@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *"  # every 6 hours
 
 permissions:
   contents: read
@@ -22,7 +22,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Node setup with/without cache based on lockfile
+      # Required by deploy-pages to set up the environment
+      - uses: actions/configure-pages@v5
+
+      # Node setup (use npm cache only if a lockfile exists)
       - name: Setup Node (no cache)
         if: ${{ hashFiles('**/package-lock.json') == '' }}
         uses: actions/setup-node@v4
@@ -36,6 +39,7 @@ jobs:
           node-version: 20
           cache: npm
 
+      # Install deps (prefer reproducible ci if locked)
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -44,22 +48,39 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
-      # Install a headless Chromium for Playwright fallback
+      # Headless Chromium for Playwright fallback in fetch-substack.mjs
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      # Provide env defaults; prefer repo Variables if set
+      # Pull configuration from secrets → variables → defaults
+      # Secrets you might have set:
+      #   SUBSTACK_FEED, PUBLIC_SUBSTACK_URL, FETCH_UA (optional)
       - name: Set env defaults
+        shell: bash
         run: |
-          echo "SUBSTACK_FEED=${SUBSTACK_FEED:-${{ vars.SUBSTACK_FEED }}}" >> $GITHUB_ENV
-          echo "SUBSTACK_FEED=${SUBSTACK_FEED:-https://damii3.substack.com/feed}" >> $GITHUB_ENV
-          echo "FETCH_UA=${FETCH_UA:-${{ vars.FETCH_UA }}}" >> $GITHUB_ENV
-          echo "FETCH_UA=${FETCH_UA:-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36}" >> $GITHUB_ENV
+          # SUBSTACK_FEED
+          FEED="${SUBSTACK_FEED:-${{ secrets.SUBSTACK_FEED }}}"
+          if [ -z "$FEED" ]; then FEED="${{ vars.SUBSTACK_FEED }}"; fi
+          if [ -z "$FEED" ]; then FEED="https://damii3.substack.com/feed"; fi
+          echo "SUBSTACK_FEED=$FEED" >> "$GITHUB_ENV"
+
+          # PUBLIC_SUBSTACK_URL (used by the UI header/empty state)
+          PUB="${PUBLIC_SUBSTACK_URL:-${{ secrets.PUBLIC_SUBSTACK_URL }}}"
+          if [ -z "$PUB" ]; then PUB="${{ vars.PUBLIC_SUBSTACK_URL }}"; fi
+          if [ -z "$PUB" ]; then PUB="https://damii3.substack.com"; fi
+          echo "PUBLIC_SUBSTACK_URL=$PUB" >> "$GITHUB_ENV"
+
+          # Browser-like UA to dodge 403s
+          UA="${FETCH_UA:-${{ secrets.FETCH_UA }}}"
+          if [ -z "$UA" ]; then UA="${{ vars.FETCH_UA }}"; fi
+          if [ -z "$UA" ]; then UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"; fi
+          echo "FETCH_UA=$UA" >> "$GITHUB_ENV"
 
       - name: Build site
         run: npm run build
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
@@ -68,7 +89,7 @@ jobs:
     needs: build
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deploy
+      - id: deployment
         uses: actions/deploy-pages@v4
