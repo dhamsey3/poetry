@@ -26,3 +26,6 @@ body{background:var(--bg);color:var(--fg);font-family:Inter,system-ui,Segoe UI,R
 .prose blockquote{border-left:4px solid var(--muted);padding-left:1rem;color:var(--muted)}
 .back{margin-top:2rem}
 a{color:var(--link)}
+
+.empty{background:var(--card);border-radius:14px;padding:2rem;text-align:center}
+.empty h2{margin:0 0 .5rem}

@@ -1,7 +1,7 @@
 ---
 const { title = "Poems", description = "Poetry by me" } = Astro.props;
+const substackUrl = import.meta.env.PUBLIC_SUBSTACK_URL || "https://damii3.substack.com";
 ---
-
 <html lang="en" class="notranslate" translate="no">
   <head>
     <meta charset="utf-8" />
@@ -10,14 +10,14 @@ const { title = "Poems", description = "Poetry by me" } = Astro.props;
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles/global.css" />
+    <link rel="stylesheet" href={`${import.meta.env.BASE_URL}styles/global.css`} />
   </head>
   <body>
     <header class="wrap header">
-      <a class="brand" href="/">Poems</a>
+      <a class="brand" href={import.meta.env.BASE_URL}>Poems</a>
       <nav class="nav">
-        <a href="/">Home</a>
-        <a href="https://damii3.substack.com" target="_blank" rel="noopener">Substack ↗</a>
+        <a href={import.meta.env.BASE_URL}>Home</a>
+        <a href={substackUrl} target="_blank" rel="noopener">Substack ↗</a>
         <button id="themeToggle" aria-label="Toggle theme">☾</button>
       </nav>
     </header>

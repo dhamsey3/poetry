@@ -10,7 +10,6 @@ const { slug } = Astro.params;
 const post = posts.find(p => p.slug === slug);
 if (!post) throw new Error("Post not found");
 ---
-
 <Base title={`${post.title} · Poems`} description={post.excerpt}>
   <article class="post">
     <h1>{post.title}</h1>
@@ -18,7 +17,7 @@ if (!post) throw new Error("Post not found");
     {post.image && <p class="hero"><img src={post.image} alt="" loading="lazy" /></p>}
     <div class="prose" set:html={post.contentHtml} />
     <p class="back">
-      <a href="/">← All poems</a> · <a href={post.url} target="_blank" rel="noopener">Original on Substack ↗</a>
+      <a href={import.meta.env.BASE_URL}>← All poems</a> · <a href={post.url} target="_blank" rel="noopener">Original on Substack ↗</a>
     </p>
   </article>
 </Base>
