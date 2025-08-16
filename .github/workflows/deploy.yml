@@ -1,4 +1,3 @@
-# .github/workflows/deploy.yml
 name: Build & Deploy (GitHub Pages)
 
 on:
@@ -6,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *" # every 6 hours
 
 permissions:
   contents: read
@@ -23,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Setup Node WITHOUT cache if no lockfile, WITH cache if present
+      # Use cache only when a lockfile exists
       - name: Setup Node (no cache)
         if: ${{ hashFiles('**/package-lock.json') == '' }}
         uses: actions/setup-node@v4
@@ -37,7 +36,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      # Install deps: use npm ci if lock exists, otherwise npm install
+      # If you added node-fetch to package.json, this installs it along with everything else
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -46,7 +45,18 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
-      - run: SUBSTACK_FEED=${{ vars.SUBSTACK_FEED }} npm run build
+      # Provide env defaults; prefer repo Variables if you set them:
+      # Settings → Secrets and variables → Variables → SUBSTACK_FEED / FETCH_UA
+      - name: Set env defaults
+        run: |
+          echo "SUBSTACK_FEED=${SUBSTACK_FEED:-${{ vars.SUBSTACK_FEED }}}" >> $GITHUB_ENV
+          echo "SUBSTACK_FEED=${SUBSTACK_FEED:-https://damii3.substack.com/feed}" >> $GITHUB_ENV
+          echo "FETCH_UA=${FETCH_UA:-${{ vars.FETCH_UA }}}" >> $GITHUB_ENV
+          echo "FETCH_UA=${FETCH_UA:-Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36}" >> $GITHUB_ENV
+
+      - name: Build site
+        run: npm run build
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

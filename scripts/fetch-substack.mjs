@@ -3,13 +3,14 @@ import sanitizeHtml from "sanitize-html";
 import slugify from "slugify";
 import fs from "fs/promises";
 import path from "path";
+import fetch from "node-fetch";
 
-const FEED = process.env.SUBSTACK_FEED || "https://damii3.substack.com/feed";
+const FEED = process.env.SUBSTACK_FEED || "https://YOUR_SUBSTACK.substack.com/feed";
+const UA =
+  process.env.FETCH_UA ||
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 
-const parser = new Parser({
-  timeout: 20000,
-  headers: { "User-Agent": "github-pages-poetry-bot/1.0" }
-});
+const parser = new Parser({ timeout: 20000 });
 
 function firstImg(html = "") {
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
@@ -33,8 +34,7 @@ function sanitize(html = "") {
     allowedSchemes: ["http", "https", "data"],
     transformTags: {
       "a": (tagName, attribs) => ({ tagName, attribs: { ...attribs, rel: "noopener", target: "_blank" } })
-    },
-    // strip any script tags, inline events, etc. (defaults already do)
+    }
   });
 }
 
@@ -44,9 +44,35 @@ function makeSlug(title, isoDate) {
   return `${base}-${d}`;
 }
 
+async function fetchXml(url) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": UA,
+      "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
+      "Referer": url.replace(/\/feed$/, "/"),
+      "Connection": "keep-alive"
+    },
+    redirect: "follow"
+  });
+  if (!res.ok) {
+    // optional retry on http (rarely helps, but harmless)
+    if (url.startsWith("https://")) {
+      const res2 = await fetch(url.replace("https://", "http://"), {
+        headers: { "User-Agent": UA, "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8" },
+        redirect: "follow"
+      });
+      if (res2.ok) return await res2.text();
+    }
+    throw new Error(`Status code ${res.status}`);
+  }
+  return await res.text();
+}
+
 async function main() {
   console.log(`Fetching feed: ${FEED}`);
-  const feed = await parser.parseURL(FEED);
+  const xml = await fetchXml(FEED);
+  const feed = await parser.parseString(xml);
 
   const posts = (feed.items || []).map((it) => {
     const html = it["content:encoded"] || it.content || "";
