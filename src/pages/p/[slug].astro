@@ -1,0 +1,24 @@
+---
+import Base from "../../layouts/Base.astro";
+import posts from "../../data/posts.json";
+
+export async function getStaticPaths() {
+  return posts.map(p => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const post = posts.find(p => p.slug === slug);
+if (!post) throw new Error("Post not found");
+---
+
+<Base title={`${post.title} · Poems`} description={post.excerpt}>
+  <article class="post">
+    <h1>{post.title}</h1>
+    <time datetime={post.date}>{new Date(post.date).toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'})}</time>
+    {post.image && <p class="hero"><img src={post.image} alt="" loading="lazy" /></p>}
+    <div class="prose" set:html={post.contentHtml} />
+    <p class="back">
+      <a href="/">← All poems</a> · <a href={post.url} target="_blank" rel="noopener">Original on Substack ↗</a>
+    </p>
+  </article>
+</Base>

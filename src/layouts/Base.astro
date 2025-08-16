@@ -1,0 +1,42 @@
+---
+const { title = "Poems", description = "Poetry by me" } = Astro.props;
+---
+
+<html lang="en" class="notranslate" translate="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body>
+    <header class="wrap header">
+      <a class="brand" href="/">Poems</a>
+      <nav class="nav">
+        <a href="/">Home</a>
+        <a href="https://YOUR_SUBSTACK.substack.com" target="_blank" rel="noopener">Substack ↗</a>
+        <button id="themeToggle" aria-label="Toggle theme">☾</button>
+      </nav>
+    </header>
+
+    <main class="wrap">
+      <slot />
+    </main>
+
+    <footer class="wrap footer">
+      <p>© {new Date().getFullYear()} · Built with Astro · Powered by Substack RSS</p>
+    </footer>
+
+    <script is:inline>
+      const btn = document.getElementById('themeToggle');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const saved = localStorage.getItem('theme');
+      const set = (t) => { document.documentElement.dataset.theme = t; localStorage.setItem('theme', t); }
+      set(saved || (prefersDark ? 'dark' : 'light'));
+      btn.onclick = () => set((document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark');
+    </script>
+  </body>
+</html>

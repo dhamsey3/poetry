@@ -1,0 +1,27 @@
+---
+import Base from "../layouts/Base.astro";
+import posts from "../data/posts.json";
+
+const items = [...posts].sort((a, b) => new Date(b.date) - new Date(a.date));
+---
+
+<Base title="Poems">
+  <section class="feed">
+    {items.map((p) => (
+      <article class="card">
+        <a class="cover" href={`/p/${p.slug}/`} aria-label={p.title}>
+          {p.image && <img src={p.image} alt="" loading="lazy" />}
+        </a>
+        <div class="content">
+          <h2><a href={`/p/${p.slug}/`}>{p.title}</a></h2>
+          <time datetime={p.date}>{new Date(p.date).toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'})}</time>
+          <p>{p.excerpt}</p>
+          <div class="links">
+            <a class="btn" href={`/p/${p.slug}/`}>Read</a>
+            <a class="substack" href={p.url} target="_blank" rel="noopener">Original on Substack ↗</a>
+          </div>
+        </div>
+      </article>
+    ))}
+  </section>
+</Base>
