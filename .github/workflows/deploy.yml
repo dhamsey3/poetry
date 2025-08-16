@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *" # every 6 hours
+    - cron: "0 */6 * * *"
 
 permissions:
   contents: read
@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Use cache only when a lockfile exists
+      # Node setup with/without cache based on lockfile
       - name: Setup Node (no cache)
         if: ${{ hashFiles('**/package-lock.json') == '' }}
         uses: actions/setup-node@v4
@@ -36,7 +36,6 @@ jobs:
           node-version: 20
           cache: npm
 
-      # If you added node-fetch to package.json, this installs it along with everything else
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -45,8 +44,11 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
-      # Provide env defaults; prefer repo Variables if you set them:
-      # Settings → Secrets and variables → Variables → SUBSTACK_FEED / FETCH_UA
+      # Install a headless Chromium for Playwright fallback
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Provide env defaults; prefer repo Variables if set
       - name: Set env defaults
         run: |
           echo "SUBSTACK_FEED=${SUBSTACK_FEED:-${{ vars.SUBSTACK_FEED }}}" >> $GITHUB_ENV
