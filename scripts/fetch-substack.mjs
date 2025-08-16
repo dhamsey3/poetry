@@ -7,7 +7,7 @@ import path from "path";
 import fetch from "node-fetch";
 import { chromium } from "playwright";
 
-const FEED = process.env.SUBSTACK_FEED || "https://YOUR_SUBSTACK.substack.com/feed";
+const FEED = process.env.SUBSTACK_FEED || "https://damii3.substack.com/feed";
 const UA =
   process.env.FETCH_UA ||
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
