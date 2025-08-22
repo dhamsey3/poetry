@@ -16,69 +16,31 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
-env:
-  # Optional: set in Settings → Variables to toggle flags without editing YAML
-  # e.g. NPM_FLAGS="--legacy-peer-deps" or "--omit=optional"
-  NPM_FLAGS: ${{ vars.NPM_FLAGS }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/configure-pages@v5
 
-      # Prefer .nvmrc if you keep Node version there; else use Node 20.x
-      - name: Setup Node from .nvmrc
-        if: ${{ hashFiles('.nvmrc') != '' }}
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version-file: .nvmrc
-          cache: npm
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "requirements.txt"
 
-      - name: Setup Node 20.x
-        if: ${{ hashFiles('.nvmrc') == '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: npm
-
-      - name: Show Node & npm
-        run: |
-          node -v
-          npm -v
-          node -p "try{console.log('lockfileVersion', require('./package-lock.json').lockfileVersion)}catch(e){console.log('no package-lock.json')}"
-
-      # Clean, reproducible install. Auto-detect workspaces; allow flags via NPM_FLAGS var.
       - name: Install dependencies
-        shell: bash
+        run: pip install -r requirements.txt
+
+      # Optional: enable chromium fallback if your feed sometimes 403s
+      - name: Install Playwright (optional)
+        if: ${{ vars.USE_PLAYWRIGHT == '1' }}
         run: |
-          set -euxo pipefail
-          if [ -f package-lock.json ]; then
-            if node -e "process.exit(require('./package.json').workspaces ? 0 : 1)"; then
-              echo "Detected npm workspaces"
-              npm ci --workspaces --no-audit --no-fund ${NPM_FLAGS:-}
-            else
-              npm ci --no-audit --no-fund ${NPM_FLAGS:-}
-            fi
-          else
-            echo "No package-lock.json found; using npm install (non-reproducible)"
-            npm install --no-audit --no-fund ${NPM_FLAGS:-}
-          fi
+          pip install playwright
+          python -m playwright install --with-deps chromium
 
-      # Helpful debug tail if any prior step fails
-      - name: Show npm debug tail on failure
-        if: failure()
-        run: |
-          echo "---- npm debug log tail ----"
-          tail -n 200 /home/runner/.npm/_logs/*-debug-0.log || true
-
-      # Headless Chromium for Playwright fallback in fetch-substack.mjs
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-
-      # Pull configuration from secrets → variables → defaults
+      # Pull config from secrets → variables → defaults
       - name: Set env defaults
         shell: bash
         run: |
@@ -98,7 +60,7 @@ jobs:
           echo "FETCH_UA=$UA" >> "$GITHUB_ENV"
 
       - name: Build site
-        run: npm run build
+        run: python fetch.py
 
       - name: Verify dist exists
         run: test -d dist && ls -la dist
