@@ -2,5 +2,4 @@ jinja2==3.1.4
 feedparser==6.0.11
 requests==2.32.3
 python-dateutil==2.9.0.post0
-# Optional: enable this and the workflow step if you want Chromium fallback
-# playwright==1.47.0
+playwright==1.47.2
