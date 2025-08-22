@@ -16,7 +16,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 DIST_DIR = Path("dist")
 TEMPLATE_FILE = Path("index.html.j2")
 
-# Flags controlled by CI
 SOFT_FAIL   = os.getenv("SOFT_FAIL", "0") == "1"
 ALLOW_EMPTY = os.getenv("ALLOW_EMPTY", "0") == "1"
 USE_PW      = os.getenv("USE_PLAYWRIGHT", "0") == "1"
@@ -62,7 +61,7 @@ def base_origin(u: str) -> str:
     p = urlparse(u)
     return f"{p.scheme}://{p.netloc}"
 
-# -------- Playwright helpers (used only when USE_PLAYWRIGHT=1) --------
+# ---------- Playwright helpers ----------
 def playwright_dom(url: str, ua: str, wait_selector: Optional[str] = None, timeout_ms: int = 90000) -> Tuple[str, str]:
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
@@ -86,7 +85,36 @@ def playwright_dom(url: str, ua: str, wait_selector: Optional[str] = None, timeo
         browser.close()
     return html, final
 
-# ----------------- Parsers -----------------
+def playwright_fetch_bytes(url: str, ua: str, timeout_ms: int = 45000) -> Tuple[bytes, str, str]:
+    """
+    Fetch raw bytes (e.g., RSS XML) using Playwright's HTTP client.
+    """
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        req = p.request.new_context(
+            user_agent=ua,
+            extra_http_headers={
+                "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "DNT": "1",
+            },
+            timeout=timeout_ms,
+        )
+        resp = req.get(url)
+        if not resp.ok:
+            status = resp.status
+            final_url = str(resp.url)
+            req.dispose()
+            raise RuntimeError(f"Playwright request failed: HTTP {status} for {final_url}")
+        ctype = resp.headers.get("content-type", "")
+        content = resp.body()
+        final_url = str(resp.url)
+        req.dispose()
+    return content, ctype, final_url
+
+# ---------- Parsers ----------
 def parse_feed_bytes(xml_bytes: bytes) -> Any:
     data = feedparser.parse(xml_bytes)
     if data.bozo and not data.entries:
@@ -135,7 +163,7 @@ def parse_html_list(content: bytes, page_url: str) -> Tuple[str, List[Dict[str, 
     soup = BeautifulSoup(content, "lxml")
     site_title = (soup.title.get_text(strip=True) if soup.title else "My Substack Feed")
     items: List[Dict[str, Any]] = []
-    # JSON-LD first
+    # JSON-LD
     for tag in soup.find_all("script", attrs={"type": "application/ld+json"}):
         try:
             import json
@@ -167,7 +195,7 @@ def parse_html_list(content: bytes, page_url: str) -> Tuple[str, List[Dict[str, 
                     stack.append(v)
             elif isinstance(node, list):
                 stack.extend(node)
-    # Anchor heuristics as fallback
+    # Anchors fallback
     if not items:
         for sel in ["a.post-preview-title", "h2 a[href*='/p/']", "h3 a[href*='/p/']", "article a[href*='/p/']",
                     "a[href*='/p/']"]:
@@ -200,7 +228,7 @@ def parse_html_list(content: bytes, page_url: str) -> Tuple[str, List[Dict[str, 
             uniq.append(it)
     return site_title, uniq
 
-# ----------------- Rendering -----------------
+# ---------- Rendering ----------
 def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[str, Any]]):
     env = Environment(loader=FileSystemLoader("."), autoescape=select_autoescape(["html", "xml"]))
     tpl = env.get_template(TEMPLATE_FILE.name)
@@ -213,10 +241,9 @@ def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[
     )
     (DIST_DIR / "index.html").write_text(html, encoding="utf-8")
 
-# ----------------- Main -----------------
+# ---------- Main ----------
 def main():
     ensure_dist()
-    # Set your publication defaults
     feed_url = os.getenv("SUBSTACK_FEED", "https://versesvibez.substack.com/feed")
     public_url = os.getenv("PUBLIC_SUBSTACK_URL", "https://versesvibez.substack.com/")
     ua = os.getenv("FETCH_UA", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
@@ -227,7 +254,8 @@ def main():
     items: List[Dict[str, Any]] = []
     site_title = "My Substack Feed"
 
-    # Try RSS first
+    # 1) Try RSS via requests
+    tried_playwright_rss = False
     try:
         content, ctype, final_url = http_get(feed_url, ua, public_url)
         if not is_html_payload(content, ctype):
@@ -235,16 +263,27 @@ def main():
             parsed = parse_feed_bytes(cleaned)
             site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
             items = normalize_entries(parsed.entries, limit=item_limit)
-        else:
-            # If RSS URL returned HTML, treat like blocked and fall through
-            pass
     except Exception as e:
         print(f"HTTP fetch failed ({e}); trying rendered DOM…")
 
-    # If blocked or empty and Playwright is enabled, try rendered archive/home
+        # 1b) Try RSS via Playwright HTTP client
+        if USE_PW:
+            tried_playwright_rss = True
+            try:
+                print("Trying Playwright HTTP fetch for RSS…")
+                content, ctype, final_url = playwright_fetch_bytes(feed_url, ua)
+                if not is_html_payload(content, ctype):
+                    cleaned = XML_INVALID_CTRL_RE.sub(b"", content)
+                    parsed = parse_feed_bytes(cleaned)
+                    site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
+                    items = normalize_entries(parsed.entries, limit=item_limit)
+                    print(f"Parsed {len(items)} items (RSS via Playwright)")
+            except Exception as e2:
+                print(f"Playwright HTTP fetch failed: {e2}")
+
+    # 2) If blocked or empty and Playwright is enabled, try rendered archive/home
     if not items and USE_PW:
         try:
-            # Prefer /archive (more structured)
             origin = base_origin(feed_url)
             archive_url = urljoin(origin + "/", "archive")
             html, arch_final = playwright_dom(archive_url, ua, wait_selector="a[href*='/p/']")
@@ -261,7 +300,7 @@ def main():
 
     print(f"Parsed {len(items)} items")
 
-    # ----- Fallbacks: last good index or placeholder -----
+    # 3) Fallbacks: last good index or placeholder
     if not items:
         prev = Path("dist/index.previous.html")
         if prev.exists():
@@ -284,10 +323,9 @@ def main():
             print("Wrote dist/index.html")
             return
 
-        # Only fail if we explicitly don't allow soft success
         raise RuntimeError("No items found from RSS or HTML fallback.")
 
-    # Normal render
+    # 4) Normal render
     render_index(site_title, feed_url, public_url, items)
     print("Wrote dist/index.html")
 
