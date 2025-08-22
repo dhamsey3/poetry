@@ -254,7 +254,7 @@ def main():
     items: List[Dict[str, Any]] = []
     site_title = "My Substack Feed"
 
-    # 1) Try RSS via requests
+    # 1) Try RSS via requests (and HTML→Playwright RSS fallback)
     tried_playwright_rss = False
     try:
         content, ctype, final_url = http_get(feed_url, ua, public_url)
@@ -263,10 +263,23 @@ def main():
             parsed = parse_feed_bytes(cleaned)
             site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
             items = normalize_entries(parsed.entries, limit=item_limit)
+        else:
+            # Got HTML challenge → try Playwright HTTP client on the same RSS URL
+            if USE_PW:
+                tried_playwright_rss = True
+                try:
+                    print("RSS returned HTML; trying Playwright HTTP fetch for RSS…")
+                    content, ctype, final_url = playwright_fetch_bytes(feed_url, ua)
+                    if not is_html_payload(content, ctype):
+                        cleaned = XML_INVALID_CTRL_RE.sub(b"", content)
+                        parsed = parse_feed_bytes(cleaned)
+                        site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
+                        items = normalize_entries(parsed.entries, limit=item_limit)
+                        print(f"Parsed {len(items)} items (RSS via Playwright)")
+                except Exception as e2:
+                    print(f"Playwright HTTP fetch failed: {e2}")
     except Exception as e:
-        print(f"HTTP fetch failed ({e}); trying rendered DOM…")
-
-        # 1b) Try RSS via Playwright HTTP client
+        print(f"HTTP fetch failed ({e})")
         if USE_PW:
             tried_playwright_rss = True
             try:
@@ -281,7 +294,7 @@ def main():
             except Exception as e2:
                 print(f"Playwright HTTP fetch failed: {e2}")
 
-    # 2) If blocked or empty and Playwright is enabled, try rendered archive/home
+    # 2) If still empty and Playwright is enabled, try rendered archive/home
     if not items and USE_PW:
         try:
             origin = base_origin(feed_url)
