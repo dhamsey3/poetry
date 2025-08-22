@@ -2,7 +2,8 @@
 import os
 import sys
 import re
-from urllib.parse import urljoin
+import json
+from urllib.parse import urlparse, urljoin
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
@@ -29,12 +30,15 @@ def ensure_dist():
 def is_html_payload(content: bytes, content_type: str) -> bool:
     if content_type and "html" in content_type.lower():
         return True
-    head = content[:200].lstrip()
+    head = content[:200].lstrip().lower()
     return head.startswith(b"<!doctype html") or head.startswith(b"<html")
+
+def base_origin(u: str) -> str:
+    p = urlparse(u)
+    return f"{p.scheme}://{p.netloc}"
 
 def discover_feed_from_html(html: str, base_url: str) -> Optional[str]:
     soup = BeautifulSoup(html, "html.parser")
-    # Look for RSS/Atom <link> discovery
     for link in soup.find_all("link"):
         rel = (link.get("rel") or [])
         rel = [r.lower() for r in rel] if isinstance(rel, list) else [str(rel).lower()]
@@ -43,12 +47,9 @@ def discover_feed_from_html(html: str, base_url: str) -> Optional[str]:
         if not href:
             continue
         if ("alternate" in rel) and (
-            "rss" in type_attr or "atom" in type_attr or type_attr.endswith("xml")
+            "rss" in type_attr or "atom" in type_attr or "xml" in type_attr
         ):
             return urljoin(base_url, href)
-    # Heuristic fallbacks
-    for candidate in ("feed", "rss", "feed.xml", "rss.xml"):
-        return urljoin(base_url.rstrip("/") + "/", candidate)
     return None
 
 def http_get(url: str, ua: str, referer: str) -> Tuple[bytes, str, str]:
@@ -91,7 +92,6 @@ def http_get(url: str, ua: str, referer: str) -> Tuple[bytes, str, str]:
                     ctype = resp.headers.get("content-type", "")
                     final_url = resp.url
                 else:
-                    # Fallback to DOM content if no response object
                     body = page.content().encode("utf-8")
                     ctype = "text/html"
                     final_url = page.url
@@ -100,7 +100,7 @@ def http_get(url: str, ua: str, referer: str) -> Tuple[bytes, str, str]:
         except Exception as e:
             raise RuntimeError(f"Failed after HTTP {last_status}; Playwright fallback error: {e}") from e
 
-    raise RuntimeError(f"Failed to fetch feed: HTTP {last_status} from {url}")
+    raise RuntimeError(f"Failed to fetch URL (last status {last_status}): {url}")
 
 def parse_feed_bytes(xml_bytes: bytes) -> Any:
     data = feedparser.parse(xml_bytes)
@@ -121,7 +121,7 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
         title = e.get("title", "Untitled")
         link = e.get("link")
         dt = None
-        for key in ("published", "updated", "created"):
+        for key in ("published", "updated", "created", "datePublished"):
             val = e.get(key)
             if val:
                 try:
@@ -134,7 +134,7 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
                 dt = datetime(*e.published_parsed[:6], tzinfo=timezone.utc)
             except Exception:
                 dt = None
-        summary = e.get("summary", "")
+        summary = e.get("summary", e.get("description", ""))
         if not summary and e.get("content"):
             try:
                 summary = e["content"][0].get("value", "")
@@ -150,6 +150,137 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
     norm.sort(key=lambda x: x["date"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return norm[:limit]
 
+# ---------- HTML Fallback Parsing (Substack) ----------
+
+def parse_jsonld_posts(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    for tag in soup.find_all("script", attrs={"type": "application/ld+json"}):
+        try:
+            data = json.loads(tag.string or tag.text or "")
+        except Exception:
+            continue
+
+        # Normalize to list to simplify processing
+        candidates = []
+        if isinstance(data, dict) and "@graph" in data and isinstance(data["@graph"], list):
+            candidates.extend(data["@graph"])
+        elif isinstance(data, dict):
+            candidates.append(data)
+        elif isinstance(data, list):
+            candidates.extend(data)
+
+        for obj in candidates:
+            if not isinstance(obj, dict):
+                continue
+            typ = obj.get("@type") or obj.get("@type".lower())
+            # ItemList lists posts via itemListElement
+            if typ in ("ItemList",):
+                elements = obj.get("itemListElement") or []
+                for el in elements:
+                    if isinstance(el, dict):
+                        # May be {"@type":"ListItem","item":{...}} or flat
+                        payload = el.get("item") if "item" in el else el
+                        if isinstance(payload, dict):
+                            items.append({
+                                "title": payload.get("name") or payload.get("headline") or "Untitled",
+                                "link": urljoin(base_url, payload.get("url") or ""),
+                                "datePublished": payload.get("datePublished") or payload.get("dateCreated") or "",
+                                "summary": payload.get("description") or "",
+                            })
+            # Blog with blogPost array
+            if typ in ("Blog", "WebSite") and isinstance(obj.get("blogPost"), list):
+                for post in obj["blogPost"]:
+                    if isinstance(post, dict):
+                        items.append({
+                            "title": post.get("headline") or post.get("name") or "Untitled",
+                            "link": urljoin(base_url, post.get("url") or ""),
+                            "datePublished": post.get("datePublished") or "",
+                            "summary": post.get("description") or "",
+                        })
+            # Individual BlogPosting
+            if typ in ("BlogPosting", "Article", "NewsArticle"):
+                items.append({
+                    "title": obj.get("headline") or obj.get("name") or "Untitled",
+                    "link": urljoin(base_url, obj.get("url") or ""),
+                    "datePublished": obj.get("datePublished") or "",
+                    "summary": obj.get("description") or "",
+                })
+    # Deduplicate by link
+    seen = set()
+    uniq = []
+    for it in items:
+        href = it.get("link") or ""
+        if not href or href in seen:
+            continue
+        seen.add(href)
+        uniq.append(it)
+    return uniq
+
+def parse_archive_links(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    # Generic: anchors to posts often contain '/p/' in Substack
+    for a in soup.select("a[href]"):
+        href = a.get("href") or ""
+        if not href:
+            continue
+        full = urljoin(base_url, href)
+        # Heuristic: keep same host, paths with '/p/' (post), ignore archive/about
+        if base_origin(full) != base_origin(base_url):
+            continue
+        path = urlparse(full).path.lower()
+        if "/p/" not in path:
+            continue
+        title = a.get_text(strip=True)
+        if not title:
+            # try title attribute
+            title = a.get("title") or ""
+        if not title:
+            continue
+        # Find date near the link (time tag)
+        dt_str = ""
+        time_el = a.find("time")
+        if not time_el:
+            # look up to two parents
+            parent = a.parent
+            for _ in range(2):
+                if not parent:
+                    break
+                time_el = parent.find("time")
+                if time_el:
+                    break
+                parent = parent.parent
+        if time_el and (time_el.get("datetime") or time_el.text):
+            dt_str = time_el.get("datetime") or time_el.get_text(strip=True)
+        items.append({
+            "title": title,
+            "link": full,
+            "datePublished": dt_str,
+            "summary": "",
+        })
+    # Deduplicate by link, keep order
+    seen = set()
+    uniq = []
+    for it in items:
+        href = it["link"]
+        if href in seen:
+            continue
+        seen.add(href)
+        uniq.append(it)
+    return uniq
+
+def parse_substack_html(content: bytes, page_url: str) -> Tuple[str, List[Dict[str, Any]]]:
+    soup = BeautifulSoup(content, "lxml")
+    # Title from page <title>
+    site_title = (soup.title.get_text(strip=True) if soup.title else "My Substack Feed")
+    # 1) JSON-LD first
+    items = parse_jsonld_posts(soup, page_url)
+    # 2) Fallback to anchors (archive pages)
+    if not items:
+        items = parse_archive_links(soup, page_url)
+    return site_title, items
+
+# ---------- Rendering ----------
+
 def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[str, Any]]):
     env = Environment(loader=FileSystemLoader("."), autoescape=select_autoescape(["html", "xml"]))
     tpl = env.get_template(TEMPLATE_FILE.name)
@@ -162,6 +293,8 @@ def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[
     )
     (DIST_DIR / "index.html").write_text(html, encoding="utf-8")
 
+# ---------- Main ----------
+
 def main():
     ensure_dist()
     feed_url = os.getenv("SUBSTACK_FEED", "https://damii3.substack.com/feed")
@@ -172,31 +305,54 @@ def main():
     print(f"Fetching feed: {feed_url}")
     content, ctype, final_url = http_get(feed_url, ua, public_url)
 
-    # If we got HTML (block page), try to auto-discover a real feed
+    site_title = "My Substack Feed"
+    items: List[Dict[str, Any]] = []
+
+    # If we got HTML (bot wall), try to auto-discover a real feed
     if is_html_payload(content, ctype):
         print(f"Got HTML from {final_url}; attempting feed autodiscovery...")
         discovered = discover_feed_from_html(content.decode("utf-8", "ignore"), final_url)
         if discovered and discovered != final_url:
             print(f"Discovered feed: {discovered}")
-            content, ctype, final_url = http_get(discovered, ua, public_url)
+            content2, ctype2, final2 = http_get(discovered, ua, public_url)
+            if not is_html_payload(content2, ctype2):
+                cleaned = XML_INVALID_CTRL_RE.sub(b"", content2)
+                parsed = parse_feed_bytes(cleaned)
+                site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
+                items = normalize_entries(parsed.entries, limit=item_limit)
+            else:
+                # Still HTML → fall through to HTML scraping below using discovered URL page
+                content, ctype, final_url = content2, ctype2, final2
+
+    if not items:
+        if is_html_payload(content, ctype):
+            print("No valid RSS; scraping HTML…")
+            # If current page isn’t archive, try /archive first (more structured)
+            origin = base_origin(final_url)
+            archive_url = urljoin(origin + "/", "archive")
+            if not final_url.rstrip("/").endswith("/archive"):
+                try:
+                    arch_body, arch_ctype, arch_final = http_get(archive_url, ua, public_url)
+                    if is_html_payload(arch_body, arch_ctype):
+                        site_title, html_items = parse_substack_html(arch_body, arch_final)
+                        items = normalize_entries(html_items, limit=item_limit)
+                except Exception as e:
+                    print(f"Archive fetch failed: {e}", file=sys.stderr)
+            # If still nothing, parse the current HTML
+            if not items:
+                site_title, html_items = parse_substack_html(content, final_url)
+                items = normalize_entries(html_items, limit=item_limit)
         else:
-            print("No feed link discovered in HTML; will attempt to parse after sanitization.")
+            # We have XML but parsing not attempted yet
+            cleaned = XML_INVALID_CTRL_RE.sub(b"", content)
+            parsed = parse_feed_bytes(cleaned)
+            site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
+            items = normalize_entries(parsed.entries, limit=item_limit)
 
-    # Sanitize invalid XML control chars and try parsing
-    cleaned = XML_INVALID_CTRL_RE.sub(b"", content)
-    try:
-        parsed = parse_feed_bytes(cleaned)
-    except Exception as e:
-        # As a last resort: if still HTML, soft fail or raise
-        head = cleaned[:200].lstrip().lower()
-        if head.startswith(b"<!doctype html") or head.startswith(b"<html"):
-            raise RuntimeError("Received HTML instead of RSS/Atom.") from e
-        raise
-
-    title = (getattr(parsed, "feed", {}) or {}).get("title") or "My Substack Feed"
-    items = normalize_entries(parsed.entries, limit=item_limit)
     print(f"Parsed {len(items)} items")
-    render_index(title, feed_url, public_url, items)
+    if not items and not SOFT_FAIL:
+        raise RuntimeError("No items found from RSS or HTML fallback.")
+    render_index(site_title, feed_url, public_url, items)
     print("Wrote dist/index.html")
 
 if __name__ == "__main__":
