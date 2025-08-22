@@ -16,61 +16,82 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
+env:
+  # Optional: set in Settings → Variables to toggle flags without editing YAML
+  # e.g. NPM_FLAGS="--legacy-peer-deps" or "--omit=optional"
+  NPM_FLAGS: ${{ vars.NPM_FLAGS }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Required by deploy-pages to set up the environment
       - uses: actions/configure-pages@v5
 
-      # Node setup (use npm cache only if a lockfile exists)
-      - name: Setup Node (no cache)
-        if: ${{ hashFiles('**/package-lock.json') == '' }}
+      # Prefer .nvmrc if you keep Node version there; else use Node 20.x
+      - name: Setup Node from .nvmrc
+        if: ${{ hashFiles('.nvmrc') != '' }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Setup Node (with npm cache)
-        if: ${{ hashFiles('**/package-lock.json') != '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
 
-      # Install deps (prefer reproducible ci if locked)
-      - name: Install dependencies
+      - name: Setup Node 20.x
+        if: ${{ hashFiles('.nvmrc') == '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - name: Show Node & npm
         run: |
+          node -v
+          npm -v
+          node -p "try{console.log('lockfileVersion', require('./package-lock.json').lockfileVersion)}catch(e){console.log('no package-lock.json')}"
+
+      # Clean, reproducible install. Auto-detect workspaces; allow flags via NPM_FLAGS var.
+      - name: Install dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
           if [ -f package-lock.json ]; then
-            npm ci
+            if node -e "process.exit(require('./package.json').workspaces ? 0 : 1)"; then
+              echo "Detected npm workspaces"
+              npm ci --workspaces --no-audit --no-fund ${NPM_FLAGS:-}
+            else
+              npm ci --no-audit --no-fund ${NPM_FLAGS:-}
+            fi
           else
-            npm install --no-audit --no-fund
+            echo "No package-lock.json found; using npm install (non-reproducible)"
+            npm install --no-audit --no-fund ${NPM_FLAGS:-}
           fi
+
+      # Helpful debug tail if any prior step fails
+      - name: Show npm debug tail on failure
+        if: failure()
+        run: |
+          echo "---- npm debug log tail ----"
+          tail -n 200 /home/runner/.npm/_logs/*-debug-0.log || true
 
       # Headless Chromium for Playwright fallback in fetch-substack.mjs
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       # Pull configuration from secrets → variables → defaults
-      # Secrets you might have set:
-      #   SUBSTACK_FEED, PUBLIC_SUBSTACK_URL, FETCH_UA (optional)
       - name: Set env defaults
         shell: bash
         run: |
-          # SUBSTACK_FEED
           FEED="${SUBSTACK_FEED:-${{ secrets.SUBSTACK_FEED }}}"
           if [ -z "$FEED" ]; then FEED="${{ vars.SUBSTACK_FEED }}"; fi
           if [ -z "$FEED" ]; then FEED="https://damii3.substack.com/feed"; fi
           echo "SUBSTACK_FEED=$FEED" >> "$GITHUB_ENV"
 
-          # PUBLIC_SUBSTACK_URL (used by the UI header/empty state)
           PUB="${PUBLIC_SUBSTACK_URL:-${{ secrets.PUBLIC_SUBSTACK_URL }}}"
           if [ -z "$PUB" ]; then PUB="${{ vars.PUBLIC_SUBSTACK_URL }}"; fi
           if [ -z "$PUB" ]; then PUB="https://damii3.substack.com"; fi
           echo "PUBLIC_SUBSTACK_URL=$PUB" >> "$GITHUB_ENV"
 
-          # Browser-like UA to dodge 403s
           UA="${FETCH_UA:-${{ secrets.FETCH_UA }}}"
           if [ -z "$UA" ]; then UA="${{ vars.FETCH_UA }}"; fi
           if [ -z "$UA" ]; then UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"; fi
@@ -78,6 +99,9 @@ jobs:
 
       - name: Build site
         run: npm run build
+
+      - name: Verify dist exists
+        run: test -d dist && ls -la dist
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
