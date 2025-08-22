@@ -71,33 +71,124 @@ def http_get(url: str, ua: str, referer: str) -> Tuple[bytes, str, str]:
             time.sleep(1.5 + random.random())
             continue
         break
-
-    # network response failed; caller may still try DOM-rendered fetch
     raise RuntimeError(f"Failed to fetch URL (last status {last_status}): {url}")
 
+# ---------- Playwright helpers ----------
+
 def playwright_dom(url: str, ua: str, wait_selector: Optional[str] = None, timeout_ms: int = 45000) -> Tuple[str, str]:
-    """Return (rendered_html, final_url) after allowing hydration."""
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(user_agent=ua)
         page = context.new_page()
         page.goto(url, timeout=timeout_ms, wait_until="load")
-        # give it a moment for client-side rendering; wait for a typical selector if provided
         if wait_selector:
-            try:
-                page.wait_for_selector(wait_selector, timeout=8000)
-            except Exception:
-                pass
+            try: page.wait_for_selector(wait_selector, timeout=8000)
+            except Exception: pass
         else:
-            try:
-                page.wait_for_selector("a[href*='/p/']", timeout=6000)
-            except Exception:
-                pass
+            try: page.wait_for_selector("a[href*='/p/']", timeout=6000)
+            except Exception: pass
         html = page.content()
         final = page.url
         browser.close()
     return html, final
+
+def playwright_collect_archive(api_base_url: str, archive_url: str, ua: str) -> Tuple[List[Dict[str, Any]], str]:
+    """
+    Navigate to /archive, capture JSON API responses, and extract posts.
+    Returns (items, final_url). Items have title/link/datePublished/summary.
+    """
+    from playwright.sync_api import sync_playwright
+    items: List[Dict[str, Any]] = []
+
+    def normalize_posts(obj: Any, base_url: str) -> List[Dict[str, Any]]:
+        out: List[Dict[str, Any]] = []
+        # Look for { "posts": [ {...} ] } anywhere
+        def walk(node):
+            if isinstance(node, dict):
+                if "posts" in node and isinstance(node["posts"], list):
+                    for p in node["posts"]:
+                        if not isinstance(p, dict): continue
+                        title = p.get("title") or p.get("headline") or p.get("name") or p.get("subject") or "Untitled"
+                        url  = p.get("canonical_url") or p.get("url")
+                        slug = p.get("slug")
+                        if not url and slug:
+                            url = "/p/" + slug
+                        link = urljoin(base_url, url or "")
+                        if not link: continue
+                        date = p.get("date_published") or p.get("published_at") or p.get("datePublished") or p.get("post_date")
+                        summary = p.get("description") or p.get("subtitle") or p.get("excerpt") or ""
+                        out.append({"title": title, "link": link, "datePublished": date or "", "summary": summary})
+                for v in node.values(): walk(v)
+            elif isinstance(node, list):
+                for v in node: walk(v)
+        walk(obj)
+        # dedupe by link
+        seen, uniq = set(), []
+        for it in out:
+            href = it.get("link") or ""
+            if href and href not in seen:
+                seen.add(href); uniq.append(it)
+        return uniq
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(user_agent=ua)
+        page = context.new_page()
+
+        captured: List[Tuple[str, str]] = []
+
+        def on_response(resp):
+            try:
+                url = resp.url
+                ctype = (resp.headers or {}).get("content-type", "")
+                if "application/json" in ctype and "/api" in url:
+                    # best-effort text read
+                    try:
+                        text = resp.text()
+                        captured.append((url, text))
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        page.on("response", on_response)
+        page.goto(archive_url, timeout=50000, wait_until="networkidle")
+
+        # Parse __NEXT_DATA__ too (some pages embed posts there)
+        next_data_items: List[Dict[str, Any]] = []
+        try:
+            script = page.locator("script#__NEXT_DATA__").first
+            if script and script.count() > 0:
+                payload = script.text_content() or ""
+                data = json.loads(payload)
+                next_data_items = normalize_posts(data, api_base_url)
+        except Exception:
+            pass
+
+        # Parse captured JSON API responses for posts
+        api_items: List[Dict[str, Any]] = []
+        for url, text in captured:
+            try:
+                data = json.loads(text)
+                api_items.extend(normalize_posts(data, api_base_url))
+            except Exception:
+                continue
+
+        html = page.content()
+        final = page.url
+        browser.close()
+
+    # Merge & dedupe (API preferred, then NEXT_DATA)
+    merged: List[Dict[str, Any]] = []
+    seen = set()
+    for it in api_items + next_data_items:
+        href = it.get("link")
+        if href and href not in seen:
+            seen.add(href); merged.append(it)
+    return merged, final
+
+# ---------- Parsing helpers ----------
 
 def parse_feed_bytes(xml_bytes: bytes) -> Any:
     data = feedparser.parse(xml_bytes)
@@ -128,39 +219,23 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
                     pass
         summary = e.get("summary", e.get("description", ""))
         if not summary and e.get("content"):
-            try:
-                summary = e["content"][0].get("value", "")
-            except Exception:
-                pass
-        norm.append({
-            "title": title,
-            "link": link,
-            "date": dt,
-            "date_iso": to_iso(dt) if dt else "",
-            "summary": summary,
-        })
+            try: summary = e["content"][0].get("value", "")
+            except Exception: pass
+        norm.append({"title": title, "link": link, "date": dt, "date_iso": to_iso(dt) if dt else "", "summary": summary})
     norm.sort(key=lambda x: x["date"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return norm[:limit]
-
-# --------- HTML fallbacks ----------
 
 def parse_jsonld_posts(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
     items: List[Dict[str, Any]] = []
     for tag in soup.find_all("script", attrs={"type": "application/ld+json"}):
-        try:
-            data = json.loads(tag.string or tag.text or "")
-        except Exception:
-            continue
+        try: data = json.loads(tag.string or tag.text or "")
+        except Exception: continue
         candidates = []
-        if isinstance(data, dict) and "@graph" in data and isinstance(data["@graph"], list):
-            candidates.extend(data["@graph"])
-        elif isinstance(data, dict):
-            candidates.append(data)
-        elif isinstance(data, list):
-            candidates.extend(data)
+        if isinstance(data, dict) and "@graph" in data and isinstance(data["@graph"], list): candidates.extend(data["@graph"])
+        elif isinstance(data, dict): candidates.append(data)
+        elif isinstance(data, list): candidates.extend(data)
         for obj in candidates:
-            if not isinstance(obj, dict):
-                continue
+            if not isinstance(obj, dict): continue
             typ = obj.get("@type")
             if typ == "ItemList":
                 for el in obj.get("itemListElement", []):
@@ -184,148 +259,49 @@ def parse_jsonld_posts(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any
     for it in items:
         href = it.get("link") or ""
         if href and href not in seen:
-            seen.add(href)
-            uniq.append(it)
-    return uniq
-
-def parse_next_data_posts(html: str, base_url: str) -> List[Dict[str, Any]]:
-    items: List[Dict[str, Any]] = []
-    soup = BeautifulSoup(html, "lxml")
-    script = soup.find("script", id="__NEXT_DATA__", type="application/json")
-    if not script or not (script.string or script.text):
-        return items
-    try:
-        data = json.loads(script.string or script.text)
-    except Exception:
-        return items
-
-    def walk(node):
-        if isinstance(node, dict):
-            title = node.get("title") or node.get("headline") or node.get("name")
-            url = node.get("canonical_url") or node.get("url")
-            slug = node.get("slug")
-            date = node.get("date_published") or node.get("published_at") or node.get("datePublished")
-            if (url or slug) and title:
-                link = urljoin(base_url, url or ("/p/" + slug))
-                items.append({
-                    "title": title,
-                    "link": link,
-                    "datePublished": date or "",
-                    "summary": node.get("description") or "",
-                })
-            for v in node.values():
-                walk(v)
-        elif isinstance(node, list):
-            for v in node:
-                walk(v)
-
-    walk(data)
-    # same-origin & dedupe
-    origin = base_origin(base_url)
-    seen, uniq = set(), []
-    for it in items:
-        href = it.get("link") or ""
-        if not href or base_origin(href) != origin:
-            continue
-        if href not in seen:
-            seen.add(href)
-            uniq.append(it)
+            seen.add(href); uniq.append(it)
     return uniq
 
 def parse_archive_links(soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
     items: List[Dict[str, Any]] = []
-    for sel in [
-        "a.post-preview-title",
-        "h2 a[href*='/p/']",
-        "h3 a[href*='/p/']",
-        "article a[href*='/p/']",
-        "a[href*='/p/']",
-    ]:
+    for sel in ["a.post-preview-title", "h2 a[href*='/p/']", "h3 a[href*='/p/']", "article a[href*='/p/']", "a[href*='/p/']"]:
         for a in soup.select(sel):
             href = a.get("href") or ""
-            if not href:
-                continue
+            if not href: continue
             full = urljoin(base_url, href)
-            if base_origin(full) != base_origin(base_url):
-                continue
+            if base_origin(full) != base_origin(base_url): continue
             title = a.get_text(strip=True) or a.get("title") or "Untitled"
-            # find date nearby
             dt_str = ""
             time_el = a.find("time")
             if not time_el:
                 parent = a.parent
                 for _ in range(3):
-                    if not parent:
-                        break
+                    if not parent: break
                     time_el = parent.find("time")
-                    if time_el:
-                        break
+                    if time_el: break
                     parent = parent.parent
             if time_el and (time_el.get("datetime") or time_el.text):
                 dt_str = time_el.get("datetime") or time_el.get_text(strip=True)
             items.append({"title": title, "link": full, "datePublished": dt_str, "summary": ""})
-
-    # Regex fallback for obfuscated markup
-    origin = base_origin(base_url)
-    host = urlparse(origin).netloc.replace(".", r"\.")
-    regex = re.compile(rf"https?://{host}/p/[a-zA-Z0-9\-_%]+")
-    for m in regex.findall(str(soup)):
-        full = m
-        if base_origin(full) != origin:
-            continue
-        items.append({"title": "", "link": full, "datePublished": "", "summary": ""})
-
-    # Dedup
+    # dedupe
     seen, uniq = set(), []
     for it in items:
         href = it["link"]
         if href not in seen:
-            seen.add(href)
-            uniq.append(it)
+            seen.add(href); uniq.append(it)
     return uniq
 
 def parse_substack_html(content: bytes, page_url: str) -> Tuple[str, List[Dict[str, Any]]]:
     soup = BeautifulSoup(content, "lxml")
     site_title = (soup.title.get_text(strip=True) if soup.title else "My Substack Feed")
-    # 1) Next.js
-    items = parse_next_data_posts(content.decode("utf-8", "ignore"), page_url)
-    if items:
-        return site_title, items
-    # 2) JSON-LD
+    # 1) JSON-LD
     items = parse_jsonld_posts(soup, page_url)
-    if items:
-        return site_title, items
-    # 3) Anchors/regex
-    items = parse_archive_links(soup, page_url)
+    # 2) Anchors as fallback
+    if not items:
+        items = parse_archive_links(soup, page_url)
     return site_title, items
 
-def fill_missing_meta(items: List[Dict[str, Any]], ua: str, limit: int = 8):
-    """For items missing title/date, fetch a few pages and read OG tags/title."""
-    headers = {"User-Agent": ua}
-    count = 0
-    for it in items:
-        if count >= limit:
-            break
-        need_title = not it.get("title")
-        need_date = not it.get("datePublished")
-        if not (need_title or need_date):
-            continue
-        try:
-            r = requests.get(it["link"], headers=headers, timeout=20)
-            if r.status_code != 200:
-                continue
-            s = BeautifulSoup(r.text, "lxml")
-            if need_title:
-                it["title"] = (s.find("meta", property="og:title") or {}).get("content") or \
-                              (s.title.get_text(strip=True) if s.title else "Untitled")
-            if need_date:
-                it["datePublished"] = (s.find("meta", property="article:published_time") or {}).get("content") or \
-                                      (s.find("time").get("datetime") if s.find("time") else "")
-            count += 1
-        except Exception:
-            continue
-
-# --------- Rendering ----------
+# ---------- Rendering ----------
 
 def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[str, Any]]):
     env = Environment(loader=FileSystemLoader("."), autoescape=select_autoescape(["html", "xml"]))
@@ -339,7 +315,7 @@ def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[
     )
     (DIST_DIR / "index.html").write_text(html, encoding="utf-8")
 
-# --------- Main ----------
+# ---------- Main ----------
 
 def main():
     ensure_dist()
@@ -349,66 +325,66 @@ def main():
     item_limit = int(os.getenv("ITEM_LIMIT", "25"))
 
     print(f"Fetching feed: {feed_url}")
+    # 1) RSS try
     try:
         content, ctype, final_url = http_get(feed_url, ua, public_url)
-    except Exception as e:
-        # If network response blocked, try rendered DOM immediately
-        if os.getenv("USE_PLAYWRIGHT", "0") == "1":
-            print(f"HTTP fetch failed ({e}); trying rendered DOM…")
-            html, final_url = playwright_dom(feed_url, ua)
-            content, ctype, final_url = html.encode("utf-8"), "text/html", final_url
-        else:
-            raise
-
-    site_title = "My Substack Feed"
-    items: List[Dict[str, Any]] = []
-
-    if is_html_payload(content, ctype):
-        print(f"Got HTML from {final_url}; attempting feed autodiscovery...")
-        discovered = discover_feed_from_html(content.decode("utf-8", "ignore"), final_url)
-        if discovered and discovered != final_url:
-            print(f"Discovered feed: {discovered}")
-            try:
-                content2, ctype2, final2 = http_get(discovered, ua, public_url)
-                if not is_html_payload(content2, ctype2):
-                    cleaned = XML_INVALID_CTRL_RE.sub(b"", content2)
-                    parsed = parse_feed_bytes(cleaned)
-                    site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
-                    items = normalize_entries(parsed.entries, limit=item_limit)
-                else:
-                    content, ctype, final_url = content2, ctype2, final2
-            except Exception:
-                # ignore; continue with HTML scraping
-                pass
-
-    if not items:
-        if is_html_payload(content, ctype):
-            print("No valid RSS; scraping HTML…")
-            origin = base_origin(final_url)
-            archive_url = urljoin(origin + "/", "archive")
-
-            # 1) Try /archive DOM-rendered
-            if os.getenv("USE_PLAYWRIGHT", "0") == "1":
-                try:
-                    html, arch_final = playwright_dom(archive_url, ua)
-                    site_title, html_items = parse_substack_html(html.encode("utf-8"), arch_final)
-                    items = normalize_entries(html_items, limit=item_limit)
-                except Exception as e:
-                    print(f"Rendered /archive failed: {e}", file=sys.stderr)
-
-            # 2) If still nothing, parse current HTML (rendered if we used playwright earlier)
-            if not items:
-                site_title, html_items = parse_substack_html(content, final_url)
-                items = normalize_entries(html_items, limit=item_limit)
-
-            # 3) As a last resort, hit a few post pages to fill missing titles/dates
-            if items:
-                fill_missing_meta(items, ua, limit=6)
-        else:
+        if not is_html_payload(content, ctype):
             cleaned = XML_INVALID_CTRL_RE.sub(b"", content)
             parsed = parse_feed_bytes(cleaned)
-            site_title = (getattr(parsed, "feed", {}) or {}).get("title") or site_title
+            title = (getattr(parsed, "feed", {}) or {}).get("title") or "My Substack Feed"
             items = normalize_entries(parsed.entries, limit=item_limit)
+            print(f"Parsed {len(items)} items (RSS)")
+            render_index(title, feed_url, public_url, items)
+            print("Wrote dist/index.html")
+            return
+    except Exception as e:
+        print(f"HTTP fetch failed ({e}); trying rendered DOM…")
+
+    # 2) Playwright-assisted paths (required for Substack bot wall)
+    if os.getenv("USE_PLAYWRIGHT", "0") != "1":
+        raise RuntimeError("RSS blocked and USE_PLAYWRIGHT!=1; enable Playwright to proceed.")
+
+    # 2a) Try rendered DOM on /feed (in case it embeds data)
+    html, final_url = playwright_dom(feed_url, ua)
+    # 2b) Autodiscover from rendered HTML
+    discovered = discover_feed_from_html(html, final_url)
+    if discovered:
+        try:
+            content2, ctype2, _ = http_get(discovered, ua, public_url)
+            if not is_html_payload(content2, ctype2):
+                cleaned = XML_INVALID_CTRL_RE.sub(b"", content2)
+                parsed = parse_feed_bytes(cleaned)
+                title = (getattr(parsed, "feed", {}) or {}).get("title") or "My Substack Feed"
+                items = normalize_entries(parsed.entries, limit=item_limit)
+                print(f"Parsed {len(items)} items (discovered RSS)")
+                render_index(title, feed_url, public_url, items)
+                print("Wrote dist/index.html")
+                return
+        except Exception:
+            pass
+
+    # 2c) Hit /archive and capture JSON API responses (most reliable)
+    origin = base_origin(final_url or feed_url)
+    archive_url = urljoin(origin + "/", "archive")
+    try:
+        api_items, arch_final = playwright_collect_archive(origin, archive_url, ua)
+    except Exception as e:
+        print(f"Rendered /archive API capture failed: {e}", file=sys.stderr)
+        api_items = []
+
+    items: List[Dict[str, Any]] = []
+    site_title = "My Substack Feed"
+
+    if api_items:
+        items = normalize_entries(api_items, limit=item_limit)
+    else:
+        # 2d) If no API posts captured, parse rendered /archive DOM
+        try:
+            arch_html, arch_final = playwright_dom(archive_url, ua)
+            site_title, html_items = parse_substack_html(arch_html.encode("utf-8"), arch_final)
+            items = normalize_entries(html_items, limit=item_limit)
+        except Exception as e:
+            print(f"Rendered /archive DOM parse failed: {e}", file=sys.stderr)
 
     print(f"Parsed {len(items)} items")
     if not items and not SOFT_FAIL:
