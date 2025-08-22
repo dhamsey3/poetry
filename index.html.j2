@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ site_title }}</title>
+  <meta name="description" content="Latest posts from {{ site_title }}">
+  <style>
+    :root { --fg:#0f172a; --muted:#475569; --bg:#fafafa; --card:#ffffff; --accent:#111827; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; color:var(--fg); background:var(--bg); }
+    header { padding: 2rem 1rem; text-align: center; }
+    header h1 { margin: 0 0 .25rem 0; font-size: clamp(1.6rem, 2.5vw, 2.2rem); }
+    header p { margin: .25rem 0 0 0; color: var(--muted); }
+    main { max-width: 880px; margin: 0 auto; padding: 0 1rem 2rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+    .card { background: var(--card); border: 1px solid #e5e7eb; border-radius: 14px; padding: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,.03); display: flex; flex-direction: column; }
+    .card h3 { margin: 0 0 .5rem 0; font-size: 1.05rem; line-height: 1.3; }
+    .meta { color: var(--muted); font-size: .85rem; margin-bottom: .5rem; }
+    .summary { color: #1f2937; font-size: .95rem; line-height: 1.45; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { text-align:center; color: var(--muted); padding: 2rem 1rem; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><a href="{{ public_url }}">{{ site_title }}</a></h1>
+    <p>Feed: <a href="{{ feed_url }}">{{ feed_url }}</a></p>
+  </header>
+
+  <main>
+    <div class="grid">
+      {% for item in items %}
+      <article class="card">
+        <h3><a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></h3>
+        {% if item.date_iso %}
+        <div class="meta">{{ item.date_iso }}</div>
+        {% endif %}
+        {% if item.summary %}
+        <div class="summary">{{ item.summary | striptags | truncate(300, True, '…') }}</div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </main>
+
+  <footer>
+    Generated {{ generated_at.isoformat() }} · <a href="{{ public_url }}" target="_blank" rel="noopener">Visit on Substack</a>
+  </footer>
+</body>
+</html>
