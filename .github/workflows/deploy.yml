@@ -33,14 +33,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Optional: enable chromium fallback if your feed sometimes 403s
-      - name: Install Playwright (optional)
-        if: ${{ vars.USE_PLAYWRIGHT == '1' }}
-        run: |
-          pip install playwright
-          python -m playwright install --with-deps chromium
+      - name: Install Playwright Chromium
+        run: python -m playwright install --with-deps chromium
 
-      # Pull config from secrets → variables → defaults
       - name: Set env defaults
         shell: bash
         run: |
@@ -58,6 +53,9 @@ jobs:
           if [ -z "$UA" ]; then UA="${{ vars.FETCH_UA }}"; fi
           if [ -z "$UA" ]; then UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"; fi
           echo "FETCH_UA=$UA" >> "$GITHUB_ENV"
+
+          echo "USE_PLAYWRIGHT=1" >> "$GITHUB_ENV"
+          echo "SOFT_FAIL=${{ vars.SOFT_FAIL }}" >> "$GITHUB_ENV"
 
       - name: Build site
         run: python fetch.py
