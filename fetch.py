@@ -11,36 +11,62 @@ from dateutil import parser as dparser
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 DIST_DIR = Path("dist")
-TEMPLATE_FILE = Path("index.html.j2")  # template at repo root
+TEMPLATE_FILE = Path("index.html.j2")
+
+# Set SOFT_FAIL=1 in repo variables if you prefer a placeholder page over a failed build
+SOFT_FAIL = os.getenv("SOFT_FAIL", "0") == "1"
 
 def ensure_dist():
     DIST_DIR.mkdir(parents=True, exist_ok=True)
+    # Skip Jekyll on Pages
     (DIST_DIR / ".nojekyll").write_text("", encoding="utf-8")
 
-def http_get(url: str, ua: str) -> bytes:
+def http_get(url: str, ua: str, referer: str) -> bytes:
+    """Fetch URL with strong headers + small retry; fall back to Playwright when enabled."""
+    import time, random
     headers = {
-        "User-Agent": ua or "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36",
+        "User-Agent": ua or "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
         "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": referer or "https://www.google.com/",
+        "DNT": "1",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Connection": "keep-alive",
     }
-    r = requests.get(url, headers=headers, timeout=30)
-    if r.status_code == 200:
-        return r.content
+    s = requests.Session()
+    last_status = None
+    for attempt in range(3):
+        r = s.get(url, headers=headers, timeout=30)
+        last_status = r.status_code
+        if r.status_code == 200:
+            return r.content
+        if r.status_code in (403, 429):
+            time.sleep(1.5 + random.random())  # jitter
+            continue
+        break
 
-    # Optional: Playwright fallback if enabled by repo variable USE_PLAYWRIGHT=1
     if os.getenv("USE_PLAYWRIGHT", "0") == "1":
         try:
             from playwright.sync_api import sync_playwright
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
-                page = browser.new_page(user_agent=ua)
+                context = browser.new_context(user_agent=ua)
+                page = context.new_page()
+                page.set_extra_http_headers({
+                    "Accept": headers["Accept"],
+                    "Accept-Language": headers["Accept-Language"],
+                    "Referer": headers["Referer"],
+                    "DNT": headers["DNT"],
+                })
                 page.goto(url, timeout=45000, wait_until="load")
                 content = page.content().encode("utf-8")
                 browser.close()
             return content
         except Exception as e:
-            raise RuntimeError(f"HTTP {r.status_code} and Playwright fallback failed: {e}") from e
+            raise RuntimeError(f"Failed after HTTP {last_status}; Playwright fallback error: {e}") from e
 
-    raise RuntimeError(f"Failed to fetch feed: HTTP {r.status_code} from {url}")
+    raise RuntimeError(f"Failed to fetch feed: HTTP {last_status} from {url}")
 
 def parse_feed(xml_bytes: bytes) -> Any:
     data = feedparser.parse(xml_bytes)
@@ -49,7 +75,7 @@ def parse_feed(xml_bytes: bytes) -> Any:
     return data
 
 def to_iso(dt) -> str:
-    if isinstance(dt, datetime):
+    if hasattr(dt, 'tzinfo'):
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         return dt.astimezone(timezone.utc).isoformat()
@@ -70,7 +96,11 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
                 except Exception:
                     pass
         if not dt and e.get("published_parsed"):
-            dt = datetime(*e.published_parsed[:6], tzinfo=timezone.utc)
+            try:
+                from datetime import datetime, timezone
+                dt = datetime(*e.published_parsed[:6], tzinfo=timezone.utc)
+            except Exception:
+                dt = None
         summary = e.get("summary", "")
         if not summary and e.get("content"):
             try:
@@ -84,7 +114,9 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
             "date_iso": to_iso(dt) if dt else "",
             "summary": summary,
         })
-    norm.sort(key=lambda x: x["date"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    # Sort newest first
+    from datetime import datetime as _dt
+    norm.sort(key=lambda x: x["date"] or _dt.min.replace(tzinfo=timezone.utc), reverse=True)
     return norm[:limit]
 
 def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[str, Any]]):
@@ -110,7 +142,7 @@ def main():
     item_limit = int(os.getenv("ITEM_LIMIT", "25"))
 
     print(f"Fetching feed: {feed_url}")
-    xml = http_get(feed_url, ua)
+    xml = http_get(feed_url, ua, public_url)
     parsed = parse_feed(xml)
     title = (getattr(parsed, "feed", {}) or {}).get("title") or "My Substack Feed"
     items = normalize_entries(parsed.entries, limit=item_limit)
@@ -123,5 +155,16 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+        if SOFT_FAIL:
+            ensure_dist()
+            (DIST_DIR / "index.html").write_text(
+                f"""<html><body>
+<h1>Feed temporarily unavailable</h1>
+<p>{e}</p>
+</body></html>""",
+                encoding="utf-8"
+            )
+            print("WARN: soft-failed and wrote placeholder page.")
+        else:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
