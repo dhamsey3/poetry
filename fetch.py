@@ -286,8 +286,8 @@ def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[
 
 def main():
     ensure_dist()
-    feed_url = os.getenv("SUBSTACK_FEED", "https://substack.com/@damii3")  # handle allowed
-    public_url = os.getenv("PUBLIC_SUBSTACK_URL", feed_url)
+    feed_url = os.getenv("SUBSTACK_FEED", "https://versesvibez.substack.com/feed")
+    public_url = os.getenv("PUBLIC_SUBSTACK_URL", "https://versesvibez.substack.com/")
     ua = os.getenv("FETCH_UA", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
     item_limit = int(os.getenv("ITEM_LIMIT","25"))
 
