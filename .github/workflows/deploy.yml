@@ -39,14 +39,15 @@ jobs:
       - name: Set env defaults
         shell: bash
         run: |
+          # Prefer secrets/variables, else fall back to the Substack HANDLE URL
           FEED="${SUBSTACK_FEED:-${{ secrets.SUBSTACK_FEED }}}"
           if [ -z "$FEED" ]; then FEED="${{ vars.SUBSTACK_FEED }}"; fi
-          if [ -z "$FEED" ]; then FEED="https://damii3.substack.com/feed"; fi
+          if [ -z "$FEED" ]; then FEED="https://substack.com/@damii3"; fi
           echo "SUBSTACK_FEED=$FEED" >> "$GITHUB_ENV"
 
           PUB="${PUBLIC_SUBSTACK_URL:-${{ secrets.PUBLIC_SUBSTACK_URL }}}"
           if [ -z "$PUB" ]; then PUB="${{ vars.PUBLIC_SUBSTACK_URL }}"; fi
-          if [ -z "$PUB" ]; then PUB="https://damii3.substack.com"; fi
+          if [ -z "$PUB" ]; then PUB="https://substack.com/@damii3"; fi
           echo "PUBLIC_SUBSTACK_URL=$PUB" >> "$GITHUB_ENV"
 
           UA="${FETCH_UA:-${{ secrets.FETCH_UA }}}"
@@ -54,6 +55,7 @@ jobs:
           if [ -z "$UA" ]; then UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"; fi
           echo "FETCH_UA=$UA" >> "$GITHUB_ENV"
 
+          # Enable Playwright path; optionally keep builds green with SOFT_FAIL=1 in repo Variables
           echo "USE_PLAYWRIGHT=1" >> "$GITHUB_ENV"
           echo "SOFT_FAIL=${{ vars.SOFT_FAIL }}" >> "$GITHUB_ENV"
 
