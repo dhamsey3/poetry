@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
-import pathlib
-import json
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Dict, Any
 
@@ -11,12 +10,11 @@ import feedparser
 from dateutil import parser as dparser
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-DIST_DIR = pathlib.Path("dist")
-TEMPLATES_DIR = pathlib.Path("templates")
+DIST_DIR = Path("dist")
+TEMPLATE_FILE = Path("index.html.j2")  # template at repo root
 
 def ensure_dist():
     DIST_DIR.mkdir(parents=True, exist_ok=True)
-    # Make GitHub Pages skip Jekyll processing just in case
     (DIST_DIR / ".nojekyll").write_text("", encoding="utf-8")
 
 def http_get(url: str, ua: str) -> bytes:
@@ -27,7 +25,8 @@ def http_get(url: str, ua: str) -> bytes:
     r = requests.get(url, headers=headers, timeout=30)
     if r.status_code == 200:
         return r.content
-    # Fallback: try playwright if available and allowed
+
+    # Optional: Playwright fallback if enabled by repo variable USE_PLAYWRIGHT=1
     if os.getenv("USE_PLAYWRIGHT", "0") == "1":
         try:
             from playwright.sync_api import sync_playwright
@@ -40,9 +39,10 @@ def http_get(url: str, ua: str) -> bytes:
             return content
         except Exception as e:
             raise RuntimeError(f"HTTP {r.status_code} and Playwright fallback failed: {e}") from e
+
     raise RuntimeError(f"Failed to fetch feed: HTTP {r.status_code} from {url}")
 
-def parse_feed(xml_bytes: bytes) -> Dict[str, Any]:
+def parse_feed(xml_bytes: bytes) -> Any:
     data = feedparser.parse(xml_bytes)
     if data.bozo and not data.entries:
         raise RuntimeError(f"Feed parse error: {data.bozo_exception}")
@@ -56,11 +56,10 @@ def to_iso(dt) -> str:
     return str(dt)
 
 def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Dict[str, Any]]:
-    norm = []
+    norm: List[Dict[str, Any]] = []
     for e in entries:
         title = e.get("title", "Untitled")
         link = e.get("link")
-        # Prefer published, then updated
         dt = None
         for key in ("published", "updated", "created"):
             val = e.get(key)
@@ -73,7 +72,6 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
         if not dt and e.get("published_parsed"):
             dt = datetime(*e.published_parsed[:6], tzinfo=timezone.utc)
         summary = e.get("summary", "")
-        # Some feeds put HTML in content[0].value
         if not summary and e.get("content"):
             try:
                 summary = e["content"][0].get("value", "")
@@ -86,16 +84,15 @@ def normalize_entries(entries: List[Dict[str, Any]], limit: int = 25) -> List[Di
             "date_iso": to_iso(dt) if dt else "",
             "summary": summary,
         })
-    # Sort by date desc if present
     norm.sort(key=lambda x: x["date"] or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return norm[:limit]
 
 def render_index(feed_title: str, feed_url: str, pub_url: str, items: List[Dict[str, Any]]):
     env = Environment(
-        loader=FileSystemLoader(str(TEMPLATES_DIR)),
+        loader=FileSystemLoader("."),
         autoescape=select_autoescape(["html", "xml"]),
     )
-    tpl = env.get_template("index.html.j2")
+    tpl = env.get_template(TEMPLATE_FILE.name)
     html = tpl.render(
         site_title=feed_title or "My Substack Feed",
         public_url=pub_url,
@@ -110,12 +107,13 @@ def main():
     feed_url = os.getenv("SUBSTACK_FEED", "https://damii3.substack.com/feed")
     public_url = os.getenv("PUBLIC_SUBSTACK_URL", "https://damii3.substack.com")
     ua = os.getenv("FETCH_UA", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+    item_limit = int(os.getenv("ITEM_LIMIT", "25"))
 
     print(f"Fetching feed: {feed_url}")
     xml = http_get(feed_url, ua)
     parsed = parse_feed(xml)
-    title = (parsed.feed.get("title") if hasattr(parsed, "feed") else None) or "My Substack Feed"
-    items = normalize_entries(parsed.entries, limit=int(os.getenv("ITEM_LIMIT", "25")))
+    title = (getattr(parsed, "feed", {}) or {}).get("title") or "My Substack Feed"
+    items = normalize_entries(parsed.entries, limit=item_limit)
 
     print(f"Parsed {len(items)} items")
     render_index(title, feed_url, public_url, items)
