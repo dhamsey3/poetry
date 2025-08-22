@@ -41,7 +41,7 @@ jobs:
         run: |
           FEED="${SUBSTACK_FEED:-${{ secrets.SUBSTACK_FEED }}}"
           if [ -z "$FEED" ]; then FEED="${{ vars.SUBSTACK_FEED }}"; fi
-          if [ -z "$FEED" ]; then FEED="https://versesvibez.substack.com/feed"; fi
+          if [ -z "$FEED" ]; then FEED="https://versesvibez.substack.com/feed."; fi
           echo "SUBSTACK_FEED=$FEED" >> "$GITHUB_ENV"
 
           PUB="${PUBLIC_SUBSTACK_URL:-${{ secrets.PUBLIC_SUBSTACK_URL }}}"
