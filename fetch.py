@@ -356,7 +356,7 @@ def main():
         if os.getenv("USE_PLAYWRIGHT", "0") == "1":
             print(f"HTTP fetch failed ({e}); trying rendered DOM…")
             html, final_url = playwright_dom(feed_url, ua)
-            content, ctype = html.encode("utf-8"), "text/html", "text/html"
+            content, ctype, final_url = html.encode("utf-8"), "text/html", final_url
         else:
             raise
 
