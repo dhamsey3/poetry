@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"  # every 6 hours
+    - cron: "0 6 * * *"  # once per day (kinder to Substack)
 
 permissions:
   contents: read
@@ -33,7 +33,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Playwright not required for direct RSS, but safe to keep if you ever re-enable
       - name: Install Playwright Chromium
         run: python -m playwright install --with-deps chromium
 
@@ -55,9 +54,25 @@ jobs:
           if [ -z "$UA" ]; then UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"; fi
           echo "FETCH_UA=$UA" >> "$GITHUB_ENV"
 
-          # RSS is clean, so Playwright can stay off unless needed
+          # Enable robust fallbacks + green builds when blocked
           echo "USE_PLAYWRIGHT=1" >> "$GITHUB_ENV"
-          echo "SOFT_FAIL=${{ vars.SOFT_FAIL }}" >> "$GITHUB_ENV"
+          echo "SOFT_FAIL=1" >> "$GITHUB_ENV"
+          echo "ALLOW_EMPTY=1" >> "$GITHUB_ENV"
+
+      # Pull last deployed page to reuse if fetch fails
+      - name: Try to fetch last deployed HTML (gh-pages)
+        shell: bash
+        run: |
+          set -e
+          git config --global init.defaultBranch gh-pages
+          git clone --depth=1 --branch gh-pages "https://github.com/${{ github.repository }}.git" _prev || true
+          if [ -f _prev/index.html ]; then
+            mkdir -p dist
+            cp _prev/index.html dist/index.previous.html
+            echo "Found previous deployment; will use as fallback if fetch fails."
+          else
+            echo "No previous deployment found."
+          fi
 
       - name: Build site
         run: python fetch.py
