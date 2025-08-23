@@ -53,10 +53,9 @@
 
   <script>
   const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
-  let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};          // e.g. https://substack-proxy.robinvp3.workers.dev/?rss_url=
+  let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};
   const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
-  // Ensure the base has ?rss_url= param
   function normalizeBase(b){
     if(!b) return "";
     const hasQuery = b.includes("?");
@@ -94,17 +93,15 @@
     const workerURL = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
     const publicURL = PUBLIC_BASE + encodeURIComponent(RSS_URL);
 
-    // Try Worker first (if configured), then fall back to public proxy
     const attempts = [];
     if (workerURL) attempts.push(["Worker", workerURL]);
     attempts.push(["Public", publicURL]);
 
-    let lastErr = null, used = null, data = null;
+    let lastErr = null;
 
     for (const [label, url] of attempts){
       try{
-        used = {label, url};
-        data = await fetchJSON(url);
+        const data = await fetchJSON(url);
         const items = (data && Array.isArray(data.items)) ? data.items : [];
         if (items.length > 0){
           statusEl.hidden = true;
@@ -112,7 +109,6 @@
           items.forEach(it => postsEl.appendChild(card(it)));
           return;
         } else {
-          // no items; try next attempt if any
           lastErr = new Error(label + ' returned 0 items');
         }
       }catch(e){
@@ -120,13 +116,13 @@
       }
     }
 
-    // If we got here, both attempts failed or returned 0 items
-    statusEl.className = 'error';
     const debugLinks = attempts.map(([label, url]) =>
       `<div><a href="${url}" target="_blank" rel="noopener">${label} proxy debug link</a></div>`
     ).join("");
+
+    statusEl.className = 'error';
     statusEl.innerHTML = 'No public posts found or proxies failed.' +
-      (lastErr ? `<br><small>${used ? used.label + ' error: ' : ''}${lastErr.message}</small>` : '') +
+      (lastErr ? `<br><small>${lastErr.message}</small>` : '') +
       `<div style="margin-top:6px">${debugLinks}</div>`;
   }
 
