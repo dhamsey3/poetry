@@ -135,17 +135,48 @@
       background:rgba(255,255,255,.05); color:#93a0b3
     }
 
-    /* ---------- FOOTER ---------- */
-    footer{
+    /* ---------- FOOTER (pro) ---------- */
+    .site-footer{
       border-top:1px dashed var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.0));
-      padding:18px; color:#6b7280; font-size:13px;
-      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap
+      background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0));
+      color:#6b7280; font-size:13px;
     }
-    [data-theme="dark"] footer{
+    [data-theme="dark"] .site-footer{
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
       color:#93a0b3;
     }
+    .footer-wrap{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px }
+    .f-col{ display:flex; flex-direction:column; gap:6px }
+    .f-brand{ display:flex; align-items:center; gap:8px; font-weight:700; color:var(--ink) }
+    .f-title{ font-family:"Inter", system-ui; font-weight:700 }
+    .f-meta{ font-size:12px }
+    .f-links, .f-credits{ display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+    .f-logo{ width:18px; height:18px; border-radius:4px; object-fit:contain }
+    .f-dark{ display:none }
+    [data-theme="dark"] .f-light{ display:none }
+    [data-theme="dark"] .f-dark{ display:inline }
+
+    /* ----- About modal styles ----- */
+    .about-card{ max-width:720px }
+    .about-head{ display:flex; gap:14px; align-items:center; margin-bottom:8px }
+    .about-avatar{
+      width:64px; height:64px; border-radius:50%; object-fit:cover;
+      border:1px solid var(--border); background:var(--paper);
+    }
+    .about-title{ margin:0; font-family:"Fraunces", serif; font-weight:800 }
+    .about-tagline{ margin:.3rem 0 0; color:var(--muted) }
+    .about-body{ margin-top:8px }
+    .about-cta{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 }
+    .about-links{ display:flex; gap:10px; flex-wrap:wrap; margin-top:4px }
+
+    /* pill buttons/links reuse */
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border:1px solid var(--border); border-radius:999px;
+      background:var(--paper); color:var(--ink); text-decoration:none; font-weight:600;
+    }
+    .pill:hover{ transform:translateY(-1px) }
+    .pill svg{ opacity:.85 }
 
     /* ---------- MODALS ---------- */
     .modal{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding:20px }
@@ -169,6 +200,11 @@
       background:radial-gradient(circle at center,var(--accent) 0, transparent 70%); opacity:.0;
       transform:translate(-50%,-50%) scale(.2); transition:opacity .25s, transform .25s; z-index:9999}
     .hidden{display:none!important}
+
+    /* Small screens */
+    @media (max-width:720px){
+      .footer-wrap{ flex-direction:column; align-items:flex-start }
+    }
   </style>
 </head>
 <body>
@@ -206,9 +242,31 @@
     <section id="posts" class="grid" hidden></section>
   </main>
 
-  <footer>
-    <div>Built from <a href="{{ feed_url }}">RSS</a>. No tracking.</div>
-    <div>Generated {{ generated_at.strftime("%Y-%m-%d %H:%M UTC") if generated_at else "" }}</div>
+  <!-- FOOTER (pro) -->
+  <footer class="site-footer">
+    <div class="wrap footer-wrap">
+      <div class="f-col">
+        <div class="f-brand">
+          <img src="static/logo-light.png" class="f-logo f-light" alt="" aria-hidden="true">
+          <img src="static/logo-dark.png"  class="f-logo f-dark"  alt="" aria-hidden="true">
+          <span class="f-title">{{ site_title or "versesvibez" }}</span>
+        </div>
+        <div class="f-meta">© {{ generated_at.strftime("%Y") if generated_at else "" }} Dami. All rights reserved.</div>
+      </div>
+
+      <nav class="f-links">
+        <a href="#" id="aboutLink" class="pill">About</a>
+        <a href="{{ public_url.rstrip('/') + '/subscribe' }}" class="pill">Subscribe</a>
+        <a href="{{ feed_url }}" class="pill">RSS</a>
+      </nav>
+
+      <div class="f-credits">
+        <span>Built with</span>
+        <a href="https://pages.github.com/" target="_blank" rel="noopener" class="pill">GitHub Pages</a>
+        <span>·</span>
+        <a href="https://workers.cloudflare.com/" target="_blank" rel="noopener" class="pill">Cloudflare Worker</a>
+      </div>
+    </div>
   </footer>
 
   <!-- Reading mode modal -->
@@ -223,12 +281,49 @@
 
   <!-- About modal -->
   <div id="about" class="modal" aria-hidden="true">
-    <div class="modal-card">
-      <button class="close" id="aboutClose">✕</button>
-      <h2>About</h2>
-      <p>Hi, I’m Dami. I write poems and small sparks. Say hi:
-        <a href="mailto:versesvibez@substack.com">versesvibez@substack.com</a>.
-      </p>
+    <div class="modal-card about-card">
+      <button class="close" id="aboutClose" aria-label="Close about">✕</button>
+
+      <div class="about-head">
+        <img class="about-avatar" src="static/avatar.jpg" alt="Dami" onerror="this.src='static/logo-light.png'">
+        <div>
+          <h2 class="about-title">About Dami</h2>
+          <p class="about-tagline">I write poems & little sparks. Welcome to my corner of the internet. ✨</p>
+        </div>
+      </div>
+
+      <div class="about-body">
+        <p>
+          I explore tenderness, memory, and the tiniest moments that make a day feel alive.
+          This site curates my public posts from Substack — collected, searchable, and
+          easy to read in one place.
+        </p>
+
+        <div class="about-cta">
+          <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe on Substack</a>
+          <button id="copyEmail" class="btn" data-email="versesvibez@substack.com">Copy email</button>
+        </div>
+
+        <div class="about-links">
+          <a href="{{ public_url.rstrip('/') }}" target="_blank" rel="noopener" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/></svg>
+            <span>Substack</span>
+          </a>
+          <a href="mailto:versesvibez@substack.com" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            <span>Email</span>
+          </a>
+          <!-- Replace with your real handles -->
+          <a href="https://x.com/" target="_blank" rel="noopener" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M4 4l7.5 8.7L4.6 20H8l4.3-5 3.7 5H20l-7.3-8.6L19.2 4H16l-4 4.6L8.8 4H4z"/></svg>
+            <span>X</span>
+          </a>
+          <a href="https://instagram.com/" target="_blank" rel="noopener" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5a5 5 0 100 10 5 5 0 000-10zm6.5-.9a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zM12 9a3 3 0 110 6 3 3 0 010-6z"/></svg>
+            <span>Instagram</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -255,7 +350,19 @@
       const about=document.getElementById('about');
       document.getElementById('aboutBtn').onclick=()=>{about.classList.add('open')};
       document.getElementById('aboutClose').onclick=()=>{about.classList.remove('open')};
+      document.getElementById('aboutLink')?.addEventListener('click',(e)=>{ e.preventDefault(); about.classList.add('open'); });
       about.addEventListener('click',e=>{ if(e.target===about) about.classList.remove('open'); });
+      // Copy email button (with feedback)
+      const btn = document.getElementById('copyEmail');
+      if(btn){
+        btn.addEventListener('click', async ()=>{
+          const email = btn.dataset.email || 'versesvibez@substack.com';
+          try{
+            await navigator.clipboard.writeText(email);
+            const old = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(()=> btn.textContent = old, 1200);
+          }catch{ btn.textContent = email; }
+        });
+      }
     })();
 
     // ----- Ink ripple -----
