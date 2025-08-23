@@ -32,7 +32,7 @@ def main():
     feed_url = os.getenv("SUBSTACK_FEED", "https://versesvibez.substack.com/feed")
     public_url = os.getenv("PUBLIC_SUBSTACK_URL", "https://versesvibez.substack.com/")
     proxy_url = os.getenv("RSS_PROXY_URL", "https://api.rss2json.com/v1/api.json?rss_url=")
-    site_title = os.getenv("SITE_TITLE", "Dami’s Substack")
+    site_title = os.getenv("SITE_TITLE", "Versesvibez")
     render_index(site_title, feed_url, public_url, proxy_url)
     print("Wrote dist/index.html (client-side feed hydration)")
 
