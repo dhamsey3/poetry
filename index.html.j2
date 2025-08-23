@@ -6,14 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="index,follow" />
   <meta name="description" content="Poetry & musings by Dami." />
-  <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f59e0b" />
+  <link rel="canonical" href="{{ public_url or '' }}" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
   <link rel="icon" href="static/logo-light.png" />
 
-  <!-- Open Graph for richer sharing -->
+  <!-- Open Graph -->
   <meta property="og:title" content="{{ site_title or 'Torchborne' }}" />
   <meta property="og:description" content="Poetry & musings by Dami." />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ public_url or '' }}" />
   <meta property="og:image" content="{{ public_url.rstrip('/') + '/static/logo-light.png' if public_url else 'static/logo-light.png' }}" />
   <meta name="twitter:card" content="summary_large_image">
 
@@ -43,7 +52,6 @@
         radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.06) 0%, transparent 50%),
         radial-gradient(circle at 50% 10%, rgba(14, 165, 233, 0.06) 0%, transparent 50%);
     }
-    
     [data-theme="dark"]{
       --bg: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
       --bg-solid: #0d0d0d;
@@ -86,17 +94,23 @@
     a:hover { color: var(--accent-solid); }
     .wrap{ max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-    /* ---------- FLOATING PARTICLES ---------- */
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .particles, .floating-shapes { display: none !important; }
+      * { animation: none !important; transition: none !important; }
+    }
+
+    /* ---------- PARTICLES ---------- */
     .particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .6; }
     .particle { position: absolute; width: 3px; height: 3px; background: var(--accent-solid); border-radius: 50%; }
 
-    /* ---------- HERO SECTION ---------- */
-    .hero{ position: relative; min-height: 85vh; display: flex; align-items: center; background: 
+    /* ---------- HERO ---------- */
+    .hero{ position: relative; min-height: 85vh; display: flex; align-items: center; background:
       radial-gradient(ellipse at top, rgba(251,191,36,.10) 0%, transparent 60%),
       radial-gradient(ellipse at bottom right, rgba(239,68,68,.08) 0%, transparent 60%);
       backdrop-filter: blur(1px); border-bottom: 1px solid var(--border-soft);
     }
-    [data-theme="dark"] .hero{ background: 
+    [data-theme="dark"] .hero{ background:
       radial-gradient(ellipse at top, rgba(251,191,36,.15) 0%, transparent 60%),
       radial-gradient(ellipse at bottom right, rgba(239,68,68,.10) 0%, transparent 60%);
     }
@@ -123,7 +137,7 @@
     .btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--shadow-lg); }
 
     /* ---------- SEARCH ---------- */
-    .search-section { opacity: 0; animation: fadeInUp 1s ease-out 1.1s forwards; }
+    .search-section { opacity: 0; animation: fadeInUp 1.2s ease-out 1.1s forwards; }
     .search-wrapper { position: relative; max-width: 600px; margin: 0 auto; }
     .search-input { width: 100%; padding: 18px 24px 18px 56px; border: 1px solid var(--border); border-radius: 50px; background: var(--paper); backdrop-filter: blur(10px); color: var(--ink); font-size: 16px; outline: none; transition: all .3s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); }
     .search-input:focus { border-color: var(--accent-solid); box-shadow: var(--shadow), 0 0 0 3px rgba(245,158,11,.18); transform: translateY(-1px); }
@@ -200,7 +214,7 @@
     .footer-brand { display: flex; align-items: center; gap: 12px; }
     .footer-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: contain; }
     .footer-info h3 { font-family: 'Playfair Display', serif; font-weight: 400; color: var(--ink); margin-bottom: 4px; }
-    .footer-copyright { color: var(--muted); font-size: 13px; }
+    .footeropyright { color: var(--muted); font-size: 13px; }
     .footer-links { display: flex; gap: 12px; flex-wrap: wrap; }
 
     /* ---------- PROGRESS BAR ---------- */
@@ -253,17 +267,17 @@
   <div class="particles" id="particles" aria-hidden="true"></div>
 
   <!-- Progress Bar -->
-  <div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+  <div class="progress-bar" id="progressBar" role="progressbar" aria-live="off" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 
-  <div class="main-content">
-    <!-- HERO SECTION -->
+  <div id="appRoot" class="main-content" aria-hidden="false">
+    <!-- HERO -->
     <section class="hero">
       <div class="wrap">
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
-              <img src="static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" />
-              <img src="static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" />
+              <img src="static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" />
+              <img src="static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" />
               <span class="brand-name">{{ site_title or "Torchborne" }}</span>
             </a>
             <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
@@ -271,7 +285,7 @@
 
           <div class="hero-actions">
             <button id="themeToggle" class="chip" title="Toggle theme" aria-pressed="false">
-              <span>🌓</span> Theme
+              <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
@@ -310,9 +324,7 @@
             <img src="static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
-              <div class="footer-copyright">
-                © {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels
-              </div>
+              <div class="footeropyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
             </div>
           </div>
 
@@ -361,24 +373,15 @@
         </div>
 
         <div class="about-body">
-          <p>
-            Welcome to my little corner of the internet where I explore the tender spaces between 
-            thoughts and feelings. Here you'll find poems, musings, and little sparks of inspiration 
-            that dance through everyday moments.
-          </p>
-          <p>
-            I believe poetry lives in the smallest gestures—the way light falls across a page, 
-            the pause between heartbeats, the stories we tell ourselves in the quiet hours. 
-            This collection gathers my public posts from Substack, made searchable and beautiful 
-            for wandering souls like yourself.
-          </p>
+          <p>Welcome to my little corner of the internet where I explore the tender spaces between thoughts and feelings. Here you'll find poems, musings, and little sparks of inspiration that dance through everyday moments.</p>
+          <p>I believe poetry lives in the smallest gestures—the way light falls across a page, the pause between heartbeats, the stories we tell ourselves in the quiet hours. This collection gathers my public posts from Substack, made searchable and beautiful for wandering souls like yourself.</p>
         </div>
 
         <div class="about-cta">
           <a class="btn btn-primary" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">
             <span>💌</span> Subscribe on Substack
           </a>
-          <button id="copyEmailBtn" class="btn" data-email="torchborne@substack.com">
+          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">
             <span>📧</span> Copy Email
           </button>
         </div>
@@ -390,13 +393,13 @@
             </svg>
             Substack
           </a>
-          <a href="mailto:torchborne@substack.com" class="pill">
+          <a href="mailto:versesvibez@substack.com" class="pill">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               <path fill="currentColor" d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
             </svg>
             Email
           </a>
-          <a href="https://instagram.com/torchborne" target="_blank" rel="noopener" class="pill">
+          <a href="https://instagram.com/versesvibez" target="_blank" rel="noopener" class="pill">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               <path fill="currentColor" d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5a5 5 0 100 10 5 5 0 000-10zm6.5-.9a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zM12 9a3 3 0 110 6 3 3 0 010-6z"/>
             </svg>
@@ -408,14 +411,14 @@
   </div>
 
   <script>
-    // ===== CONFIGURATION =====
-    const RSS_URL = {{ (feed_url or "https://torchborne.substack.com/feed") | tojson }};
-    let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};
+    // ===== CONFIG =====
+    const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
+    let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }}; // e.g., "https://substack-proxy.robinvp3.workers.dev/?rss_url="
     const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
     function normalizeBase(base) {
       if (!base) return "";
-      const hasParam = /[\?&]rss_url=/.test(base);
+      const hasParam = /[\\?&]rss_url=/.test(base);
       if (hasParam) return base;
       const hasQuery = base.includes("?");
       if (!hasQuery) return base + "?rss_url=";
@@ -425,79 +428,92 @@
     WORKER_BASE = normalizeBase(WORKER_BASE);
 
     // ===== DOM =====
-    const elements = {
-      statusMessage: document.getElementById('statusMessage'),
-      postsGrid: document.getElementById('postsGrid'),
-      searchInput: document.getElementById('searchInput'),
-      progressBar: document.getElementById('progressBar'),
+    const els = {
+      appRoot: document.getElementById('appRoot'),
+      status: document.getElementById('statusMessage'),
+      grid: document.getElementById('postsGrid'),
+      search: document.getElementById('searchInput'),
+      bar: document.getElementById('progressBar'),
       particles: document.getElementById('particles'),
-      // Theme
       themeToggle: document.getElementById('themeToggle'),
-      // Modals
+      themeIcon: document.getElementById('themeIcon'),
+      themeText: document.getElementById('themeText'),
       aboutBtn: document.getElementById('aboutBtn'),
       aboutModal: document.getElementById('aboutModal'),
-      aboutModalClose: document.getElementById('aboutModalClose'),
-      footerAboutLink: document.getElementById('footerAboutLink'),
+      aboutClose: document.getElementById('aboutModalClose'),
+      footerAbout: document.getElementById('footerAboutLink'),
       readingModal: document.getElementById('readingModal'),
-      readingModalClose: document.getElementById('readingModalClose'),
+      readingClose: document.getElementById('readingModalClose'),
       modalTitle: document.getElementById('modalTitle'),
       modalMeta: document.getElementById('modalMeta'),
       modalBody: document.getElementById('modalBody'),
-      prevPost: document.getElementById('prevPost'),
-      nextPost: document.getElementById('nextPost'),
-      copyEmailBtn: document.getElementById('copyEmailBtn')
+      prev: document.getElementById('prevPost'),
+      next: document.getElementById('nextPost'),
+      copyEmailBtn: document.getElementById('copyEmailBtn'),
     };
 
     // ===== STATE =====
-    let allPosts = [];
-    let currentModalIndex = 0;
-    let lastFocusedElement = null;
+    let posts = [];
+    let iModal = 0;
+    let lastFocus = null;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // ===== THEME =====
+    // ===== UTIL =====
+    const debounce = (fn, ms=200) => {
+      let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    };
+
+    // Theme
     class ThemeManager {
-      constructor() { this.init(); }
-      init() {
+      init(){
         const saved = localStorage.getItem('vv-theme');
         if (saved) document.documentElement.setAttribute('data-theme', saved);
-        elements.themeToggle?.addEventListener('click', () => this.toggle());
+        this.syncButton();
+        els.themeToggle?.addEventListener('click', () => this.toggle(), { passive: true });
       }
-      toggle() {
-        const current = document.documentElement.getAttribute('data-theme') || 'light';
-        const next = current === 'dark' ? 'light' : 'dark';
+      toggle(){
+        const cur = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = cur === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('vv-theme', next);
-        const pressed = next === 'dark';
-        elements.themeToggle.setAttribute('aria-pressed', String(pressed));
-        elements.themeToggle.style.transform = 'scale(0.9)';
-        setTimeout(() => { elements.themeToggle.style.transform = ''; }, 150);
+        els.themeToggle.setAttribute('aria-pressed', String(next === 'dark'));
+        this.bump(els.themeToggle);
+        this.syncButton();
       }
+      syncButton(){
+        const mode = document.documentElement.getAttribute('data-theme') || 'light';
+        if (els.themeIcon) els.themeIcon.textContent = mode === 'dark' ? '☀️' : '🌙';
+        if (els.themeText) els.themeText.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode';
+      }
+      bump(el){ el.style.transform = 'scale(0.96)'; setTimeout(() => el.style.transform='', 120); }
     }
 
-    // ===== PARTICLES (rAF, lower overhead) =====
+    // Particles
     class ParticleSystem {
-      constructor() { this.pool = []; this.max = 18; this.t = 0; this.anim = null; this.init(); }
-      init() {
-        for (let i = 0; i < this.max; i++) this.spawn();
-        const step = (ts) => { this.update(ts); this.anim = requestAnimationFrame(step); };
+      constructor(){ this.pool=[]; this.max = reduceMotion ? 0 : 14; this.t=0; this.anim=null; }
+      init(){
+        if (this.max === 0) return;
+        for (let i=0;i<this.max;i++) this.spawn();
+        const step = ts => { this.update(ts); this.anim = requestAnimationFrame(step); };
         this.anim = requestAnimationFrame(step);
-        window.addEventListener('visibilitychange', () => {
+        document.addEventListener('visibilitychange', () => {
           if (document.hidden && this.anim) cancelAnimationFrame(this.anim);
-          else this.anim = requestAnimationFrame(step);
-        });
+          else if (!reduceMotion) this.anim = requestAnimationFrame(step);
+        }, { passive: true });
       }
-      spawn() {
+      spawn(){
         const p = document.createElement('div');
         p.className = 'particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.top = (100 + Math.random() * 20) + 'vh';
-        p.dataset.vy = (-0.1 - Math.random() * 0.2).toString();
-        p.dataset.x = (Math.random() * 100).toString();
-        elements.particles.appendChild(p);
+        p.style.left = (Math.random()*100) + '%';
+        p.style.top = (100 + Math.random()*20) + 'vh';
+        p.dataset.vy = (-0.1 - Math.random()*0.2).toString();
+        p.dataset.x = (Math.random()*100).toString();
+        els.particles.appendChild(p);
         this.pool.push(p);
       }
-      update(ts) {
+      update(ts){
         this.t = ts * 0.001;
-        for (const p of this.pool) {
+        for (const p of this.pool){
           const vy = parseFloat(p.dataset.vy);
           const top = parseFloat(p.style.top);
           const nx = parseFloat(p.dataset.x) + Math.sin(this.t + top) * 0.02;
@@ -505,19 +521,18 @@
           p.style.transform = `translateX(${nx}vw)`;
           p.style.top = (top + vy) + 'vh';
           if (parseFloat(p.style.top) < -10) {
-            p.style.top = (110 + Math.random() * 10) + 'vh';
-            p.style.left = Math.random() * 100 + '%';
+            p.style.top = (110 + Math.random()*10) + 'vh';
+            p.style.left = (Math.random()*100) + '%';
           }
         }
       }
     }
 
-    // ===== ACCESSIBILITY HELPERS =====
+    // Focus trap
     const Focus = {
-      trap(container) {
+      trap(container){
         const focusable = container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
+        const first = focusable[0]; const last = focusable[focusable.length - 1];
         function handle(e){
           if (e.key !== 'Tab') return;
           if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -528,264 +543,258 @@
       }
     };
 
-    // ===== SANITIZER (basic) =====
-    function sanitize(html) {
+    // Sanitizer
+    function sanitize(html){
       const div = document.createElement('div');
       div.innerHTML = html || '';
-      // remove scripts & iframes
-      div.querySelectorAll('script, iframe, object, embed').forEach(el => el.remove());
-      // remove on* handlers & javascript: URLs
+      div.querySelectorAll('script, iframe, object, embed, link, style').forEach(el => el.remove());
       div.querySelectorAll('*').forEach(el => {
         [...el.attributes].forEach(attr => {
-          const name = attr.name.toLowerCase();
-          const val = attr.value.trim().toLowerCase();
-          if (name.startsWith('on') || val.startsWith('javascript:')) el.removeAttribute(attr.name);
+          const n = attr.name.toLowerCase();
+          const v = (attr.value || '').trim().toLowerCase();
+          if (n.startsWith('on') || v.startsWith('javascript:')) el.removeAttribute(attr.name);
         });
       });
-      // remove subscription widgets
       div.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(el => el.remove());
       return div.innerHTML;
     }
 
-    // ===== MODALS =====
+    // Modals
     class ModalManager {
-      constructor() { this.releaseTrap = null; this.init(); }
-      init() {
-        elements.aboutBtn?.addEventListener('click', () => this.openAbout());
-        elements.footerAboutLink?.addEventListener('click', (e) => { e.preventDefault(); this.openAbout(); });
-        elements.aboutModalClose?.addEventListener('click', () => this.closeAbout());
-        elements.aboutModal?.addEventListener('click', (e) => { if (e.target === elements.aboutModal) this.closeAbout(); });
+      constructor(){ this.releaseTrap = null; }
+      init(){
+        els.aboutBtn?.addEventListener('click', () => this.openAbout(), { passive: true });
+        els.footerAbout?.addEventListener('click', e => { e.preventDefault(); this.openAbout(); });
+        els.aboutClose?.addEventListener('click', () => this.closeAbout());
+        els.aboutModal?.addEventListener('click', e => { if (e.target === els.aboutModal) this.closeAbout(); });
 
-        elements.readingModalClose?.addEventListener('click', () => this.closeReading());
-        elements.readingModal?.addEventListener('click', (e) => { if (e.target === elements.readingModal) this.closeReading(); });
+        els.readingClose?.addEventListener('click', () => this.closeReading());
+        els.readingModal?.addEventListener('click', e => { if (e.target === els.readingModal) this.closeReading(); });
 
-        elements.prevPost?.addEventListener('click', () => this.prev());
-        elements.nextPost?.addEventListener('click', () => this.next());
+        els.prev?.addEventListener('click', () => this.prev());
+        els.next?.addEventListener('click', () => this.next());
 
-        document.addEventListener('keydown', (e) => this.handleKeydown(e));
-        elements.copyEmailBtn?.addEventListener('click', () => this.copyEmail());
-        elements.modalBody?.addEventListener('scroll', () => this.updateReadingProgress());
+        document.addEventListener('keydown', e => this.key(e));
+        els.modalBody?.addEventListener('scroll', () => this.progress(), { passive: true });
+
+        els.copyEmailBtn?.addEventListener('click', () => this.copy(els.copyEmailBtn?.dataset.email || 'versesvibez@substack.com', els.copyEmailBtn));
       }
-
-      openAbout() {
-        lastFocusedElement = document.activeElement;
-        elements.aboutModal.classList.add('open');
-        elements.aboutModal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-        this.releaseTrap = Focus.trap(elements.aboutModal);
-        elements.aboutModal.focus();
+      lockMain(lock){
+        els.appRoot?.setAttribute('aria-hidden', String(lock));
+        document.body.style.overflow = lock ? 'hidden' : '';
       }
-      closeAbout() {
-        elements.aboutModal.classList.remove('open');
-        elements.aboutModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
+      openAbout(){
+        lastFocus = document.activeElement;
+        els.aboutModal.classList.add('open');
+        els.aboutModal.setAttribute('aria-hidden','false');
+        this.lockMain(true);
+        this.releaseTrap = Focus.trap(els.aboutModal);
+        els.aboutModal.focus();
+      }
+      closeAbout(){
+        els.aboutModal.classList.remove('open');
+        els.aboutModal.setAttribute('aria-hidden','true');
+        this.lockMain(false);
         this.releaseTrap && this.releaseTrap();
-        lastFocusedElement?.focus();
+        lastFocus?.focus();
       }
-
-      openReading(post, index) {
+      openReading(post, idx){
         const date = post.pubDate ? new Date(post.pubDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-        elements.modalTitle.textContent = post.title || 'Untitled';
-        elements.modalMeta.textContent = date;
-        const safe = sanitize(post.content || post.description || '');
-        elements.modalBody.innerHTML = safe;
-        // Lazy-upgrade images inside modal
-        elements.modalBody.querySelectorAll('img').forEach(img => { img.setAttribute('loading','lazy'); img.removeAttribute('width'); img.removeAttribute('height'); });
+        els.modalTitle.textContent = post.title || 'Untitled';
+        els.modalMeta.textContent = date;
+        els.modalBody.innerHTML = sanitize(post.content || post.description || '');
+        els.modalBody.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; img.removeAttribute('width'); img.removeAttribute('height'); });
 
-        lastFocusedElement = document.activeElement;
-        elements.readingModal.classList.add('open');
-        elements.readingModal.setAttribute('aria-hidden', 'false');
-        elements.readingModal.dataset.index = index;
-        document.body.style.overflow = 'hidden';
-        currentModalIndex = index;
-        elements.progressBar.style.width = '0%';
-        this.releaseTrap = Focus.trap(elements.readingModal);
-        elements.readingModal.focus();
-        this.updateNavButtons();
+        lastFocus = document.activeElement;
+        els.readingModal.classList.add('open');
+        els.readingModal.setAttribute('aria-hidden','false');
+        els.readingModal.dataset.index = idx;
+        iModal = idx;
+        els.bar.style.width = '0%';
+        els.bar.setAttribute('aria-valuenow','0');
+        this.lockMain(true);
+        this.releaseTrap = Focus.trap(els.readingModal);
+        els.readingModal.focus();
+        this.updateNav();
       }
-      closeReading() {
-        elements.readingModal.classList.remove('open');
-        elements.readingModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-        elements.progressBar.style.width = '0%';
+      closeReading(){
+        els.readingModal.classList.remove('open');
+        els.readingModal.setAttribute('aria-hidden','true');
+        els.bar.style.width = '0%';
+        els.bar.setAttribute('aria-valuenow','0');
+        this.lockMain(false);
         this.releaseTrap && this.releaseTrap();
-        lastFocusedElement?.focus();
+        lastFocus?.focus();
       }
-      handleKeydown(e) {
+      key(e){
         if (e.key === 'Escape') { this.closeAbout(); this.closeReading(); }
-        if (elements.readingModal.classList.contains('open')) {
+        if (els.readingModal.classList.contains('open')) {
           if (e.key === 'ArrowRight') this.next();
-          else if (e.key === 'ArrowLeft') this.prev();
+          if (e.key === 'ArrowLeft') this.prev();
         }
       }
-      next(){ if (currentModalIndex < allPosts.length - 1) this.openReading(allPosts[currentModalIndex + 1], currentModalIndex + 1); }
-      prev(){ if (currentModalIndex > 0) this.openReading(allPosts[currentModalIndex - 1], currentModalIndex - 1); }
-      updateNavButtons(){
-        elements.prevPost.disabled = currentModalIndex <= 0;
-        elements.nextPost.disabled = currentModalIndex >= allPosts.length - 1;
+      next(){ if (iModal < posts.length - 1) this.openReading(posts[iModal + 1], iModal + 1); }
+      prev(){ if (iModal > 0) this.openReading(posts[iModal - 1], iModal - 1); }
+      updateNav(){
+        els.prev.disabled = iModal <= 0;
+        els.next.disabled = iModal >= posts.length - 1;
       }
-      async copyEmail() {
-        const email = elements.copyEmailBtn?.dataset.email || 'torchborne@substack.com';
-        const original = elements.copyEmailBtn?.innerHTML;
-        try {
-          await navigator.clipboard.writeText(email);
-          elements.copyEmailBtn.innerHTML = '<span>✓</span> Copied!';
-          setTimeout(() => { elements.copyEmailBtn.innerHTML = original; }, 2000);
-        } catch (err) {
-          elements.copyEmailBtn.innerHTML = email;
-          setTimeout(() => { elements.copyEmailBtn.innerHTML = original; }, 3000);
+      progress(){
+        const h = els.modalBody.scrollHeight - els.modalBody.clientHeight;
+        const sc = h > 0 ? (els.modalBody.scrollTop / h) * 100 : 0;
+        els.bar.style.width = sc + '%';
+        els.bar.setAttribute('aria-valuenow', String(Math.round(sc)));
+      }
+      async copy(text, btn){
+        const original = btn?.innerHTML;
+        try { await navigator.clipboard.writeText(text);
+          if (btn) { btn.innerHTML = '<span>✓</span> Copied!'; setTimeout(() => btn.innerHTML = original, 1800); }
+        } catch {
+          if (btn) { btn.innerHTML = text; setTimeout(() => btn.innerHTML = original, 2000); }
         }
-      }
-      updateReadingProgress() {
-        const scrollHeight = elements.modalBody.scrollHeight - elements.modalBody.clientHeight;
-        const scrolled = scrollHeight > 0 ? (elements.modalBody.scrollTop / scrollHeight) * 100 : 0;
-        elements.progressBar.style.width = scrolled + '%';
       }
     }
 
-    // ===== CONTENT =====
+    // Content
     class ContentManager {
-      constructor() { this.init(); }
-      init() {
-        elements.searchInput?.addEventListener('input', () => this.handleSearch());
-        this.loadContent();
+      init(){
+        els.search?.addEventListener('input', debounce(() => this.search(), 120));
+        this.load();
       }
-      stripHtml(html) {
-        const div = document.createElement('div'); div.innerHTML = sanitize(html || '');
-        return div.textContent || div.innerText || '';
-      }
-      extractFirstImage(html) {
-        const div = document.createElement('div'); div.innerHTML = sanitize(html || '');
-        const img = div.querySelector('img');
-        if (img?.src) return img.src;
-        const source = div.querySelector('source[srcset]');
-        if (source) {
-          const srcset = source.getAttribute('srcset') || '';
-          const firstSrc = srcset.split(',')[0]?.trim().split(' ')[0];
-          if (firstSrc) return firstSrc;
-        }
+      textOnly(html){ const d=document.createElement('div'); d.innerHTML = sanitize(html||''); return d.textContent || d.innerText || ''; }
+      firstImage(html){
+        const d=document.createElement('div'); d.innerHTML = sanitize(html||'');
+        const img = d.querySelector('img'); if (img?.src) return img.src;
+        const source = d.querySelector('source[srcset]');
+        if (source){ const first = (source.getAttribute('srcset')||'').split(',')[0]?.trim().split(' ')[0]; if (first) return first; }
         return null;
       }
-      calculateReadingTime(text) { const words = (text.trim().match(/\S+/g) || []).length; return `${Math.max(1, Math.round(words / 200))} min read`; }
-      generateVibes(title = '') { const words = title.toLowerCase().match(/[a-z]{4,}/g) || []; return [...new Set(words.slice(0, 2))]; }
+      readTime(txt){ const w=(txt.trim().match(/\\S+/g)||[]).length; return `${Math.max(1, Math.round(w/200))} min read`; }
+      vibes(title=''){ const words = title.toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
 
-      createPostCard(post, index) {
+      card(post, idx){
         const date = post.pubDate ? new Date(post.pubDate) : null;
-        const dateStr = date ? date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
-        const htmlContent = post.content || post.description || '';
-        const plainText = this.stripHtml(htmlContent);
-        const image = this.extractFirstImage(htmlContent);
-        const summary = plainText.length > 280 ? plainText.slice(0, 280) + '…' : plainText;
-        const readingTime = plainText ? this.calculateReadingTime(plainText) : '';
-        const vibes = this.generateVibes(post.title);
+        const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
+        const html = post.content || post.description || '';
+        const txt = this.textOnly(html);
+        const img = this.firstImage(html);
+        const summary = txt.length > 280 ? txt.slice(0,280) + '…' : txt;
+        const rt = txt ? this.readTime(txt) : '';
+        const tags = this.vibes(post.title);
 
-        const card = document.createElement('article');
-        card.className = 'card';
-        card.style.transitionDelay = `${Math.min(index, 15) * 100}ms`;
-        card.setAttribute('aria-label', post.title || 'Poem');
+        const el = document.createElement('article');
+        el.className = 'card';
+        el.style.transitionDelay = `${Math.min(idx,15)*100}ms`;
+        el.setAttribute('aria-label', post.title || 'Poem');
 
-        card.innerHTML = `
-          ${image ? 
-            `<div class="card-thumb">
-              <img loading="lazy" src="${image}" alt="" />
-            </div>` : 
-            `<div class="card-thumb" aria-hidden="true"></div>`
-          }
+        el.innerHTML = `
+          ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
           <div class="card-content">
-            <h2 class="card-title">
-              <a href="${post.link}" target="_blank" rel="noopener">${post.title || 'Untitled'}</a>
-            </h2>
+            <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${post.title || 'Untitled'}</a></h2>
             <div class="card-meta">
-              ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
-              ${readingTime ? `<span>⏱️ ${readingTime}</span>` : ''}
+              ${dateStr ? `<span>📅 ${dateStr}</span>` : '' }
+              ${rt ? `<span>⏱️ ${rt}</span>` : '' }
             </div>
             <div class="card-summary">${summary}</div>
-            ${vibes.length > 0 ? `<div class="card-badges">${vibes.map(v => `<span class="badge">${v}</span>`).join('')}</div>` : ''}
+            ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${v}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
               <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
-              <a href="#" data-quick-read="${index}">Quick read</a>
+              <a href="#" data-quick-read="${idx}">Quick read</a>
               <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
             </div>
           </div>
         `;
 
-        const img = card.querySelector('.card-thumb img');
-        if (img) { if (img.complete) img.setAttribute('data-loaded', '1'); else img.addEventListener('load', () => img.setAttribute('data-loaded', '1')); }
-        this.attachCardEvents(card, post, index);
-        return card;
+        // events
+        el.querySelector('[data-quick-read]')?.addEventListener('click', e => { e.preventDefault(); modal.openReading(post, idx); });
+        const share = el.querySelector('[data-share]');
+        share?.addEventListener('click', async e => {
+          e.preventDefault();
+          const url = post.link, title = post.title || 'Poem from Torchborne';
+          try { if (navigator.share) await navigator.share({ title, url });
+            else { await navigator.clipboard.writeText(url); const t = share.textContent; share.textContent='Copied ✓'; setTimeout(()=> share.textContent=t, 1500); }
+          } catch {}
+        });
+
+        const im = el.querySelector('.card-thumb img');
+        if (im) { if (im.complete) im.setAttribute('data-loaded','1'); else im.addEventListener('load', () => im.setAttribute('data-loaded','1')); }
+        return el;
       }
 
-      attachCardEvents(card, post, index) {
-        const quickRead = card.querySelector('[data-quick-read]');
-        quickRead?.addEventListener('click', (e) => { e.preventDefault(); modalManager.openReading(post, index); });
-        const shareLink = card.querySelector('[data-share]');
-        shareLink?.addEventListener('click', async (e) => { e.preventDefault(); await this.handleShare(post, shareLink); });
+      render(list){
+        els.status.classList.add('hidden');
+        els.grid.hidden = false;
+        els.grid.innerHTML = '';
+        list.forEach((p, i) => {
+          const c = this.card(p, i);
+          els.grid.appendChild(c);
+          requestAnimationFrame(() => c.classList.add('show'));
+        });
       }
 
-      async handleShare(post, el) {
-        const url = post.link; const title = post.title || 'Poem from Torchborne';
-        try {
-          if (navigator.share) await navigator.share({ title, url });
-          else { await navigator.clipboard.writeText(url); const t = el.textContent; el.textContent = 'Copied ✓'; setTimeout(() => { el.textContent = t; }, 2000); }
-        } catch (err) { console.log('Share failed:', err); }
+      search(){
+        const q = (els.search.value || '').trim().toLowerCase();
+        const cards = els.grid.querySelectorAll('.card');
+        if (!q) { cards.forEach(c => c.classList.remove('hidden')); return; }
+        posts.forEach((p, i) => {
+          const text = [p.title || '', this.textOnly(p.content || p.description || '')].join(' ').toLowerCase();
+          const show = text.includes(q);
+          const card = cards[i];
+          if (card) card.classList.toggle('hidden', !show);
+        });
       }
 
-      async loadContent() {
-        const workerURL = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
-        const publicURL = PUBLIC_BASE + encodeURIComponent(RSS_URL);
-        const attempts = workerURL ? [workerURL, publicURL] : [publicURL];
+      async load(){
+        const sources = [];
+        const worker = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
+        const publicUrl = PUBLIC_BASE + encodeURIComponent(RSS_URL);
+        if (worker) sources.push(worker);
+        sources.push(publicUrl);
 
-        for (const url of attempts) {
+        for (const url of sources){
           try {
-            const response = await fetch(url, { credentials: 'omit', cache: 'no-store' });
-            if (!response.ok) continue;
-            const data = await response.json();
-            const rawPosts = (data && Array.isArray(data.items)) ? data.items : [];
-            const valid = rawPosts.filter(post => {
-              const title = (post.title || '').toLowerCase();
-              const text = this.stripHtml(post.content || post.description || '').trim();
-              if (/coming\s+soon/i.test(title)) return false;
+            const data = await this.fetchWithTimeout(url, 9000);
+            const raw = Array.isArray(data?.items) ? data.items : [];
+            const valid = raw.filter(p => {
+              const title = (p.title || '').toLowerCase();
+              const text = this.textOnly(p.content || p.description || '').trim();
+              if (/coming\\s+soon/i.test(title)) return false;
               if (text.length < 50) return false;
               return true;
             });
-            if (valid.length) { allPosts = valid; this.renderPosts(valid); return; }
-          } catch (err) { console.log('Failed to load from:', url, err); continue; }
+            if (valid.length) { posts = valid; this.render(valid); return; }
+          } catch(e) { /* try next source */ }
         }
-        this.showError();
+        this.fail();
       }
 
-      renderPosts(posts) {
-        elements.statusMessage.classList.add('hidden');
-        elements.postsGrid.hidden = false; elements.postsGrid.innerHTML = '';
-        posts.forEach((post, i) => { const card = this.createPostCard(post, i); elements.postsGrid.appendChild(card); requestAnimationFrame(() => card.classList.add('show')); });
+      fetchWithTimeout(url, ms=8000){
+        const ctrl = new AbortController(); const id = setTimeout(()=>ctrl.abort(), ms);
+        return fetch(url, { credentials:'omit', cache:'no-store', signal: ctrl.signal })
+          .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+          .finally(() => clearTimeout(id));
       }
 
-      showError() {
-        elements.statusMessage.className = 'status error';
-        elements.statusMessage.setAttribute('role', 'alert');
-        elements.statusMessage.textContent = "Unable to load poems right now. The words are taking a little break. ☁️";
-      }
-
-      handleSearch() {
-        const query = elements.searchInput.value.trim().toLowerCase();
-        const cards = elements.postsGrid.querySelectorAll('.card');
-        if (!query) { cards.forEach(c => c.classList.remove('hidden')); return; }
-        allPosts.forEach((post, index) => {
-          const searchText = [post.title || '', this.stripHtml(post.content || post.description || '')].join(' ').toLowerCase();
-          const card = cards[index]; if (card) card.classList.toggle('hidden', !searchText.includes(query));
-        });
+      fail(){
+        els.status.className = 'status error';
+        els.status.setAttribute('role','alert');
+        els.status.textContent = "Unable to load poems right now. The words are taking a little break. ☁️";
       }
     }
 
     // ===== INIT =====
-    let modalManager;
+    const theme = new ThemeManager();
+    const particles = new ParticleSystem();
+    const modal = new ModalManager();
+    const content = new ContentManager();
+
     document.addEventListener('DOMContentLoaded', () => {
-      new ThemeManager();
-      new ParticleSystem();
-      modalManager = new ModalManager();
-      new ContentManager();
+      theme.init();
+      particles.init();
+      modal.init();
+      content.init();
       console.log('✨ Torchborne — ready to inspire');
-    });
+    }, { passive: true });
   </script>
 </body>
 </html>
