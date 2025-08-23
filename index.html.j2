@@ -9,24 +9,89 @@
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
 
   <style>
-    :root{--bg:#0b0c10;--card:#0f1117;--muted:#8892a6;--text:#e6edf3;--brand:#8ab4ff;--border:rgba(255,255,255,.08)}
+    :root{
+      --bg:#0b0c10;
+      --card:#0f1117;
+      --muted:#93a0b3;
+      --text:#e6edf3;
+      --brand:#8ab4ff;
+      --accent:#7ee787;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 6px 24px rgba(0,0,0,.24), 0 2px 8px rgba(0,0,0,.18);
+    }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    a{color:var(--brand);text-decoration:none} a:hover{text-decoration:underline}
-    .wrap{max-width:880px;margin:0 auto;padding:28px 18px 40px}
-    header{display:flex;gap:14px;align-items:center;justify-content:space-between;margin:8px 0 22px}
-    .title a{color:var(--text);text-decoration:none}
-    .subtitle{color:var(--muted);font-size:14px;margin-top:4px}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));color:var(--text);text-decoration:none;font-weight:600}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    a{color:var(--brand);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 44px}
+    header{display:flex;gap:18px;align-items:center;justify-content:space-between;margin:8px 0 22px}
+    .title a{color:var(--text);text-decoration:none;font-weight:700;font-size:20px}
+    .subtitle{color:var(--muted);font-size:13px;margin-top:6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 14px;border:1px solid var(--border);border-radius:12px;
+      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+      color:var(--text);text-decoration:none;font-weight:600
+    }
     .btn:hover{border-color:rgba(138,180,255,.5)}
-    .grid{display:grid;grid-template-columns:1fr;gap:14px}
-    @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    article{border:1px solid var(--border);border-radius:16px;background:var(--card);padding:18px 16px 14px;display:flex;flex-direction:column;min-height:140px}
-    h2{font-size:18px;margin:0 0 6px;line-height:1.35}
-    .meta{color:var(--muted);font-size:12px;margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap}
-    .summary{color:#cbd5e1;font-size:14px}
-    .empty,.error{margin:22px 0;border:1px dashed var(--border);border-radius:16px;padding:18px;background:rgba(255,255,255,.03)}
-    footer{margin-top:28px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .grid{
+      display:grid;gap:16px;
+      grid-template-columns:1fr;
+    }
+    @media (min-width:700px){ .grid{grid-template-columns:1fr 1fr} }
+    @media (min-width:1024px){ .grid{grid-template-columns:1fr 1fr 1fr} }
+
+    article.card{
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:var(--card);
+      overflow:hidden;
+      display:flex;flex-direction:column;
+      transition:transform .15s ease, box-shadow .15s ease, border-color .2s ease;
+    }
+    article.card:hover{
+      transform:translateY(-2px);
+      box-shadow:var(--shadow);
+      border-color:rgba(138,180,255,.25);
+    }
+    .thumb{
+      aspect-ratio: 16/9;
+      width:100%;
+      background:#0b0f14;
+      display:block;
+      overflow:hidden;
+    }
+    .thumb img{
+      width:100%;height:100%;object-fit:cover;display:block
+    }
+    .content{padding:16px 14px 14px;display:flex;flex-direction:column;gap:8px}
+    h2{
+      font-size:17px;margin:0;line-height:1.35;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
+    }
+    .meta{
+      color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap
+    }
+    .summary{
+      color:#cbd5e1;font-size:14px;
+      display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden
+    }
+    .more{
+      margin-top:4px;font-size:13px;font-weight:600
+    }
+    .empty,.error{
+      margin:24px 0;border:1px dashed var(--border);border-radius:16px;padding:20px;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));color:var(--muted)
+    }
+    footer{
+      margin-top:28px;color:var(--muted);font-size:12px;
+      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap
+    }
+    /* tiny shimmer for loading */
+    .skeleton{position:relative;overflow:hidden;background:linear-gradient(90deg,#111319, #12141b 40%, #111319);background-size:200% 100%;animation:shimmer 1.5s infinite}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .hidden{display:none!important}
   </style>
 </head>
 <body>
@@ -36,14 +101,19 @@
         <div class="title"><a href="{{ public_url }}">{{ site_title or "My Substack Feed" }}</a></div>
         <div class="subtitle">Client-side via RSS proxy • Generated {{ generated_at.strftime("%Y-%m-%d %H:%M UTC") if generated_at else "" }}</div>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="actions">
         <a class="btn" href="{{ feed_url }}" rel="noopener">View RSS</a>
         <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe</a>
       </div>
     </header>
 
     <div id="status" class="empty">Loading posts…</div>
-    <section id="posts" class="grid" hidden></section>
+    <section id="posts" class="grid hidden">
+      <!-- skeletons -->
+      <article class="card skeleton" style="height:260px;border-radius:16px"></article>
+      <article class="card skeleton" style="height:260px;border-radius:16px"></article>
+      <article class="card skeleton" style="height:260px;border-radius:16px"></article>
+    </section>
 
     <footer>
       <div>Built from <a href="{{ feed_url }}">RSS</a>. No tracking.</div>
@@ -52,85 +122,127 @@
   </div>
 
   <script>
-  const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
-  let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};
-  const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
+    // Backend-configured values from Python:
+    const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
+    let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};          // e.g. https://substack-proxy.X.workers.dev/?rss_url=
+    const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
-  function normalizeBase(b){
-    if(!b) return "";
-    const hasQuery = b.includes("?");
-    const hasParam = /[\?&]rss_url=/.test(b);
-    if (!hasParam) {
+    // Ensure base includes ?rss_url=
+    function normalizeBase(b){
+      if(!b) return "";
+      const hasParam = /[\?&]rss_url=/.test(b);
+      if (hasParam) return b;
+      const hasQuery = b.includes("?");
       if (!hasQuery) return b + "?rss_url=";
       if (!/[&?]$/.test(b)) b += "&";
       return b + "rss_url=";
     }
-    return b;
-  }
-  WORKER_BASE = normalizeBase(WORKER_BASE);
+    WORKER_BASE = normalizeBase(WORKER_BASE);
 
-  const statusEl = document.getElementById('status');
-  const postsEl = document.getElementById('posts');
+    const statusEl = document.getElementById('status');
+    const postsEl = document.getElementById('posts');
 
-  function card(item){
-    const pubDate = item.pubDate ? new Date(item.pubDate).toISOString().slice(0,10) : '';
-    const el = document.createElement('article');
-    el.innerHTML = `
-      <h2><a href="${item.link}" target="_blank" rel="noopener">${item.title || 'Untitled'}</a></h2>
-      <div class="meta">${pubDate ? ('Published: ' + pubDate) : ''}</div>
-      <div class="summary">${item.content || item.description || ''}</div>
-    `;
-    return el;
-  }
-
-  async function fetchJSON(url){
-    const r = await fetch(url, { credentials: "omit", cache: "no-store" });
-    if(!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  }
-
-  async function load(){
-    const workerURL = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
-    const publicURL = PUBLIC_BASE + encodeURIComponent(RSS_URL);
-
-    const attempts = [];
-    if (workerURL) attempts.push(["Worker", workerURL]);
-    attempts.push(["Public", publicURL]);
-
-    let lastErr = null;
-
-    for (const [label, url] of attempts){
-      try{
-        const data = await fetchJSON(url);
-        const items = (data && Array.isArray(data.items)) ? data.items : [];
-        if (items.length > 0){
-          statusEl.hidden = true;
-          postsEl.hidden = false;
-          items.forEach(it => postsEl.appendChild(card(it)));
-          return;
-        } else {
-          lastErr = new Error(label + ' returned 0 items');
-        }
-      }catch(e){
-        lastErr = e;
+    function stripHtml(html){
+      const d = document.createElement('div'); d.innerHTML = html || '';
+      // remove substack subscribe widgets/noisy wrappers
+      d.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(n => n.remove());
+      return d.textContent || d.innerText || '';
+    }
+    function firstImage(html){
+      const d = document.createElement('div'); d.innerHTML = html || '';
+      const img = d.querySelector('img');
+      if (img && img.src) return img.src;
+      // also accept <source srcset> as a fallback
+      const source = d.querySelector('source[srcset]');
+      if (source){
+        const srcset = source.getAttribute('srcset') || '';
+        const pick = srcset.split(',').map(s=>s.trim().split(' ')[0]).filter(Boolean)[0];
+        if (pick) return pick;
       }
+      return '';
+    }
+    function readingTime(text){
+      const words = (text.trim().match(/\S+/g) || []).length;
+      const mins = Math.max(1, Math.round(words / 200));
+      return `${mins} min read`;
+    }
+    function card(item){
+      const date = item.pubDate ? new Date(item.pubDate) : null;
+      const dateStr = date ? date.toISOString().slice(0,10) : '';
+      const imgUrl = firstImage(item.content || item.description || '');
+      const plain = stripHtml(item.content || item.description || '');
+      const snippet = plain.length > 220 ? plain.slice(0, 220) + '…' : plain;
+      const rtime = readingTime(plain);
+
+      const a = document.createElement('article');
+      a.className = 'card';
+      a.innerHTML = `
+        ${imgUrl ? `<a class="thumb" href="${item.link}" target="_blank" rel="noopener"><img src="${imgUrl}" alt=""></a>` : ''}
+        <div class="content">
+          <h2><a href="${item.link}" target="_blank" rel="noopener">${item.title || 'Untitled'}</a></h2>
+          <div class="meta">
+            ${dateStr ? `<span>${dateStr}</span>` : ''}
+            ${plain ? `<span>${rtime}</span>` : ''}
+          </div>
+          <div class="summary">${snippet}</div>
+          <div class="more"><a href="${item.link}" target="_blank" rel="noopener">Read more →</a></div>
+        </div>
+      `;
+      return a;
     }
 
-    const debugLinks = attempts.map(([label, url]) =>
-      `<div><a href="${url}" target="_blank" rel="noopener">${label} proxy debug link</a></div>`
-    ).join("");
+    async function fetchJSON(url){
+      const r = await fetch(url, { credentials: "omit", cache: "no-store" });
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }
 
-    statusEl.className = 'error';
-    statusEl.innerHTML = 'No public posts found or proxies failed.' +
-      (lastErr ? `<br><small>${lastErr.message}</small>` : '') +
-      `<div style="margin-top:6px">${debugLinks}</div>`;
-  }
+    async function load(){
+      const workerURL = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
+      const publicURL = PUBLIC_BASE + encodeURIComponent(RSS_URL);
 
-  load().catch(err => {
-    statusEl.className = 'error';
-    statusEl.textContent = 'Failed to load feed: ' + err.message;
-    console.error(err);
-  });
-</script>
+      const attempts = [];
+      if (workerURL) attempts.push(["Worker", workerURL]);
+      attempts.push(["Public", publicURL]);
+
+      let lastErr = null;
+
+      for (const [label, url] of attempts){
+        try{
+          const data = await fetchJSON(url);
+          const items = (data && Array.isArray(data.items)) ? data.items : [];
+          if (items.length > 0){
+            // render
+            postsEl.innerHTML = ''; // clear skeletons
+            statusEl.classList.add('hidden');
+            postsEl.classList.remove('hidden');
+            items.forEach(it => postsEl.appendChild(card(it)));
+            return;
+          } else {
+            lastErr = new Error(label + ' returned 0 items');
+          }
+        }catch(e){
+          lastErr = e;
+        }
+      }
+
+      // If here, all attempts failed or returned 0
+      const debugLinks = attempts.map(([label, url]) =>
+        `<div><a href="${url}" target="_blank" rel="noopener">${label} proxy debug link</a></div>`
+      ).join("");
+      statusEl.className = 'error';
+      statusEl.innerHTML = 'No public posts found or proxies failed.' +
+        (lastErr ? `<br><small>${lastErr.message}</small>` : '') +
+        `<div style="margin-top:8px">${debugLinks}</div>`;
+      postsEl.classList.add('hidden');
+    }
+
+    load().catch(err => {
+      statusEl.className = 'error';
+      statusEl.textContent = 'Failed to load feed: ' + err.message;
+      postsEl.classList.add('hidden');
+      console.error(err);
+    });
+  </script>
 </body>
 </html>
