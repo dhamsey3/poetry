@@ -57,12 +57,22 @@
     .logo-img{ height:44px; width:auto; object-fit:contain; border-radius:10px;
       transition: transform .18s ease, filter .2s ease; }
     .brand-link:hover .logo-img{ transform: rotate(-2deg) scale(1.05); filter: drop-shadow(0 2px 6px rgba(0,0,0,.15)) }
-    /* Swap logos by theme */
+
+    /* Swap logos by theme (we show only one) */
     .logo-dark{ display:none }
     [data-theme="dark"] .logo-light{ display:none }
     [data-theme="dark"] .logo-dark{ display:inline }
 
-    .brand-name{ font-family:"Fraunces", serif; font-weight:800; font-size:clamp(22px, 2.6vw, 32px); letter-spacing:.2px }
+    /* Gradient brand name + underline on hover */
+    .brand-name{
+      font-family:"Fraunces", serif; font-weight:800; font-size:clamp(22px, 2.6vw, 32px); letter-spacing:.2px;
+      background: linear-gradient(90deg,var(--accent),var(--accent-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .brand-link:hover .brand-name{
+      text-decoration: underline; text-decoration-thickness:.12em; text-underline-offset:.18em;
+    }
+
     .tagline{ margin-top:6px; color:var(--muted); font-size:15px; font-style:italic; letter-spacing:.2px }
 
     .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -88,16 +98,19 @@
     article.card{
       border:1px solid var(--border); border-radius:18px; background:var(--paper);
       overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow);
-      transform: translateY(10px) rotate(.2deg); opacity:0;
+      transform: translateY(10px) rotate(.2deg); opacity:0; transform-style:preserve-3d;
       transition: transform .5s cubic-bezier(.2,.75,.2,1), opacity .5s, box-shadow .25s;
     }
     article.card.show{ transform: none; opacity:1 }
-    article.card:hover{ box-shadow: 0 14px 40px rgba(30,30,30,.12), 0 3px 14px rgba(30,30,30,.06) }
+    article.card:hover{ box-shadow: 0 14px 40px rgba(30,30,30,.12), 0 3px 14px rgba(30,30,30,.06); transform: translateY(-2px) rotateX(.6deg) rotateY(.6deg) }
     [data-theme="dark"] article.card:hover{ box-shadow: 0 14px 40px rgba(0,0,0,.35), 0 3px 14px rgba(0,0,0,.25) }
 
     .thumb{ aspect-ratio: 4/3; width:100%; background:linear-gradient(135deg, rgba(229,106,166,.18), rgba(106,166,229,.18)) }
     [data-theme="dark"] .thumb{ background:linear-gradient(135deg, rgba(255,155,210,.18), rgba(138,180,255,.18)) }
-    .thumb img{ width:100%; height:100%; object-fit:cover; display:block }
+
+    /* Blur-up images */
+    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; filter:blur(8px); transition:filter .35s ease }
+    .thumb img[data-loaded="1"]{ filter:blur(0) }
 
     .pad{ padding:18px 16px 16px }
     h2{
@@ -106,11 +119,11 @@
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     }
     .meta{ color:var(--muted); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px }
-    .summary{
-      color:#374151; font-size:15px;
-      display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden
-    }
+    .summary{ color:#374151; font-size:15px; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden }
     [data-theme="dark"] .summary{ color: #cbd5e1 }
+
+    .badges{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 0 }
+    .badge{ font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:var(--paper) }
 
     .more{ margin-top:10px; font-weight:700; color:var(--accent) }
 
@@ -134,7 +147,7 @@
       color:#93a0b3;
     }
 
-    /* ---------- MODAL ---------- */
+    /* ---------- MODALS ---------- */
     .modal{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding:20px }
     .modal.open{ display:flex }
     .modal-card{
@@ -148,6 +161,13 @@
     .modal .close{ position:sticky; top:0; float:right; margin:-6px -6px 6px 6px;
       border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:transparent; color:var(--ink); cursor:pointer }
 
+    /* Reading progress bar */
+    #progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s ease}
+
+    /* Tiny “ink” click ripple */
+    #ink{position:fixed;pointer-events:none;inset:auto; width:14px;height:14px;border-radius:50%;
+      background:radial-gradient(circle at center,var(--accent) 0, transparent 70%); opacity:.0;
+      transform:translate(-50%,-50%) scale(.2); transition:opacity .25s, transform .25s; z-index:9999}
     .hidden{display:none!important}
   </style>
 </head>
@@ -166,6 +186,7 @@
         </div>
         <div class="actions">
           <button id="themeToggle" class="chip" title="Toggle theme">🌓 Theme</button>
+          <button id="aboutBtn" class="btn" title="About">About</button>
           <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe</a>
         </div>
       </div>
@@ -200,6 +221,21 @@
     </div>
   </div>
 
+  <!-- About modal -->
+  <div id="about" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="close" id="aboutClose">✕</button>
+      <h2>About</h2>
+      <p>Hi, I’m Dami. I write poems and small sparks. Say hi:
+        <a href="mailto:versesvibez@substack.com">versesvibez@substack.com</a>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Progress bar + ink ripple -->
+  <div id="progress"></div>
+  <div id="ink"></div>
+
   <script>
     // ----- Theme toggle (persist) -----
     (function(){
@@ -211,6 +247,24 @@
         const next = cur === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute(attr, next);
         localStorage.setItem(key, next);
+      });
+    })();
+
+    // ----- About modal -----
+    (function(){
+      const about=document.getElementById('about');
+      document.getElementById('aboutBtn').onclick=()=>{about.classList.add('open')};
+      document.getElementById('aboutClose').onclick=()=>{about.classList.remove('open')};
+      about.addEventListener('click',e=>{ if(e.target===about) about.classList.remove('open'); });
+    })();
+
+    // ----- Ink ripple -----
+    (function(){
+      const ink=document.getElementById('ink');
+      document.addEventListener('click',(e)=>{
+        ink.style.left=e.clientX+'px'; ink.style.top=e.clientY+'px';
+        ink.style.opacity=.35; ink.style.transform='translate(-50%,-50%) scale(1)';
+        setTimeout(()=>{ink.style.opacity=0; ink.style.transform='translate(-50%,-50%) scale(.2)';},220);
       });
     })();
 
@@ -232,6 +286,7 @@
     const statusEl = document.getElementById('status');
     const postsEl  = document.getElementById('posts');
     const qEl      = document.getElementById('q');
+    const prog     = document.getElementById('progress');
 
     // ----- Helpers -----
     function strip(html){
@@ -253,6 +308,10 @@
       const words=(text.trim().match(/\S+/g)||[]).length;
       return `${Math.max(1, Math.round(words/200))} min read`;
     }
+    function vibesFromTitle(title=''){
+      const words = (title.toLowerCase().match(/[a-z]{4,}/g)||[]).slice(0,2);
+      return [...new Set(words)];
+    }
 
     function makeCard(item, idx){
       const date = item.pubDate ? new Date(item.pubDate) : null;
@@ -262,6 +321,8 @@
       const img = firstImage(html);
       const snippet = plain.length>260 ? plain.slice(0,260)+'…' : plain;
       const rtime = plain ? readingTime(plain) : '';
+      const vibes = vibesFromTitle(item.title).map(v=>`<span class="badge">${v}</span>`).join('');
+      const badges = vibes ? `<div class="badges">${vibes}</div>` : '';
 
       const card=document.createElement('article');
       card.className='card';
@@ -272,13 +333,25 @@
           <h2><a href="${item.link}" target="_blank" rel="noopener">${item.title || 'Untitled'}</a></h2>
           <div class="meta">${dateStr ? `<span>${dateStr}</span>`:''}${rtime?`<span>${rtime}</span>`:''}</div>
           <div class="summary">${snippet}</div>
-          <div class="more"><a href="${item.link}" target="_blank" rel="noopener">Read on Substack →</a> &nbsp;•&nbsp;
-            <a href="#" data-read="1">Quick read</a>
+          ${badges}
+          <div class="more">
+            <a href="${item.link}" target="_blank" rel="noopener">Read on Substack →</a>
+            &nbsp;•&nbsp;<a href="#" data-read="1">Quick read</a>
+            &nbsp;•&nbsp;<a href="#" data-share="${encodeURIComponent(item.link)}">Share</a>
           </div>
         </div>`;
-      card.querySelector('[data-read]')?.addEventListener('click', (e)=>{
-        e.preventDefault(); openModal(item.title, dateStr, html);
+
+      // Blur-up handler
+      card.querySelectorAll('.thumb img').forEach(imgEl=>{
+        if (imgEl.complete) imgEl.setAttribute('data-loaded','1');
+        imgEl.addEventListener('load',()=>imgEl.setAttribute('data-loaded','1'));
       });
+
+      // Quick read (modal) opens by index (for keyboard nav)
+      card.querySelector('[data-read]')?.addEventListener('click', (e)=>{
+        e.preventDefault(); openModalByIndex(idx);
+      });
+
       return card;
     }
 
@@ -295,13 +368,53 @@
       m.meta.textContent  = dateStr || '';
       m.body.innerHTML    = html || '';
       m.el.classList.add('open'); m.el.setAttribute('aria-hidden','false');
+      // Reset progress bar
+      prog.style.width = '0%';
     }
     function closeModal(){
       m.el.classList.remove('open'); m.el.setAttribute('aria-hidden','true'); m.body.innerHTML='';
+      prog.style.width = '0%';
     }
     m.close.addEventListener('click', closeModal);
     m.el.addEventListener('click', e=>{ if(e.target===m.el) closeModal(); });
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+    // Reading progress bar
+    m.body.addEventListener('scroll', ()=>{
+      const h = m.body.scrollHeight - m.body.clientHeight;
+      const p = h>0 ? (m.body.scrollTop / h) * 100 : 0;
+      prog.style.width = p + '%';
+    });
+
+    // Keyboard nav inside modal
+    function openModalByIndex(i){
+      const it = ALL_ITEMS[i]; if(!it) return;
+      const d = it.pubDate ? new Date(it.pubDate) : null;
+      openModal(it.title, d ? d.toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'}) : '', it.content || it.description || '');
+      m.el.dataset.index = i;
+    }
+    document.addEventListener('keydown', (e)=>{
+      if(!m.el.classList.contains('open')) return;
+      const i = parseInt(m.el.dataset.index||'0',10);
+      if(e.key==='ArrowRight'){ openModalByIndex(Math.min(ALL_ITEMS.length-1, i+1)); }
+      if(e.key==='ArrowLeft'){ openModalByIndex(Math.max(0, i-1)); }
+    });
+
+    // ----- Share (Web Share API with clipboard fallback) -----
+    postsEl.addEventListener('click', async (e)=>{
+      const a = e.target.closest('[data-share]');
+      if(!a) return;
+      e.preventDefault();
+      const url = decodeURIComponent(a.getAttribute('data-share'));
+      const title = a.closest('.card')?.querySelector('h2')?.textContent?.trim() || 'Poem';
+      try{
+        if (navigator.share) await navigator.share({title, url});
+        else {
+          await navigator.clipboard.writeText(url);
+          a.textContent = 'Copied ✓'; setTimeout(()=>a.textContent='Share',1200);
+        }
+      }catch{}
+    });
 
     // ----- Fetch + render (Worker → Public fallback) -----
     async function fetchJSON(url){
