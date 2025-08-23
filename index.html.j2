@@ -147,6 +147,24 @@
 
     /* Small helpers */
     .hidden{display:none!important}
+    /* Logo sizing */
+    .logo-wrap { display:inline-block; line-height:0 }
+    .logo-img {
+      height: 44px; width: auto; object-fit: contain;
+      border-radius: 10px; /* remove if you prefer square */
+      transition: transform .18s ease, filter .2s ease, opacity .2s ease;
+    }
+
+    /* cute tilt on hover */
+    .brand-link:hover .logo-img {
+      transform: rotate(-2deg) scale(1.03);
+    }
+
+    /* Optional: subtle shadow on hover */
+    .brand-link:hover .logo-img {
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.12));
+    }
+
   </style>
 </head>
 <body>
@@ -157,6 +175,13 @@
         <div class="brand">
           <a href="./" class="brand-link">
             <img src="static/logo.png" alt="Site logo" class="logo" />
+            <picture class="logo-wrap">
+              <!-- Shown when user prefers dark mode -->
+              <source srcset="static/logo-dark.png" media="(prefers-color-scheme: dark)">
+              <!-- Fallback + light mode -->
+              <img src="static/logo-light.png" alt="Versesvibez logo" class="logo-img" decoding="async" fetchpriority="high">
+            </picture>
+
             <span class="brand-name">{{ site_title or "versesvibez" }}</span>
           </a>
           <div class="tagline">poems • thoughts • little sparks ✨</div>
