@@ -1,131 +1,160 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <title>{{ site_title or "My Substack Feed" }}</title>
+  <title>{{ site_title or "versesvibez" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="index,follow" />
-  <meta name="description" content="Latest posts from {{ site_title or 'this publication' }}." />
+  <meta name="description" content="Poetry & musings by Dami." />
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
+
+  <!-- Friendly, legible fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#0b0c10;
-      --card:#0f1117;
-      --muted:#93a0b3;
-      --text:#e6edf3;
-      --brand:#8ab4ff;
-      --accent:#7ee787;
-      --border:rgba(255,255,255,.08);
-      --shadow: 0 6px 24px rgba(0,0,0,.24), 0 2px 8px rgba(0,0,0,.18);
+      --bg:#0b0c10; --card:#0f1117; --muted:#93a0b3; --text:#e6edf3;
+      --brand:#8ab4ff; --accent:#ff9bd2; --accent2:#7ee787; --border:rgba(255,255,255,.08);
+      --shadow:0 8px 28px rgba(0,0,0,.28),0 2px 10px rgba(0,0,0,.18);
     }
+    [data-theme="light"]{
+      --bg:#f7f8fb; --card:#ffffff; --muted:#6b7280; --text:#0f172a;
+      --brand:#3b82f6; --accent:#f97316; --accent2:#10b981; --border:rgba(0,0,0,.08);
+      --shadow:0 8px 28px rgba(0,0,0,.08),0 2px 10px rgba(0,0,0,.06);
+    }
+
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    a{color:var(--brand);text-decoration:none}
-    a:hover{text-decoration:underline}
-    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 44px}
-    header{display:flex;gap:18px;align-items:center;justify-content:space-between;margin:8px 0 22px}
-    .title a{color:var(--text);text-decoration:none;font-weight:700;font-size:20px}
-    .subtitle{color:var(--muted);font-size:13px;margin-top:6px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:10px 14px;border:1px solid var(--border);border-radius:12px;
-      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
-      color:var(--text);text-decoration:none;font-weight:600
+    html,body{margin:0;background:var(--bg);color:var(--text);
+      font:16px/1.65 Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;}
+    h1,h2{font-family:"Playfair Display", serif}
+    a{color:var(--brand);text-decoration:none} a:hover{text-decoration:underline}
+
+    /* HERO */
+    .hero{
+      position:relative; overflow:hidden; border-bottom:1px solid var(--border);
+      background:
+        radial-gradient(1200px 500px at 20% -10%, rgba(138,180,255,.22), transparent 60%),
+        radial-gradient(1200px 500px at 80% 0%, rgba(255,155,210,.18), transparent 60%);
     }
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 28px}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .site-title a{color:var(--text);text-decoration:none;font-weight:800;font-size:22px}
+    .tagline{color:var(--muted);font-size:13px;margin-top:4px}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);
+      border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+      color:var(--text);font-weight:600}
     .btn:hover{border-color:rgba(138,180,255,.5)}
-    .grid{
-      display:grid;gap:16px;
-      grid-template-columns:1fr;
+    .search{flex:1;min-width:220px;display:flex;gap:8px;margin-top:14px}
+    .search input{
+      width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);
+      outline:none
     }
-    @media (min-width:700px){ .grid{grid-template-columns:1fr 1fr} }
-    @media (min-width:1024px){ .grid{grid-template-columns:1fr 1fr 1fr} }
+
+    /* GRID */
+    .content{padding:22px 18px 44px;max-width:1100px;margin:0 auto}
+    .grid{display:grid;gap:18px;grid-template-columns:1fr}
+    @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+    @media (min-width:1100px){.grid{grid-template-columns:1fr 1fr 1fr}}
 
     article.card{
-      border:1px solid var(--border);
-      border-radius:16px;
-      background:var(--card);
-      overflow:hidden;
-      display:flex;flex-direction:column;
-      transition:transform .15s ease, box-shadow .15s ease, border-color .2s ease;
+      border:1px solid var(--border); border-radius:18px; background:var(--card); overflow:hidden;
+      display:flex;flex-direction:column; box-shadow:var(--shadow);
+      transform:translateY(8px) scale(.98); opacity:0; will-change:transform,opacity;
+      transition:transform .35s cubic-bezier(.2,.75,.2,1), opacity .35s;
     }
-    article.card:hover{
-      transform:translateY(-2px);
-      box-shadow:var(--shadow);
-      border-color:rgba(138,180,255,.25);
-    }
-    .thumb{
-      aspect-ratio: 16/9;
-      width:100%;
-      background:#0b0f14;
-      display:block;
-      overflow:hidden;
-    }
-    .thumb img{
-      width:100%;height:100%;object-fit:cover;display:block
-    }
-    .content{padding:16px 14px 14px;display:flex;flex-direction:column;gap:8px}
-    h2{
-      font-size:17px;margin:0;line-height:1.35;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden
-    }
-    .meta{
-      color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap
-    }
-    .summary{
-      color:#cbd5e1;font-size:14px;
-      display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden
-    }
-    .more{
-      margin-top:4px;font-size:13px;font-weight:600
-    }
-    .empty,.error{
-      margin:24px 0;border:1px dashed var(--border);border-radius:16px;padding:20px;
-      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));color:var(--muted)
-    }
-    footer{
-      margin-top:28px;color:var(--muted);font-size:12px;
-      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap
-    }
-    /* tiny shimmer for loading */
-    .skeleton{position:relative;overflow:hidden;background:linear-gradient(90deg,#111319, #12141b 40%, #111319);background-size:200% 100%;animation:shimmer 1.5s infinite}
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .hidden{display:none!important}
+    article.card.show{transform:none; opacity:1}
+    article.card:hover{transform:translateY(-4px) scale(1.005)}
+    .thumb{aspect-ratio: 16/9; width:100%; background:linear-gradient(135deg, rgba(255,155,210,.25), rgba(138,180,255,.22))}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+    .pad{padding:16px 14px 14px}
+    h2{font-size:19px;margin:0 0 8px;line-height:1.3;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .meta{color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+    .summary{color:color-mix(in oklab, var(--text) 80%, transparent);
+      font-size:14px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+    .more{margin-top:8px;font-size:13px;font-weight:700}
+    .empty,.error{margin:24px 0;border:1px dashed var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,.03);color:var(--muted)}
+
+    footer{border-top:1px solid var(--border);padding:18px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+    /* MODAL (reading mode) */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px}
+    .modal.open{display:flex}
+    .modal-card{max-width:800px;max-height:80vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:22px}
+    .modal h2{margin:0 0 12px}
+    .modal .meta{margin-bottom:14px}
+    .modal .body{font-size:18px;line-height:1.75}
+    .modal .close{position:sticky;top:0;float:right;margin:-6px -6px 6px 6px;border:1px solid var(--border);border-radius:10px;padding:6px 10px;background:transparent;color:var(--text);cursor:pointer}
+
+    /* Light/dark toggle chip */
+    .chip{border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--card);cursor:pointer}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <div class="title"><a href="./">{{ site_title or "versesvibez" }}</a></div>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="header">
+        <div>
+          <div class="site-title"><a href="./">{{ site_title or "versesvibez" }}</a></div>
+          <div class="tagline">poems • thoughts • little sparks ✨</div>
+        </div>
+        <div class="controls">
+          <button id="themeToggle" class="chip" title="Toggle theme">🌓</button>
+          <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe</a>
+        </div>
       </div>
-      <div class="actions">
-        <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe</a>
-      </div>
-    </header>
 
-    <div id="status" class="empty">Loading posts…</div>
-    <section id="posts" class="grid hidden">
-      <!-- skeletons -->
-      <article class="card skeleton" style="height:260px;border-radius:16px"></article>
-      <article class="card skeleton" style="height:260px;border-radius:16px"></article>
-      <article class="card skeleton" style="height:260px;border-radius:16px"></article>
+      <div class="search">
+        <input id="q" type="search" placeholder="Search poems (title or text)…" aria-label="Search poems" />
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div id="status" class="empty">Loading poems…</div>
+    <section id="posts" class="grid" hidden>
+      <!-- cards injected -->
     </section>
+  </main>
 
-    <footer>
-      <div>Built from <a href="{{ feed_url }}">RSS</a>. No tracking.</div>
-      <div>Last updated {{ generated_at.strftime("%Y-%m-%d %H:%M UTC") if generated_at else "" }}</div>
-    </footer>
+  <footer>
+    <div>Built from <a href="{{ feed_url }}">RSS</a>. No tracking.</div>
+    <div>Generated {{ generated_at.strftime("%Y-%m-%d %H:%M UTC") if generated_at else "" }}</div>
+  </footer>
+
+  <!-- Reading mode modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="close" id="modalClose">✕</button>
+      <h2 id="mTitle"></h2>
+      <div class="meta" id="mMeta"></div>
+      <div class="body" id="mBody"></div>
+    </div>
   </div>
 
   <script>
-    // Backend-configured values from Python:
+    // ======== Theme toggle (persist) ========
+    (function(){
+      const key = 'vv-theme';
+      const saved = localStorage.getItem(key);
+      if(saved) document.documentElement.setAttribute('data-theme', saved);
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem(key, next);
+      });
+    })();
+
+    // ======== Config from backend ========
     const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
-    let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};          // e.g. https://substack-proxy.X.workers.dev/?rss_url=
+    let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }}; // e.g. https://substack-proxy.X.workers.dev/?rss_url=
     const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
-    // Ensure base includes ?rss_url=
     function normalizeBase(b){
       if(!b) return "";
       const hasParam = /[\?&]rss_url=/.test(b);
@@ -138,109 +167,130 @@
     WORKER_BASE = normalizeBase(WORKER_BASE);
 
     const statusEl = document.getElementById('status');
-    const postsEl = document.getElementById('posts');
+    const postsEl  = document.getElementById('posts');
+    const qEl      = document.getElementById('q');
 
-    function stripHtml(html){
-      const d = document.createElement('div'); d.innerHTML = html || '';
-      // remove substack subscribe widgets/noisy wrappers
-      d.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(n => n.remove());
-      return d.textContent || d.innerText || '';
+    // ======== Helpers ========
+    function strip(html){
+      const d=document.createElement('div'); d.innerHTML=html||'';
+      d.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(n=>n.remove());
+      return d.textContent||d.innerText||'';
     }
     function firstImage(html){
-      const d = document.createElement('div'); d.innerHTML = html || '';
-      const img = d.querySelector('img');
-      if (img && img.src) return img.src;
-      // also accept <source srcset> as a fallback
-      const source = d.querySelector('source[srcset]');
-      if (source){
-        const srcset = source.getAttribute('srcset') || '';
-        const pick = srcset.split(',').map(s=>s.trim().split(' ')[0]).filter(Boolean)[0];
-        if (pick) return pick;
-      }
+      const d=document.createElement('div'); d.innerHTML=html||'';
+      const img=d.querySelector('img'); if(img&&img.src) return img.src;
+      const source=d.querySelector('source[srcset]');
+      if(source){ const pick=(source.getAttribute('srcset')||'').split(',').map(s=>s.trim().split(' ')[0]).filter(Boolean)[0]; if(pick) return pick; }
       return '';
     }
     function readingTime(text){
-      const words = (text.trim().match(/\S+/g) || []).length;
-      const mins = Math.max(1, Math.round(words / 200));
-      return `${mins} min read`;
+      const words=(text.trim().match(/\S+/g)||[]).length;
+      return `${Math.max(1, Math.round(words/200))} min read`;
     }
-    function card(item){
+
+    function makeCard(item, idx){
       const date = item.pubDate ? new Date(item.pubDate) : null;
-      const dateStr = date ? date.toISOString().slice(0,10) : '';
-      const imgUrl = firstImage(item.content || item.description || '');
-      const plain = stripHtml(item.content || item.description || '');
-      const snippet = plain.length > 220 ? plain.slice(0, 220) + '…' : plain;
-      const rtime = readingTime(plain);
+      const dateStr = date ? date.toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'}) : '';
+      const html = item.content || item.description || '';
+      const plain = strip(html);
+      const img = firstImage(html);
+      const snippet = plain.length>240 ? plain.slice(0,240)+'…' : plain;
+      const rtime = plain ? readingTime(plain) : '';
 
-      const a = document.createElement('article');
-      a.className = 'card';
-      a.innerHTML = `
-        ${imgUrl ? `<a class="thumb" href="${item.link}" target="_blank" rel="noopener"><img src="${imgUrl}" alt=""></a>` : ''}
-        <div class="content">
+      const card=document.createElement('article');
+      card.className='card';
+      card.style.transitionDelay = `${Math.min(idx, 12) * 35}ms`;
+      card.innerHTML = `
+        ${img ? `<a class="thumb" href="${item.link}" target="_blank" rel="noopener"><img loading="lazy" src="${img}" alt=""></a>` : `<div class="thumb"></div>`}
+        <div class="pad">
           <h2><a href="${item.link}" target="_blank" rel="noopener">${item.title || 'Untitled'}</a></h2>
-          <div class="meta">
-            ${dateStr ? `<span>${dateStr}</span>` : ''}
-            ${plain ? `<span>${rtime}</span>` : ''}
-          </div>
+          <div class="meta">${dateStr ? `<span>${dateStr}</span>`:''}${rtime?`<span>${rtime}</span>`:''}</div>
           <div class="summary">${snippet}</div>
-          <div class="more"><a href="${item.link}" target="_blank" rel="noopener">Read more →</a></div>
-        </div>
-      `;
-      return a;
+          <div class="more"><a href="${item.link}" target="_blank" rel="noopener">Read on Substack →</a> &nbsp;•&nbsp;
+            <a href="#" data-read="1">Quick read</a>
+          </div>
+        </div>`;
+      // Quick read (modal)
+      card.querySelector('[data-read]')?.addEventListener('click', (e)=>{
+        e.preventDefault();
+        openModal(item.title, dateStr, html);
+      });
+      return card;
     }
 
+    // ======== Modal (reading mode) ========
+    const m = {
+      el: document.getElementById('modal'),
+      title: document.getElementById('mTitle'),
+      meta: document.getElementById('mMeta'),
+      body: document.getElementById('mBody'),
+      close: document.getElementById('modalClose'),
+    };
+    function openModal(title, dateStr, html){
+      m.title.textContent = title || 'Untitled';
+      m.meta.textContent  = dateStr || '';
+      // Keep basic formatting (paragraphs, br, strong, em, images)
+      m.body.innerHTML = html || '';
+      m.el.classList.add('open');
+      m.el.setAttribute('aria-hidden','false');
+    }
+    function closeModal(){
+      m.el.classList.remove('open');
+      m.el.setAttribute('aria-hidden','true');
+      m.body.innerHTML='';
+    }
+    m.close.addEventListener('click', closeModal);
+    m.el.addEventListener('click', e=>{ if(e.target===m.el) closeModal(); });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+    // ======== Fetch + render (Worker → Public fallback) ========
     async function fetchJSON(url){
-      const r = await fetch(url, { credentials: "omit", cache: "no-store" });
-      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const r=await fetch(url,{credentials:"omit",cache:"no-store"});
+      if(!r.ok) throw new Error('HTTP '+r.status);
       return r.json();
     }
+
+    let ALL_ITEMS = [];
 
     async function load(){
       const workerURL = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
       const publicURL = PUBLIC_BASE + encodeURIComponent(RSS_URL);
+      const attempts = []; if(workerURL) attempts.push(workerURL); attempts.push(publicURL);
 
-      const attempts = [];
-      if (workerURL) attempts.push(["Worker", workerURL]);
-      attempts.push(["Public", publicURL]);
-
-      let lastErr = null;
-
-      for (const [label, url] of attempts){
+      for(const url of attempts){
         try{
           const data = await fetchJSON(url);
           const items = (data && Array.isArray(data.items)) ? data.items : [];
-          if (items.length > 0){
-            // render
-            postsEl.innerHTML = ''; // clear skeletons
+          if(items.length){
+            ALL_ITEMS = items;
             statusEl.classList.add('hidden');
-            postsEl.classList.remove('hidden');
-            items.forEach(it => postsEl.appendChild(card(it)));
+            postsEl.hidden = false;
+            postsEl.innerHTML='';
+            items.forEach((it,i)=> {
+              const card=makeCard(it,i);
+              postsEl.appendChild(card);
+              queueMicrotask(()=>card.classList.add('show'));
+            });
             return;
-          } else {
-            lastErr = new Error(label + ' returned 0 items');
           }
-        }catch(e){
-          lastErr = e;
-        }
+        }catch(e){ /* try next */ }
       }
-
-      // If here, all attempts failed or returned 0
-      const debugLinks = attempts.map(([label, url]) =>
-        `<div><a href="${url}" target="_blank" rel="noopener">${label} proxy debug link</a></div>`
-      ).join("");
-      statusEl.className = 'error';
-      statusEl.innerHTML = 'No public posts found or proxies failed.' +
-        (lastErr ? `<br><small>${lastErr.message}</small>` : '') +
-        `<div style="margin-top:8px">${debugLinks}</div>`;
-      postsEl.classList.add('hidden');
+      statusEl.className='error';
+      statusEl.textContent='Could not load poems right now. Please try again later.';
     }
 
-    load().catch(err => {
-      statusEl.className = 'error';
-      statusEl.textContent = 'Failed to load feed: ' + err.message;
-      postsEl.classList.add('hidden');
-      console.error(err);
+    // ======== Search (client-only) ========
+    qEl.addEventListener('input', ()=>{
+      const q = qEl.value.trim().toLowerCase();
+      const cards = postsEl.querySelectorAll('article.card');
+      if(!q){ cards.forEach(c=>c.classList.remove('hidden')); return; }
+      ALL_ITEMS.forEach((it, i)=>{
+        const text = ((it.title||'') + ' ' + (strip(it.content||it.description||''))).toLowerCase();
+        cards[i]?.classList.toggle('hidden', !text.includes(q));
+      });
     });
+
+    load();
   </script>
 </body>
 </html>
