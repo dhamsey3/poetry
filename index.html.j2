@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <title>{{ site_title or "versesvibez" }}</title>
+  <title>{{ site_title or "Torchborne" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="index,follow" />
   <meta name="description" content="Poetry & musings by Dami." />
@@ -11,7 +11,7 @@
   <link rel="icon" href="static/logo-light.png" />
 
   <!-- Open Graph for richer sharing -->
-  <meta property="og:title" content="{{ site_title or 'versesvibez' }}" />
+  <meta property="og:title" content="{{ site_title or 'Torchborne' }}" />
   <meta property="og:description" content="Poetry & musings by Dami." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="{{ public_url.rstrip('/') + '/static/logo-light.png' if public_url else 'static/logo-light.png' }}" />
@@ -262,11 +262,11 @@
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
-              <img src="static/logo-light.png" alt="Versesvibez logo" class="logo-img logo-light" />
-              <img src="static/logo-dark.png" alt="Versesvibez logo" class="logo-img logo-dark" />
-              <span class="brand-name">{{ site_title or "versesvibez" }}</span>
+              <img src="static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" />
+              <img src="static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" />
+              <span class="brand-name">{{ site_title or "Torchborne" }}</span>
             </a>
-            <div class="hero-tagline" aria-live="polite">where words dance with wonder ✨</div>
+            <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
           </div>
 
           <div class="hero-actions">
@@ -309,7 +309,7 @@
             <img src="static/logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true">
             <img src="static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true">
             <div class="footer-info">
-              <h3>{{ site_title or "versesvibez" }}</h3>
+              <h3>{{ site_title or "Torchborne" }}</h3>
               <div class="footer-copyright">
                 © {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels
               </div>
@@ -353,10 +353,10 @@
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
         <div class="about-header">
-          <img class="about-avatar" src="static/avatar.jpg" alt="Dami" onerror="this.src='static/logo-light.png'">
+          <img class="about-avatar" src="static/avatar.jpg" alt="Torchborne" onerror="this.src='static/logo-light.png'">
           <div class="about-info">
-            <h2 id="aboutTitle">About Dami</h2>
-            <p class="about-tagline">Weaving words into wonder, one poem at a time ✨</p>
+            <h2 id="aboutTitle">About Torchborne</h2>
+            <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
           </div>
         </div>
 
@@ -723,7 +723,7 @@
       }
 
       async handleShare(post, el) {
-        const url = post.link; const title = post.title || 'Poem from versesvibez';
+        const url = post.link; const title = post.title || 'Poem from Torchborne';
         try {
           if (navigator.share) await navigator.share({ title, url });
           else { await navigator.clipboard.writeText(url); const t = el.textContent; el.textContent = 'Copied ✓'; setTimeout(() => { el.textContent = t; }, 2000); }
@@ -784,7 +784,7 @@
       new ParticleSystem();
       modalManager = new ModalManager();
       new ContentManager();
-      console.log('✨ versesvibez enhanced - ready to inspire');
+      console.log('✨ Torchborne — ready to inspire');
     });
   </script>
 </body>

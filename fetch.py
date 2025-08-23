@@ -25,7 +25,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
     )
     tpl = env.get_template(TEMPLATE_FILE.name)
     html = tpl.render(
-        site_title=site_title or "versesvibez",
+        site_title=site_title or "torchborne",
         public_url=public_url,
         feed_url=feed_url,
         rss_proxy_url=(proxy_url or "").rstrip("?&"),
@@ -39,7 +39,7 @@ def main():
     feed_url   = os.getenv("SUBSTACK_FEED", "https://versesvibez.substack.com/feed")
     public_url = os.getenv("PUBLIC_SUBSTACK_URL", "https://versesvibez.substack.com/")
     proxy_url  = os.getenv("RSS_PROXY_URL", "https://api.rss2json.com/v1/api.json?rss_url=")
-    site_title = os.getenv("SITE_TITLE", "versesvibez")
+    site_title = os.getenv("SITE_TITLE", "torchborne")
     render_index(site_title, feed_url, public_url, proxy_url)
     print("Wrote dist/index.html and copied static/ → dist/static")
 
