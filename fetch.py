@@ -3,6 +3,18 @@ import os
 from pathlib import Path
 from datetime import datetime, timezone
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+# add at the top
+import shutil
+from pathlib import Path
+
+DIST_DIR = Path("dist")
+
+def ensure_dist():
+    DIST_DIR.mkdir(parents=True, exist_ok=True)
+    (DIST_DIR / ".nojekyll").write_text("", encoding="utf-8")
+    if Path("static").exists():
+        shutil.copytree("static", DIST_DIR / "assets", dirs_exist_ok=True)
+
 
 DIST_DIR = Path("dist")
 TEMPLATE_FILE = Path("index.html.j2")

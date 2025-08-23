@@ -9,7 +9,9 @@
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
 
   <!-- Fonts: elegant serif for titles, humanist sans for body -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family:Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
+  <!-- Optional favicon -->
+  <link rel="icon" href="/assets/favicon.ico" />
 
   <style>
     :root{
@@ -49,11 +51,13 @@
       backdrop-filter: blur(2px);
     }
     .header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
-    .site-title a{
-      text-decoration:none; color:var(--ink);
-      font-family:"Fraunces", serif; font-weight:800; font-size:clamp(28px, 6vw, 48px);
-      letter-spacing:.2px;
-    }
+
+    /* Brand (logo + name) */
+    .brand { display:flex; flex-direction:column; gap:6px }
+    .brand-link { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit }
+    .logo { width:36px; height:36px; object-fit:contain; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.08) }
+    .brand-name { font-family:"Fraunces", serif; font-weight:800; font-size:clamp(22px, 2.6vw, 32px); letter-spacing:.2px }
+
     .tagline{
       margin-top:6px; color:var(--muted); font-size:15px;
       font-style:italic; letter-spacing:.2px
@@ -144,8 +148,11 @@
   <section class="hero">
     <div class="wrap">
       <div class="header">
-        <div>
-          <div class="site-title"><a href="./">{{ site_title or "versesvibez" }}</a></div>
+        <div class="brand">
+          <a href="./" class="brand-link">
+            <img src="/assets/logo.svg" alt="" class="logo" />
+            <span class="brand-name">{{ site_title or "versesvibez" }}</span>
+          </a>
           <div class="tagline">poems • thoughts • little sparks ✨</div>
         </div>
         <div class="actions">
@@ -292,7 +299,17 @@
       for(const url of attempts){
         try{
           const data = await fetchJSON(url);
-          const items = (data && Array.isArray(data.items)) ? data.items : [];
+          const raw  = (data && Array.isArray(data.items)) ? data.items : [];
+
+          // --- Filter out placeholders / deleted posts ---
+          const items = raw.filter(it => {
+            const title = (it.title || '').toLowerCase();
+            const text  = (strip(it.content || it.description || '') || '').trim();
+            if (/coming\s+soon/i.test(title)) return false; // drop “Coming soon”
+            if (text.length < 40) return false;            // too-short announcement
+            return true;
+          });
+
           if(items.length){
             ALL_ITEMS = items;
             statusEl.classList.add('hidden');
