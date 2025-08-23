@@ -1,4 +1,290 @@
-<!doctype html>
+// Modals
+      aboutBtn: document.getElementById('aboutBtn'),
+      aboutModal: document.getElementById('aboutModal'),
+      aboutModalClose: document.getElementById('aboutModalClose'),
+      footerAboutLink: document.getElementById('footerAboutLink'),
+      
+      readingModal: document.getElementById('readingModal'),
+      readingModalClose: document.getElementById('readingModalClose'),
+      modalTitle: document.getElementById('modalTitle'),
+      modalMeta: document.getElementById('modalMeta'),
+      modalBody: document.getElementById('modalBody'),
+      
+      copyEmailBtn: document.getElementById('copyEmailBtn'),
+      
+      // Fun elements
+      funModeBtn: document.getElementById('funModeBtn'),
+      inspirationalQuote: document.getElementById('inspirationalQuote'),
+      quoteText: document.getElementById('quoteText'),
+      quoteAuthor: document.getElementById('quoteAuthor'),
+      scrollIndicator: document.getElementById('scrollIndicator')
+    };
+
+    // ===== GLOBAL STATE =====
+    let allPosts = [];
+    let currentModalIndex = 0;
+    window.funModeEnabled = false;
+
+    // ===== FUN SYSTEM =====
+    class FunModeManager {
+      constructor() {
+        this.quotes = [
+          { text: "Poetry is when an emotion has found its thought and the thought has found words.", author: "Robert Frost" },
+          { text: "Words mean more than what is set down on paper. It takes the human voice to infuse them with deeper meaning.", author: "Maya Angelou" },
+          { text: "Poetry is the spontaneous overflow of powerful feelings.", author: "William Wordsworth" },
+          { text: "A poem begins as a lump in the throat, a sense of wrong, a homesickness, a lovesickness.", author: "Robert Frost" },
+          { text: "Poetry is not a turning loose of emotion, but an escape from emotion.", author: "T.S. Eliot" },
+          { text: "The poetry of the earth is never dead.", author: "John Keats" },
+          { text: "Poetry is the music of the soul, and above all, of great and feeling souls.", author: "Voltaire" }
+        ];
+        this.currentQuoteIndex = 0;
+        this.quoteInterval = null;
+        this.cursorTrails = [];
+        this.init();
+      }
+
+      init() {
+        elements.funModeBtn.addEventListener('click', () => this.toggleFunMode());
+        this.setupCursorTrail();
+        this.setupScrollIndicator();
+      }
+
+      toggleFunMode() {
+        window.funModeEnabled = !window.funModeEnabled;
+        
+        const btn = elements.funModeBtn;
+        if (window.funModeEnabled) {
+          btn.innerHTML = '<span>🎊</span> Fun Mode ON';
+          btn.classList.add('pulse-glow', 'rainbow-text');
+          this.enableFunFeatures();
+          this.createConfettiBurst();
+          this.showTypingIndicator("Fun mode activated! ✨");
+        } else {
+          btn.innerHTML = '<span>🎉</span> Fun Mode';
+          btn.classList.remove('pulse-glow', 'rainbow-text');
+          this.disableFunFeatures();
+        }
+        
+        btn.classList.add('bounce-in');
+        setTimeout(() => btn.classList.remove('bounce-in'), 600);
+      }
+
+      enableFunFeatures() {
+        // Start inspirational quotes
+        this.startInspirationalQuotes();
+        
+        // Enhanced cursor trail
+        this.enhanceCursorTrail();
+        
+        // Add wiggle to brand name occasionally
+        this.startBrandAnimation();
+        
+        // Show scroll indicator
+        elements.scrollIndicator.style.display = 'flex';
+        
+        console.log('🎉 Fun mode enabled! Let the magic begin!');
+      }
+
+      disableFunFeatures() {
+        // Stop quotes
+        if (this.quoteInterval) {
+          clearInterval(this.quoteInterval);
+          this.quoteInterval = null;
+        }
+        elements.inspirationalQuote.classList.remove('show');
+        
+        // Reset cursor trail
+        this.cursorTrails = [];
+        
+        // Hide scroll indicator
+        elements.scrollIndicator.style.display = 'none';
+        
+        // Stop brand animation
+        if (this.brandAnimationInterval) {
+          clearInterval(this.brandAnimationInterval);
+        }
+      }
+
+      startInspirationalQuotes() {
+        this.showQuote();
+        this.quoteInterval = setInterval(() => {
+          this.showQuote();
+        }, 10000); // Show a new quote every 10 seconds
+      }
+
+      showQuote() {
+        const quote = this.quotes[this.currentQuoteIndex];
+        elements.quoteText.textContent = `"${quote.text}"`;
+        elements.quoteAuthor.textContent = `— ${quote.author}`;
+        
+        elements.inspirationalQuote.classList.add('show');
+        
+        // Auto-hide after 6 seconds
+        setTimeout(() => {
+          elements.inspirationalQuote.classList.remove('show');
+        }, 6000);
+        
+        this.currentQuoteIndex = (this.currentQuoteIndex + 1) % this.quotes.length;
+      }
+
+      setupCursorTrail() {
+        document.addEventListener('mousemove', (e) => {
+          if (!window.funModeEnabled) return;
+          
+          const trail = document.createElement('div');
+          trail.className = 'cursor-trail';
+          trail.style.left = e.clientX + 'px';
+          trail.style.top = e.clientY + 'px';
+          
+          document.body.appendChild(trail);
+          
+          setTimeout(() => {
+            if (trail.parentNode) {
+              trail.parentNode.removeChild(trail);
+            }
+          }, 800);
+        });
+      }
+
+      enhanceCursorTrail() {
+        // Additional sparkles on click
+        document.addEventListener('click', (e) => {
+          if (!window.funModeEnabled) return;
+          
+          this.createClickSparkles(e.clientX, e.clientY);
+        });
+      }
+
+      createClickSparkles(x, y) {
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + (Math.random() - 0.5) * 40 + 'px';
+            sparkle.style.top = y + (Math.random() - 0.5) * 40 + 'px';
+            
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+              if (sparkle.parentNode) {
+                sparkle.parentNode.removeChild(sparkle);
+              }
+            }, 1000);
+          }, i * 50);
+        }
+      }
+
+      startBrandAnimation() {
+        this.brandAnimationInterval = setInterval(() => {
+          if (Math.random() < 0.3) { // 30% chance
+            const brandName = document.querySelector('.brand-name');
+            if (brandName) {
+              brandName.classList.add('wiggle');
+              setTimeout(() => {
+                brandName.classList.remove('wiggle');
+              }, 500);
+            }
+          }
+        }, 5000);
+      }
+
+      createConfettiBurst() {
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+        
+        for (let i = 0; i < 50; i++) {
+          setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.top = '-10px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            document.body.appendChild(confetti);
+            
+            setTimeout(() => {
+              if (confetti.parentNode) {
+                confetti.parentNode.removeChild(confetti);
+              }
+            }, 3000);
+          }, i * 50);
+        }
+      }
+
+      setupScrollIndicator() {
+        window.addEventListener('scroll', () => {
+          const scrolled = window.scrollY > 100;
+          elements.scrollIndicator.style.opacity = scrolled ? '0' : '0.7';
+        });
+      }
+
+      showTypingIndicator(message) {
+        const indicator = document.createElement('div');
+        indicator.className = 'typing-indicator show';
+        indicator.innerHTML = `
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        `;
+        
+        elements.funModeBtn.parentNode.appendChild(indicator);
+        
+        setTimeout(() => {
+          indicator.innerHTML = message;
+          setTimeout(() => {
+            indicator.classList.remove('show');
+            setTimeout(() => {
+              if (indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+              }
+            }, 300);
+          }, 2000);
+        }, 1500);
+      }
+    }
+
+    // ===== ENHANCED PARTICLE SYSTEM =====
+    class ParticleSystem {
+      constructor() {
+        this.particles = [];
+        this.init();
+      }
+
+      init() {
+        this.createParticles();
+        setInterval(() => this.addParticle(), window.funModeEnabled ? 2000 : 3000);
+      }
+
+      createParticles() {
+        const count = window.funModeEnabled ? 8 : 5;
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => this.addParticle(), i * 1000);
+        }
+      }
+
+      addParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        if (window.funModeEnabled) {
+          // More colorful particles in fun mode
+          const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+          particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+          particle.style.width = particle.style.height = (2 + Math.random() * 4) + 'px';
+        }
+        
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 2 + 's';
+        particle.style.animationDuration = (window.funModeEnabled ? 10 : 15) + Math.random() * 10 + 's';
+        
+        elements.particles.appendChild(particle);
+        
+        setTimeout(() => {
+          if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+          }
+        }, 25000);
+      }
+    }<!doctype html>
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
@@ -882,6 +1168,344 @@
       animation: shimmer 2s infinite;
     }
 
+    /* ---------- FUN INTERACTIONS ---------- */
+    .rainbow-text {
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: rainbow 3s ease-in-out infinite;
+    }
+    
+    @keyframes rainbow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .wiggle {
+      animation: wiggle 0.5s ease-in-out;
+    }
+    
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-3deg); }
+      75% { transform: rotate(3deg); }
+    }
+    
+    .bounce-in {
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    @keyframes bounceIn {
+      0% { transform: scale(0) rotate(180deg); opacity: 0; }
+      60% { transform: scale(1.1) rotate(-10deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    
+    .pulse-glow {
+      animation: pulseGlow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes pulseGlow {
+      from { box-shadow: var(--shadow), 0 0 5px var(--accent-solid); }
+      to { box-shadow: var(--shadow-lg), 0 0 20px var(--accent-solid), 0 0 30px var(--accent-solid); }
+    }
+
+    /* Magic cursor trail */
+    .cursor-trail {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      background: var(--accent-solid);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.7;
+      transform: translate(-50%, -50%);
+      animation: trailFade 0.8s ease-out forwards;
+    }
+    
+    @keyframes trailFade {
+      to { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+    }
+
+    /* Floating hearts for likes */
+    .floating-heart {
+      position: fixed;
+      font-size: 20px;
+      color: #ff6b6b;
+      pointer-events: none;
+      z-index: 9998;
+      animation: floatHeart 2s ease-out forwards;
+    }
+    
+    @keyframes floatHeart {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-100px) scale(0.5); }
+    }
+
+    /* Sparkle effects */
+    .sparkle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #ffd700;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: sparkleAnim 1s ease-out forwards;
+    }
+    
+    @keyframes sparkleAnim {
+      0% { opacity: 1; transform: scale(0) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1) rotate(180deg); }
+      100% { opacity: 0; transform: scale(0) rotate(360deg); }
+    }
+
+    /* Easter egg typing indicator */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-sm);
+      margin-left: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+    
+    .typing-indicator.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-solid);
+      border-radius: 50%;
+      animation: typingDot 1.4s infinite;
+    }
+    
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes typingDot {
+      0%, 60%, 100% { transform: scale(0.8); opacity: 0.5; }
+      30% { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* Fun loading states */
+    .loading-poem {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .loading-poem::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    /* Confetti burst */
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      pointer-events: none;
+      z-index: 9997;
+    }
+    
+    .confetti::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: var(--accent-solid);
+      border-radius: 50%;
+      animation: confettiFall 3s ease-in forwards;
+    }
+    
+    @keyframes confettiFall {
+      0% { 
+        opacity: 1; 
+        transform: translateY(0) rotate(0deg); 
+      }
+      100% { 
+        opacity: 0; 
+        transform: translateY(100vh) rotate(720deg); 
+      }
+    }
+
+    /* Interactive elements with enhanced hover states */
+    .interactive-hover {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .interactive-hover::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+      pointer-events: none;
+    }
+    
+    .interactive-hover:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    /* Poetry quote generator */
+    .inspirational-quote {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      max-width: 300px;
+      padding: 16px;
+      background: var(--paper);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      font-family: 'Crimson Text', serif;
+      font-style: italic;
+      z-index: 100;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .inspirational-quote.show {
+      transform: translateX(0);
+    }
+    
+    .quote-text {
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    
+    .quote-author {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    /* Sound wave visualization */
+    .sound-wave {
+      display: inline-flex;
+      align-items: end;
+      gap: 2px;
+      height: 20px;
+      margin: 0 8px;
+    }
+    
+    .sound-bar {
+      width: 3px;
+      background: var(--accent-solid);
+      border-radius: 2px;
+      animation: soundWave 1s ease-in-out infinite;
+    }
+    
+    .sound-bar:nth-child(1) { animation-delay: 0.1s; }
+    .sound-bar:nth-child(2) { animation-delay: 0.2s; }
+    .sound-bar:nth-child(3) { animation-delay: 0.3s; }
+    .sound-bar:nth-child(4) { animation-delay: 0.4s; }
+    .sound-bar:nth-child(5) { animation-delay: 0.5s; }
+    
+    @keyframes soundWave {
+      0%, 100% { height: 4px; }
+      50% { height: 16px; }
+    }
+
+    /* Emoji reactions */
+    .emoji-reactions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .emoji-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .emoji-btn:hover {
+      transform: scale(1.1);
+      background: var(--paper-hover);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .emoji-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent-solid);
+      animation: bounce 0.5s ease;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    /* Fun scroll indicators */
+    .scroll-indicator {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      z-index: 100;
+      opacity: 0.7;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+    
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-10px); }
+    }
+    
+    .scroll-arrow {
+      font-size: 18px;
+      animation: arrowBounce 1s ease-in-out infinite;
+    }
+    
+    @keyframes arrowBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
+    }
+
     /* ---------- UTILITY CLASSES ---------- */
     .hidden { display: none !important; }
     .visually-hidden {
@@ -910,6 +1534,18 @@
 
   <!-- Progress Bar -->
   <div class="progress-bar" id="progressBar"></div>
+
+  <!-- Inspirational Quote -->
+  <div class="inspirational-quote" id="inspirationalQuote">
+    <div class="quote-text" id="quoteText"></div>
+    <div class="quote-author" id="quoteAuthor"></div>
+  </div>
+
+  <!-- Scroll Indicator -->
+  <div class="scroll-indicator" id="scrollIndicator">
+    <span>Scroll for more poems</span>
+    <div class="scroll-arrow">↓</div>
+  </div>
 
   <div class="main-content">
     <!-- HERO SECTION -->
@@ -1390,6 +2026,21 @@
               <a href="#" data-quick-read="${index}">Quick read</a>
               <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
             </div>
+
+            <div class="emoji-reactions">
+              <button class="emoji-btn" data-emoji="❤️" data-count="0">
+                <span>❤️</span> <span class="count">0</span>
+              </button>
+              <button class="emoji-btn" data-emoji="✨" data-count="0">
+                <span>✨</span> <span class="count">0</span>
+              </button>
+              <button class="emoji-btn" data-emoji="🥺" data-count="0">
+                <span>🥺</span> <span class="count">0</span>
+              </button>
+              <button class="emoji-btn" data-emoji="🔥" data-count="0">
+                <span>🔥</span> <span class="count">0</span>
+              </button>
+            </div>
           </div>
         `;
 
@@ -1426,6 +2077,75 @@
             e.preventDefault();
             await this.handleShare(post, shareLink);
           });
+        }
+
+        // Emoji reactions
+        const emojiButtons = card.querySelectorAll('.emoji-btn');
+        emojiButtons.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.handleEmojiReaction(btn, card);
+          });
+        });
+      }
+
+      handleEmojiReaction(button, card) {
+        if (!window.funModeEnabled) return;
+
+        const emoji = button.dataset.emoji;
+        const countSpan = button.querySelector('.count');
+        let count = parseInt(button.dataset.count) || 0;
+        
+        count++;
+        button.dataset.count = count;
+        countSpan.textContent = count;
+        
+        // Add active state
+        button.classList.add('active');
+        setTimeout(() => button.classList.remove('active'), 500);
+        
+        // Create floating emoji
+        this.createFloatingEmoji(emoji, button);
+        
+        // Add sparkles
+        this.createSparkles(button);
+      }
+
+      createFloatingEmoji(emoji, element) {
+        const rect = element.getBoundingClientRect();
+        const floatingEmoji = document.createElement('div');
+        floatingEmoji.className = 'floating-heart';
+        floatingEmoji.textContent = emoji;
+        floatingEmoji.style.left = rect.left + rect.width / 2 + 'px';
+        floatingEmoji.style.top = rect.top + 'px';
+        
+        document.body.appendChild(floatingEmoji);
+        
+        setTimeout(() => {
+          if (floatingEmoji.parentNode) {
+            floatingEmoji.parentNode.removeChild(floatingEmoji);
+          }
+        }, 2000);
+      }
+
+      createSparkles(element) {
+        const rect = element.getBoundingClientRect();
+        
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = rect.left + Math.random() * rect.width + 'px';
+            sparkle.style.top = rect.top + Math.random() * rect.height + 'px';
+            
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => {
+              if (sparkle.parentNode) {
+                sparkle.parentNode.removeChild(sparkle);
+              }
+            }, 1000);
+          }, i * 100);
         }
       }
 
@@ -1541,11 +2261,61 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Initialize all systems
       const themeManager = new ThemeManager();
+      const funModeManager = new FunModeManager();
       const particleSystem = new ParticleSystem();
       window.modalManager = new ModalManager(); // Make globally available
       const contentManager = new ContentManager();
 
-      console.log('✨ versesvibez enhanced - ready to inspire');
+      // Add some delightful loading messages
+      const loadingMessages = [
+        "Gathering poems from the digital ether... ✨",
+        "Summoning words from the void... 📝",
+        "Collecting scattered verses... 🌟",
+        "Weaving magic into reality... 🪄",
+        "Awakening sleeping metaphors... 💭"
+      ];
+      
+      const randomMessage = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+      elements.statusMessage.textContent = randomMessage;
+
+      // Easter egg: Konami code for super fun mode
+      let konamiCode = [];
+      const konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // ↑↑↓↓←→←→BA
+      
+      document.addEventListener('keydown', (e) => {
+        konamiCode.push(e.keyCode);
+        if (konamiCode.length > konamiSequence.length) {
+          konamiCode.shift();
+        }
+        
+        if (konamiCode.join(',') === konamiSequence.join(',')) {
+          // Super secret fun mode!
+          document.body.style.animation = 'rainbow 2s ease-in-out infinite';
+          funModeManager.createConfettiBurst();
+          funModeManager.showTypingIndicator("🎊 SUPER FUN MODE ACTIVATED! 🎊");
+          
+          // Make everything more fun
+          document.querySelectorAll('.card').forEach(card => {
+            card.style.animation = 'bounce 2s ease-in-out infinite';
+            setTimeout(() => {
+              card.style.animation = '';
+            }, 4000);
+          });
+          
+          konamiCode = []; // Reset
+        }
+      });
+
+      // Welcome message after everything loads
+      setTimeout(() => {
+        if (window.funModeEnabled) {
+          funModeManager.showTypingIndicator("Welcome to the magical world of words! ✨");
+        }
+      }, 2000);
+
+      console.log('✨ versesvibez enhanced with fun mode - ready to sparkle and inspire! 🌟');
+      console.log('💡 Tip: Try the Fun Mode button for extra magic!');
+      console.log('🎮 Secret: Try the Konami code for a surprise... ↑↑↓↓←→←→BA');
     });
   </script>
 </body>
