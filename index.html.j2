@@ -52,44 +52,89 @@
   </div>
 
   <script>
-    // Backend-configured values:
-    const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
-    const PROXY_BASE = {{ (rss_proxy_url or "https://api.rss2json.com/v1/api.json?rss_url=") | tojson }};
-    const PROXY = PROXY_BASE + encodeURIComponent(RSS_URL);
+  const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
+  let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }};          // e.g. https://substack-proxy.robinvp3.workers.dev/?rss_url=
+  const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
-    const statusEl = document.getElementById('status');
-    const postsEl = document.getElementById('posts');
+  // Ensure the base has ?rss_url= param
+  function normalizeBase(b){
+    if(!b) return "";
+    const hasQuery = b.includes("?");
+    const hasParam = /[\?&]rss_url=/.test(b);
+    if (!hasParam) {
+      if (!hasQuery) return b + "?rss_url=";
+      if (!/[&?]$/.test(b)) b += "&";
+      return b + "rss_url=";
+    }
+    return b;
+  }
+  WORKER_BASE = normalizeBase(WORKER_BASE);
 
-    function card(item){
-      const pubDate = item.pubDate ? new Date(item.pubDate).toISOString().slice(0,10) : '';
-      const el = document.createElement('article');
-      el.innerHTML = `
-        <h2><a href="${item.link}" target="_blank" rel="noopener">${item.title || 'Untitled'}</a></h2>
-        <div class="meta">${pubDate ? ('Published: ' + pubDate) : ''}</div>
-        <div class="summary">${item.content || item.description || ''}</div>
-      `;
-      return el;
+  const statusEl = document.getElementById('status');
+  const postsEl = document.getElementById('posts');
+
+  function card(item){
+    const pubDate = item.pubDate ? new Date(item.pubDate).toISOString().slice(0,10) : '';
+    const el = document.createElement('article');
+    el.innerHTML = `
+      <h2><a href="${item.link}" target="_blank" rel="noopener">${item.title || 'Untitled'}</a></h2>
+      <div class="meta">${pubDate ? ('Published: ' + pubDate) : ''}</div>
+      <div class="summary">${item.content || item.description || ''}</div>
+    `;
+    return el;
+  }
+
+  async function fetchJSON(url){
+    const r = await fetch(url, { credentials: "omit", cache: "no-store" });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+
+  async function load(){
+    const workerURL = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
+    const publicURL = PUBLIC_BASE + encodeURIComponent(RSS_URL);
+
+    // Try Worker first (if configured), then fall back to public proxy
+    const attempts = [];
+    if (workerURL) attempts.push(["Worker", workerURL]);
+    attempts.push(["Public", publicURL]);
+
+    let lastErr = null, used = null, data = null;
+
+    for (const [label, url] of attempts){
+      try{
+        used = {label, url};
+        data = await fetchJSON(url);
+        const items = (data && Array.isArray(data.items)) ? data.items : [];
+        if (items.length > 0){
+          statusEl.hidden = true;
+          postsEl.hidden = false;
+          items.forEach(it => postsEl.appendChild(card(it)));
+          return;
+        } else {
+          // no items; try next attempt if any
+          lastErr = new Error(label + ' returned 0 items');
+        }
+      }catch(e){
+        lastErr = e;
+      }
     }
 
-    fetch(PROXY, { credentials: "omit", cache: "no-store" })
-      .then(r => {
-        if(!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(data => {
-        const items = (data && Array.isArray(data.items)) ? data.items : [];
-        if(items.length === 0){
-          statusEl.textContent = 'No public posts found.';
-          return;
-        }
-        statusEl.hidden = true;
-        postsEl.hidden = false;
-        items.forEach(it => postsEl.appendChild(card(it)));
-      })
-      .catch(err => {
-        statusEl.className = 'error';
-        statusEl.textContent = 'Failed to load feed: ' + err.message;
-      });
-  </script>
+    // If we got here, both attempts failed or returned 0 items
+    statusEl.className = 'error';
+    const debugLinks = attempts.map(([label, url]) =>
+      `<div><a href="${url}" target="_blank" rel="noopener">${label} proxy debug link</a></div>`
+    ).join("");
+    statusEl.innerHTML = 'No public posts found or proxies failed.' +
+      (lastErr ? `<br><small>${used ? used.label + ' error: ' : ''}${lastErr.message}</small>` : '') +
+      `<div style="margin-top:6px">${debugLinks}</div>`;
+  }
+
+  load().catch(err => {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Failed to load feed: ' + err.message;
+    console.error(err);
+  });
+</script>
 </body>
 </html>
