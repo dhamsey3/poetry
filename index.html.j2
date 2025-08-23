@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="zine">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <title>{{ site_title or "versesvibez" }}</title>
@@ -7,29 +7,29 @@
   <meta name="robots" content="index,follow" />
   <meta name="description" content="Poetry & musings by Dami." />
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
-
-  <!-- Fonts: elegant serif for titles, humanist sans for body -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
-  <!-- Optional favicon -->
-  <link rel="icon" href="static/logo.png" />
+  <link rel="icon" href="static/logo-light.png" />
 
   <style>
+    /* ---------- THEME TOKENS ---------- */
     :root{
-      /* Pastel zine palette */
-      --bg:#faf7f3;
-      --paper:#fffdfa;           /* card */
-      --ink:#1f2937;             /* text */
-      --muted:#6b7280;           /* meta */
-      --accent:#e56aa6;          /* pink */
-      --accent-2:#6aa6e5;        /* blue */
-      --accent-3:#98d6a6;        /* green */
+      --bg:#faf7f3; --paper:#fffdfa; --ink:#1f2937; --muted:#6b7280;
+      --accent:#e56aa6; --accent-2:#6aa6e5; --accent-3:#98d6a6;
       --border:rgba(15,23,42,.12);
       --shadow:0 10px 30px rgba(30,30,30,.06), 0 2px 10px rgba(30,30,30,.04);
       --grain: radial-gradient(1200px 600px at 10% -10%, rgba(229,106,166,.12), transparent 60%),
                radial-gradient(1200px 600px at 90% 0%, rgba(106,166,229,.12), transparent 60%);
     }
+    [data-theme="dark"]{
+      --bg:#0b0c10; --paper:#0f1117; --ink:#e6edf3; --muted:#93a0b3;
+      --accent:#ff9bd2; --accent-2:#8ab4ff; --accent-3:#7ee787;
+      --border:rgba(255,255,255,.10);
+      --shadow:0 10px 30px rgba(0,0,0,.28), 0 2px 10px rgba(0,0,0,.18);
+      --grain: radial-gradient(1200px 600px at 10% -10%, rgba(138,180,255,.12), transparent 60%),
+               radial-gradient(1200px 600px at 90% 0%, rgba(255,155,210,.12), transparent 60%);
+    }
 
-    /* Soft paper texture using CSS noise overlay */
+    /* ---------- BASE ---------- */
     html,body{height:100%}
     body{
       margin:0; color:var(--ink); background:var(--bg);
@@ -38,55 +38,48 @@
       -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
     }
     *{box-sizing:border-box}
-
     a{color:inherit; text-decoration-color: rgba(229,106,166,.5); text-underline-offset:2px}
+    [data-theme="dark"] a{ text-decoration-color: rgba(255,155,210,.5) }
     a:hover{ text-decoration-color: var(--accent) }
-
     .wrap{max-width:1080px; margin:0 auto; padding:28px 18px 42px}
 
-    /* Header / Hero */
-    .hero{
-      position:relative; border-bottom:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.2));
-      backdrop-filter: blur(2px);
+    /* ---------- HEADER / HERO ---------- */
+    .hero{ position:relative; border-bottom:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.2)); }
+    [data-theme="dark"] .hero{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
     }
     .header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
 
     /* Brand (logo + name) */
     .brand { display:flex; flex-direction:column; gap:6px }
     .brand-link { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit }
-    .logo {
-      height: 42px;        /* adjust as needed */
-      width: auto;
-      border-radius: 8px;  /* remove if you want square */
-      object-fit: contain;
-    }
+    .logo-img{ height:44px; width:auto; object-fit:contain; border-radius:10px;
+      transition: transform .18s ease, filter .2s ease; }
+    .brand-link:hover .logo-img{ transform: rotate(-2deg) scale(1.05); filter: drop-shadow(0 2px 6px rgba(0,0,0,.15)) }
+    /* Swap logos by theme */
+    .logo-dark{ display:none }
+    [data-theme="dark"] .logo-light{ display:none }
+    [data-theme="dark"] .logo-dark{ display:inline }
 
-    .brand-name { font-family:"Fraunces", serif; font-weight:800; font-size:clamp(22px, 2.6vw, 32px); letter-spacing:.2px }
+    .brand-name{ font-family:"Fraunces", serif; font-weight:800; font-size:clamp(22px, 2.6vw, 32px); letter-spacing:.2px }
+    .tagline{ margin-top:6px; color:var(--muted); font-size:15px; font-style:italic; letter-spacing:.2px }
 
-    .tagline{
-      margin-top:6px; color:var(--muted); font-size:15px;
-      font-style:italic; letter-spacing:.2px
-    }
     .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .btn{
+    .btn, .chip{
       display:inline-flex;align-items:center;gap:8px;
       padding:10px 14px;border:1px solid var(--border);border-radius:999px;
-      background:var(--paper); box-shadow:var(--shadow); color:var(--ink); font-weight:600
+      background:var(--paper); box-shadow:var(--shadow); color:var(--ink); font-weight:600;
+      cursor:pointer;
     }
-    .btn:hover{ transform: translateY(-1px); }
+    .btn:hover, .chip:hover{ transform: translateY(-1px) }
 
     /* Search chip */
     .search{margin-top:18px}
-    .search .chip{
-      width:100%; max-width:520px; display:flex; align-items:center; gap:10px;
-      padding:10px 14px; border:1px solid var(--border); border-radius:999px; background:var(--paper); box-shadow:var(--shadow)
-    }
-    .chip input{
-      border:0; outline:0; flex:1; background:transparent; color:var(--ink); font-size:15px
-    }
+    .search .chip{ width:100%; max-width:520px; display:flex; align-items:center; gap:10px }
+    .search .chip input{ border:0; outline:0; flex:1; background:transparent; color:var(--ink); font-size:15px }
 
-    /* Grid / Cards */
+    /* ---------- GRID / CARDS ---------- */
     .content{padding:24px 18px 50px}
     .grid{display:grid; gap:18px; grid-template-columns:1fr}
     @media (min-width:720px){ .grid{grid-template-columns:1fr 1fr} }
@@ -100,38 +93,48 @@
     }
     article.card.show{ transform: none; opacity:1 }
     article.card:hover{ box-shadow: 0 14px 40px rgba(30,30,30,.12), 0 3px 14px rgba(30,30,30,.06) }
+    [data-theme="dark"] article.card:hover{ box-shadow: 0 14px 40px rgba(0,0,0,.35), 0 3px 14px rgba(0,0,0,.25) }
 
     .thumb{ aspect-ratio: 4/3; width:100%; background:linear-gradient(135deg, rgba(229,106,166,.18), rgba(106,166,229,.18)) }
+    [data-theme="dark"] .thumb{ background:linear-gradient(135deg, rgba(255,155,210,.18), rgba(138,180,255,.18)) }
     .thumb img{ width:100%; height:100%; object-fit:cover; display:block }
 
     .pad{ padding:18px 16px 16px }
     h2{
       font-family:"Fraunces", serif; font-weight:800; margin:0 0 8px;
-      font-size: clamp(20px, 2.2vw, 24px); line-height:1.25;
-      letter-spacing:.2px;
+      font-size: clamp(20px, 2.2vw, 24px); line-height:1.25; letter-spacing:.2px;
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     }
     .meta{ color:var(--muted); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px }
     .summary{
-      color:#374151; /* slightly softer than ink */
-      font-size:15px;
+      color:#374151; font-size:15px;
       display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden
     }
+    [data-theme="dark"] .summary{ color: #cbd5e1 }
+
     .more{ margin-top:10px; font-weight:700; color:var(--accent) }
 
     .empty,.error{
       margin:24px 0; border:1px dashed var(--border); border-radius:14px; padding:16px;
       background:rgba(255,255,255,.6); color:#6b7280
     }
+    [data-theme="dark"] .empty,[data-theme="dark"] .error{
+      background:rgba(255,255,255,.05); color:#93a0b3
+    }
 
+    /* ---------- FOOTER ---------- */
     footer{
       border-top:1px dashed var(--border);
       background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.0));
       padding:18px; color:#6b7280; font-size:13px;
       display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap
     }
+    [data-theme="dark"] footer{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+      color:#93a0b3;
+    }
 
-    /* Modal (reading mode) */
+    /* ---------- MODAL ---------- */
     .modal{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding:20px }
     .modal.open{ display:flex }
     .modal-card{
@@ -145,26 +148,7 @@
     .modal .close{ position:sticky; top:0; float:right; margin:-6px -6px 6px 6px;
       border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:transparent; color:var(--ink); cursor:pointer }
 
-    /* Small helpers */
     .hidden{display:none!important}
-    /* Logo sizing */
-    .logo-wrap { display:inline-block; line-height:0 }
-    .logo-img {
-      height: 44px; width: auto; object-fit: contain;
-      border-radius: 10px; /* remove if you prefer square */
-      transition: transform .18s ease, filter .2s ease, opacity .2s ease;
-    }
-
-    /* cute tilt on hover */
-    .brand-link:hover .logo-img {
-      transform: rotate(-2deg) scale(1.03);
-    }
-
-    /* Optional: subtle shadow on hover */
-    .brand-link:hover .logo-img {
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,.12));
-    }
-
   </style>
 </head>
 <body>
@@ -174,19 +158,14 @@
       <div class="header">
         <div class="brand">
           <a href="./" class="brand-link">
-            <img src="static/logo.png" alt="Site logo" class="logo" />
-            <picture class="logo-wrap">
-              <!-- Shown when user prefers dark mode -->
-              <source srcset="static/logo-dark.png" media="(prefers-color-scheme: dark)">
-              <!-- Fallback + light mode -->
-              <img src="static/logo-light.png" alt="Versesvibez logo" class="logo-img" decoding="async" fetchpriority="high">
-            </picture>
-
+            <img src="static/logo-light.png" alt="Versesvibez logo" class="logo-img logo-light" />
+            <img src="static/logo-dark.png"  alt="Versesvibez logo" class="logo-img logo-dark" />
             <span class="brand-name">{{ site_title or "versesvibez" }}</span>
           </a>
           <div class="tagline">poems • thoughts • little sparks ✨</div>
         </div>
         <div class="actions">
+          <button id="themeToggle" class="chip" title="Toggle theme">🌓 Theme</button>
           <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe</a>
         </div>
       </div>
@@ -222,11 +201,23 @@
   </div>
 
   <script>
+    // ----- Theme toggle (persist) -----
+    (function(){
+      const attr='data-theme', key='vv-theme';
+      const saved = localStorage.getItem(key);
+      if(saved) document.documentElement.setAttribute(attr, saved);
+      document.getElementById('themeToggle').addEventListener('click', ()=>{
+        const cur = document.documentElement.getAttribute(attr) || 'light';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute(attr, next);
+        localStorage.setItem(key, next);
+      });
+    })();
+
     // ----- Config from backend -----
     const RSS_URL   = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
     let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }}; // e.g. https://substack-proxy.X.workers.dev/?rss_url=
     const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
-
     function normalizeBase(b){
       if(!b) return "";
       const hasParam = /[\?&]rss_url=/.test(b);
@@ -285,7 +276,6 @@
             <a href="#" data-read="1">Quick read</a>
           </div>
         </div>`;
-      // Quick read (modal)
       card.querySelector('[data-read]')?.addEventListener('click', (e)=>{
         e.preventDefault(); openModal(item.title, dateStr, html);
       });
@@ -332,12 +322,12 @@
           const data = await fetchJSON(url);
           const raw  = (data && Array.isArray(data.items)) ? data.items : [];
 
-          // --- Filter out placeholders / deleted posts ---
+          // filter out placeholders / deleted posts
           const items = raw.filter(it => {
             const title = (it.title || '').toLowerCase();
             const text  = (strip(it.content || it.description || '') || '').trim();
-            if (/coming\s+soon/i.test(title)) return false; // drop “Coming soon”
-            if (text.length < 40) return false;            // too-short announcement
+            if (/coming\s+soon/i.test(title)) return false;
+            if (text.length < 40) return false;
             return true;
           });
 
