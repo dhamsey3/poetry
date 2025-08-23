@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="zine">
 <head>
   <meta charset="utf-8" />
   <title>{{ site_title or "versesvibez" }}</title>
@@ -8,88 +8,135 @@
   <meta name="description" content="Poetry & musings by Dami." />
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
 
-  <!-- Friendly, legible fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <!-- Fonts: elegant serif for titles, humanist sans for body -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family:Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#0b0c10; --card:#0f1117; --muted:#93a0b3; --text:#e6edf3;
-      --brand:#8ab4ff; --accent:#ff9bd2; --accent2:#7ee787; --border:rgba(255,255,255,.08);
-      --shadow:0 8px 28px rgba(0,0,0,.28),0 2px 10px rgba(0,0,0,.18);
-    }
-    [data-theme="light"]{
-      --bg:#f7f8fb; --card:#ffffff; --muted:#6b7280; --text:#0f172a;
-      --brand:#3b82f6; --accent:#f97316; --accent2:#10b981; --border:rgba(0,0,0,.08);
-      --shadow:0 8px 28px rgba(0,0,0,.08),0 2px 10px rgba(0,0,0,.06);
+      /* Pastel zine palette */
+      --bg:#faf7f3;
+      --paper:#fffdfa;           /* card */
+      --ink:#1f2937;             /* text */
+      --muted:#6b7280;           /* meta */
+      --accent:#e56aa6;          /* pink */
+      --accent-2:#6aa6e5;        /* blue */
+      --accent-3:#98d6a6;        /* green */
+      --border:rgba(15,23,42,.12);
+      --shadow:0 10px 30px rgba(30,30,30,.06), 0 2px 10px rgba(30,30,30,.04);
+      --grain: radial-gradient(1200px 600px at 10% -10%, rgba(229,106,166,.12), transparent 60%),
+               radial-gradient(1200px 600px at 90% 0%, rgba(106,166,229,.12), transparent 60%);
     }
 
+    /* Soft paper texture using CSS noise overlay */
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--ink); background:var(--bg);
+      background-image: var(--grain);
+      font:17px/1.75 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
     *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--text);
-      font:16px/1.65 Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;}
-    h1,h2{font-family:"Playfair Display", serif}
-    a{color:var(--brand);text-decoration:none} a:hover{text-decoration:underline}
 
-    /* HERO */
+    a{color:inherit; text-decoration-color: rgba(229,106,166,.5); text-underline-offset:2px}
+    a:hover{ text-decoration-color: var(--accent) }
+
+    .wrap{max-width:1080px; margin:0 auto; padding:28px 18px 42px}
+
+    /* Header / Hero */
     .hero{
-      position:relative; overflow:hidden; border-bottom:1px solid var(--border);
-      background:
-        radial-gradient(1200px 500px at 20% -10%, rgba(138,180,255,.22), transparent 60%),
-        radial-gradient(1200px 500px at 80% 0%, rgba(255,155,210,.18), transparent 60%);
+      position:relative; border-bottom:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.2));
+      backdrop-filter: blur(2px);
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 28px}
-    .header{display:flex;align-items:center;justify-content:space-between;gap:14px}
-    .site-title a{color:var(--text);text-decoration:none;font-weight:800;font-size:22px}
-    .tagline{color:var(--muted);font-size:13px;margin-top:4px}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);
-      border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
-      color:var(--text);font-weight:600}
-    .btn:hover{border-color:rgba(138,180,255,.5)}
-    .search{flex:1;min-width:220px;display:flex;gap:8px;margin-top:14px}
-    .search input{
-      width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);
-      outline:none
+    .header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+    .site-title a{
+      text-decoration:none; color:var(--ink);
+      font-family:"Fraunces", serif; font-weight:800; font-size:clamp(28px, 6vw, 48px);
+      letter-spacing:.2px;
+    }
+    .tagline{
+      margin-top:6px; color:var(--muted); font-size:15px;
+      font-style:italic; letter-spacing:.2px
+    }
+    .actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:10px 14px;border:1px solid var(--border);border-radius:999px;
+      background:var(--paper); box-shadow:var(--shadow); color:var(--ink); font-weight:600
+    }
+    .btn:hover{ transform: translateY(-1px); }
+
+    /* Search chip */
+    .search{margin-top:18px}
+    .search .chip{
+      width:100%; max-width:520px; display:flex; align-items:center; gap:10px;
+      padding:10px 14px; border:1px solid var(--border); border-radius:999px; background:var(--paper); box-shadow:var(--shadow)
+    }
+    .chip input{
+      border:0; outline:0; flex:1; background:transparent; color:var(--ink); font-size:15px
     }
 
-    /* GRID */
-    .content{padding:22px 18px 44px;max-width:1100px;margin:0 auto}
-    .grid{display:grid;gap:18px;grid-template-columns:1fr}
-    @media (min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    @media (min-width:1100px){.grid{grid-template-columns:1fr 1fr 1fr}}
+    /* Grid / Cards */
+    .content{padding:24px 18px 50px}
+    .grid{display:grid; gap:18px; grid-template-columns:1fr}
+    @media (min-width:720px){ .grid{grid-template-columns:1fr 1fr} }
+    @media (min-width:1100px){ .grid{grid-template-columns:1fr 1fr 1fr} }
 
     article.card{
-      border:1px solid var(--border); border-radius:18px; background:var(--card); overflow:hidden;
-      display:flex;flex-direction:column; box-shadow:var(--shadow);
-      transform:translateY(8px) scale(.98); opacity:0; will-change:transform,opacity;
-      transition:transform .35s cubic-bezier(.2,.75,.2,1), opacity .35s;
+      border:1px solid var(--border); border-radius:18px; background:var(--paper);
+      overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--shadow);
+      transform: translateY(10px) rotate(.2deg); opacity:0;
+      transition: transform .5s cubic-bezier(.2,.75,.2,1), opacity .5s, box-shadow .25s;
     }
-    article.card.show{transform:none; opacity:1}
-    article.card:hover{transform:translateY(-4px) scale(1.005)}
-    .thumb{aspect-ratio: 16/9; width:100%; background:linear-gradient(135deg, rgba(255,155,210,.25), rgba(138,180,255,.22))}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    article.card.show{ transform: none; opacity:1 }
+    article.card:hover{ box-shadow: 0 14px 40px rgba(30,30,30,.12), 0 3px 14px rgba(30,30,30,.06) }
 
-    .pad{padding:16px 14px 14px}
-    h2{font-size:19px;margin:0 0 8px;line-height:1.3;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .meta{color:var(--muted);font-size:12px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
-    .summary{color:color-mix(in oklab, var(--text) 80%, transparent);
-      font-size:14px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-    .more{margin-top:8px;font-size:13px;font-weight:700}
-    .empty,.error{margin:24px 0;border:1px dashed var(--border);border-radius:14px;padding:16px;background:rgba(255,255,255,.03);color:var(--muted)}
+    .thumb{ aspect-ratio: 4/3; width:100%; background:linear-gradient(135deg, rgba(229,106,166,.18), rgba(106,166,229,.18)) }
+    .thumb img{ width:100%; height:100%; object-fit:cover; display:block }
 
-    footer{border-top:1px solid var(--border);padding:18px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .pad{ padding:18px 16px 16px }
+    h2{
+      font-family:"Fraunces", serif; font-weight:800; margin:0 0 8px;
+      font-size: clamp(20px, 2.2vw, 24px); line-height:1.25;
+      letter-spacing:.2px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .meta{ color:var(--muted); font-size:13px; display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px }
+    .summary{
+      color:#374151; /* slightly softer than ink */
+      font-size:15px;
+      display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden
+    }
+    .more{ margin-top:10px; font-weight:700; color:var(--accent) }
 
-    /* MODAL (reading mode) */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px}
-    .modal.open{display:flex}
-    .modal-card{max-width:800px;max-height:80vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:22px}
-    .modal h2{margin:0 0 12px}
-    .modal .meta{margin-bottom:14px}
-    .modal .body{font-size:18px;line-height:1.75}
-    .modal .close{position:sticky;top:0;float:right;margin:-6px -6px 6px 6px;border:1px solid var(--border);border-radius:10px;padding:6px 10px;background:transparent;color:var(--text);cursor:pointer}
+    .empty,.error{
+      margin:24px 0; border:1px dashed var(--border); border-radius:14px; padding:16px;
+      background:rgba(255,255,255,.6); color:#6b7280
+    }
 
-    /* Light/dark toggle chip */
-    .chip{border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--card);cursor:pointer}
+    footer{
+      border-top:1px dashed var(--border);
+      background:linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.0));
+      padding:18px; color:#6b7280; font-size:13px;
+      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap
+    }
+
+    /* Modal (reading mode) */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; padding:20px }
+    .modal.open{ display:flex }
+    .modal-card{
+      max-width:820px; max-height:80vh; overflow:auto; background:var(--paper);
+      border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow);
+      padding:22px 22px 26px
+    }
+    .modal h2{ margin:0 0 10px; font-family:"Fraunces", serif; font-weight:800 }
+    .modal .meta{ margin-bottom:14px }
+    .modal .body{ font-size:18px; line-height:1.85 }
+    .modal .close{ position:sticky; top:0; float:right; margin:-6px -6px 6px 6px;
+      border:1px solid var(--border); border-radius:999px; padding:6px 10px; background:transparent; color:var(--ink); cursor:pointer }
+
+    /* Small helpers */
+    .hidden{display:none!important}
   </style>
 </head>
 <body>
@@ -101,24 +148,24 @@
           <div class="site-title"><a href="./">{{ site_title or "versesvibez" }}</a></div>
           <div class="tagline">poems • thoughts • little sparks ✨</div>
         </div>
-        <div class="controls">
-          <button id="themeToggle" class="chip" title="Toggle theme">🌓</button>
+        <div class="actions">
           <a class="btn" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">Subscribe</a>
         </div>
       </div>
 
       <div class="search">
-        <input id="q" type="search" placeholder="Search poems (title or text)…" aria-label="Search poems" />
+        <div class="chip">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18A7.5 7.5 0 1010.5 3a7.5 7.5 0 000 15z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input id="q" type="search" placeholder="Search poems (title or text)..." aria-label="Search poems" />
+        </div>
       </div>
     </div>
   </section>
 
   <!-- CONTENT -->
   <main class="content">
-    <div id="status" class="empty">Loading poems…</div>
-    <section id="posts" class="grid" hidden>
-      <!-- cards injected -->
-    </section>
+    <div id="status" class="empty">Gathering poems from the ether…</div>
+    <section id="posts" class="grid" hidden></section>
   </main>
 
   <footer>
@@ -137,21 +184,8 @@
   </div>
 
   <script>
-    // ======== Theme toggle (persist) ========
-    (function(){
-      const key = 'vv-theme';
-      const saved = localStorage.getItem(key);
-      if(saved) document.documentElement.setAttribute('data-theme', saved);
-      document.getElementById('themeToggle').addEventListener('click', () => {
-        const cur = document.documentElement.getAttribute('data-theme') || 'dark';
-        const next = cur === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem(key, next);
-      });
-    })();
-
-    // ======== Config from backend ========
-    const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
+    // ----- Config from backend -----
+    const RSS_URL   = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
     let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }}; // e.g. https://substack-proxy.X.workers.dev/?rss_url=
     const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
 
@@ -170,7 +204,7 @@
     const postsEl  = document.getElementById('posts');
     const qEl      = document.getElementById('q');
 
-    // ======== Helpers ========
+    // ----- Helpers -----
     function strip(html){
       const d=document.createElement('div'); d.innerHTML=html||'';
       d.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(n=>n.remove());
@@ -180,7 +214,10 @@
       const d=document.createElement('div'); d.innerHTML=html||'';
       const img=d.querySelector('img'); if(img&&img.src) return img.src;
       const source=d.querySelector('source[srcset]');
-      if(source){ const pick=(source.getAttribute('srcset')||'').split(',').map(s=>s.trim().split(' ')[0]).filter(Boolean)[0]; if(pick) return pick; }
+      if(source){
+        const pick=(source.getAttribute('srcset')||'').split(',').map(s=>s.trim().split(' ')[0]).filter(Boolean)[0];
+        if(pick) return pick;
+      }
       return '';
     }
     function readingTime(text){
@@ -194,12 +231,12 @@
       const html = item.content || item.description || '';
       const plain = strip(html);
       const img = firstImage(html);
-      const snippet = plain.length>240 ? plain.slice(0,240)+'…' : plain;
+      const snippet = plain.length>260 ? plain.slice(0,260)+'…' : plain;
       const rtime = plain ? readingTime(plain) : '';
 
       const card=document.createElement('article');
       card.className='card';
-      card.style.transitionDelay = `${Math.min(idx, 12) * 35}ms`;
+      card.style.transitionDelay = `${Math.min(idx, 12) * 45}ms`;
       card.innerHTML = `
         ${img ? `<a class="thumb" href="${item.link}" target="_blank" rel="noopener"><img loading="lazy" src="${img}" alt=""></a>` : `<div class="thumb"></div>`}
         <div class="pad">
@@ -212,13 +249,12 @@
         </div>`;
       // Quick read (modal)
       card.querySelector('[data-read]')?.addEventListener('click', (e)=>{
-        e.preventDefault();
-        openModal(item.title, dateStr, html);
+        e.preventDefault(); openModal(item.title, dateStr, html);
       });
       return card;
     }
 
-    // ======== Modal (reading mode) ========
+    // ----- Modal -----
     const m = {
       el: document.getElementById('modal'),
       title: document.getElementById('mTitle'),
@@ -229,21 +265,17 @@
     function openModal(title, dateStr, html){
       m.title.textContent = title || 'Untitled';
       m.meta.textContent  = dateStr || '';
-      // Keep basic formatting (paragraphs, br, strong, em, images)
-      m.body.innerHTML = html || '';
-      m.el.classList.add('open');
-      m.el.setAttribute('aria-hidden','false');
+      m.body.innerHTML    = html || '';
+      m.el.classList.add('open'); m.el.setAttribute('aria-hidden','false');
     }
     function closeModal(){
-      m.el.classList.remove('open');
-      m.el.setAttribute('aria-hidden','true');
-      m.body.innerHTML='';
+      m.el.classList.remove('open'); m.el.setAttribute('aria-hidden','true'); m.body.innerHTML='';
     }
     m.close.addEventListener('click', closeModal);
     m.el.addEventListener('click', e=>{ if(e.target===m.el) closeModal(); });
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
 
-    // ======== Fetch + render (Worker → Public fallback) ========
+    // ----- Fetch + render (Worker → Public fallback) -----
     async function fetchJSON(url){
       const r=await fetch(url,{credentials:"omit",cache:"no-store"});
       if(!r.ok) throw new Error('HTTP '+r.status);
@@ -279,7 +311,7 @@
       statusEl.textContent='Could not load poems right now. Please try again later.';
     }
 
-    // ======== Search (client-only) ========
+    // ----- Search (client-only) -----
     qEl.addEventListener('input', ()=>{
       const q = qEl.value.trim().toLowerCase();
       const cards = postsEl.querySelectorAll('article.card');
