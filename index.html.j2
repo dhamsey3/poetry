@@ -11,7 +11,7 @@
   <!-- Fonts: elegant serif for titles, humanist sans for body -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
   <!-- Optional favicon -->
-  <link rel="icon" href="/assets/favicon.ico" />
+  <link rel="icon" href="assets/logo.png" />
 
   <style>
     :root{
@@ -55,7 +55,13 @@
     /* Brand (logo + name) */
     .brand { display:flex; flex-direction:column; gap:6px }
     .brand-link { display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit }
-    .logo { width:36px; height:36px; object-fit:contain; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.08) }
+    .logo {
+      height: 42px;        /* adjust as needed */
+      width: auto;
+      border-radius: 8px;  /* remove if you want square */
+      object-fit: contain;
+    }
+
     .brand-name { font-family:"Fraunces", serif; font-weight:800; font-size:clamp(22px, 2.6vw, 32px); letter-spacing:.2px }
 
     .tagline{
@@ -150,7 +156,7 @@
       <div class="header">
         <div class="brand">
           <a href="./" class="brand-link">
-            <img src="/assets/logo.svg" alt="" class="logo" />
+            <img src="assets/logo.png" alt="Site logo" class="logo" />
             <span class="brand-name">{{ site_title or "versesvibez" }}</span>
           </a>
           <div class="tagline">poems • thoughts • little sparks ✨</div>
