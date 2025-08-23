@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *"  # once per day (kinder to Substack)
+    - cron: "0 6 * * *"  # once per day
 
 permissions:
   contents: read
@@ -33,15 +33,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Install Playwright Chromium
-        run: python -m playwright install --with-deps chromium
-
       - name: Set env defaults
         shell: bash
         run: |
+          # Your publication + feed
           FEED="${SUBSTACK_FEED:-${{ secrets.SUBSTACK_FEED }}}"
           if [ -z "$FEED" ]; then FEED="${{ vars.SUBSTACK_FEED }}"; fi
-          if [ -z "$FEED" ]; then FEED="https://versesvibez.substack.com/feed."; fi
+          if [ -z "$FEED" ]; then FEED="https://versesvibez.substack.com/feed"; fi
           echo "SUBSTACK_FEED=$FEED" >> "$GITHUB_ENV"
 
           PUB="${PUBLIC_SUBSTACK_URL:-${{ secrets.PUBLIC_SUBSTACK_URL }}}"
@@ -49,32 +47,13 @@ jobs:
           if [ -z "$PUB" ]; then PUB="https://versesvibez.substack.com/"; fi
           echo "PUBLIC_SUBSTACK_URL=$PUB" >> "$GITHUB_ENV"
 
-          UA="${FETCH_UA:-${{ secrets.FETCH_UA }}}"
-          if [ -z "$UA" ]; then UA="${{ vars.FETCH_UA }}"; fi
-          if [ -z "$UA" ]; then UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"; fi
-          echo "FETCH_UA=$UA" >> "$GITHUB_ENV"
+          # Proxy (BEST: your Cloudflare Worker). TEMP fallback: rss2json public API.
+          PROXY="${RSS_PROXY_URL:-${{ secrets.RSS_PROXY_URL }}}"
+          if [ -z "$PROXY" ]; then PROXY="${{ vars.RSS_PROXY_URL }}"; fi
+          if [ -z "$PROXY" ]; then PROXY="https://api.rss2json.com/v1/api.json?rss_url="; fi
+          echo "RSS_PROXY_URL=$PROXY" >> "$GITHUB_ENV"
 
-          # Enable robust fallbacks + green builds when blocked
-          echo "USE_PLAYWRIGHT=1" >> "$GITHUB_ENV"
-          echo "SOFT_FAIL=1" >> "$GITHUB_ENV"
-          echo "ALLOW_EMPTY=1" >> "$GITHUB_ENV"
-
-      # Pull last deployed page to reuse if fetch fails
-      - name: Try to fetch last deployed HTML (gh-pages)
-        shell: bash
-        run: |
-          set -e
-          git config --global init.defaultBranch gh-pages
-          git clone --depth=1 --branch gh-pages "https://github.com/${{ github.repository }}.git" _prev || true
-          if [ -f _prev/index.html ]; then
-            mkdir -p dist
-            cp _prev/index.html dist/index.previous.html
-            echo "Found previous deployment; will use as fallback if fetch fails."
-          else
-            echo "No previous deployment found."
-          fi
-
-      - name: Build site
+      - name: Build site (templating only)
         run: python fetch.py
 
       - name: Verify dist exists
