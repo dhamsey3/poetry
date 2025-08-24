@@ -211,7 +211,7 @@
     .modal-body::-webkit-scrollbar { width: 6px; }
     .modal-body::-webkit-scrollbar-track { background: var(--border-soft); border-radius: 3px; }
     .modal-body::-webkit-scrollbar-thumb { background: var(--accent-solid); border-radius: 3px; }
-    /* Keep poem formatting when using <pre> */
+    /* Preserve poem spacing for Substack “Poetry” posts */
     .modal-body pre { white-space: pre-wrap; }
 
     /* ---------- ABOUT MODAL ---------- */
@@ -580,7 +580,7 @@
       }
     };
 
-    // --- Remove Substack's editor helper blurb from RSS HTML ---
+    // --- Remove Substack's poetry boilerplate line from RSS HTML ---
     function stripSubstackBoilerplate(html){
       const d = document.createElement('div');
       d.innerHTML = html || '';
@@ -595,7 +595,7 @@
     // Sanitizer
     function sanitize(html){
       const div = document.createElement('div');
-      // first, remove the Substack helper text line if present
+      // strip Substack helper line first (common in Poetry posts)
       div.innerHTML = stripSubstackBoilerplate(html || '');
       div.querySelectorAll('script, iframe, object, embed, link, style').forEach(el => el.remove());
       div.querySelectorAll('*').forEach(el => {
@@ -719,7 +719,15 @@
         els.loadMore?.addEventListener('click', () => this.renderNextChunk(false));
         this.load();
       }
-      textOnly(html){ const d=document.createElement('div'); d.innerHTML = sanitize(html||''); return d.textContent || d.innerText || ''; }
+
+      textOnly(html){
+        const d=document.createElement('div');
+        d.innerHTML = sanitize(html||'');
+        // Normalize whitespace a bit but keep newlines for length calc
+        const t = (d.textContent || d.innerText || '').replace(/\u00a0/g, ' ');
+        return t;
+      }
+
       firstImage(html){
         const d=document.createElement('div'); d.innerHTML = sanitize(html||'');
         const img = d.querySelector('img'); if (img?.src) return img.src;
@@ -727,8 +735,16 @@
         if (source){ const first = (source.getAttribute('srcset')||'').split(',')[0]?.trim().split(' ')[0]; if (first) return first; }
         return null;
       }
-      readTime(txt){ const w=(txt.trim().match(/\S+/g)||[]).length; return `${Math.max(1, Math.round(w/200))} min read`; }
-      vibes(title=''){ const words = title.toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
+
+      readTime(txt){
+        const w=(txt.trim().match(/\S+/g)||[]).length;
+        return `${Math.max(1, Math.round(w/180))} min read`;
+      }
+
+      vibes(title=''){
+        const words = (title || '').toLowerCase().match(/[a-z]{4,}/g)||[];
+        return [...new Set(words.slice(0,2))];
+      }
 
       card(post, idx){
         const date = post.pubDate ? new Date(post.pubDate) : null;
@@ -785,11 +801,13 @@
       render(list){
         els.grid.hidden = false;
         this.viewList = list;
+        els.grid.innerHTML = ""; // reset
+        this.shown = 0;
         this.renderNextChunk(true);
       }
 
       renderNextChunk(reset=false){
-        if (reset) { els.grid.innerHTML = ""; this.shown = 0; }
+        if (reset) { /* already cleared in render */ }
         const slice = this.viewList.slice(this.shown, this.shown + this.pageSize);
         slice.forEach((p) => {
           const idx = posts.indexOf(p); // ensure modal nav uses global posts index
@@ -818,7 +836,7 @@
       }
 
       async load(force=false){
-        els.status.classList.remove('hidden');
+        els.status.classList.remove('hidden','error');
         els.status.textContent = "Gathering poems from the digital ether...";
         const sources = [];
         const worker   = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
@@ -828,16 +846,22 @@
 
         for (const url of sources){
           try {
-            const data = await this.fetchWithTimeout(url, 9000);
+            const data = await this.fetchWithTimeout(url, 12000);
             let raw = Array.isArray(data?.items) ? data.items : [];
+            // If rss2json returns objects without content for Poetry, try content:encoded field name variants
+            raw = raw.map(it => {
+              if (!it.content && it["content:encoded"]) it.content = it["content:encoded"];
+              return it;
+            });
             if (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) raw = raw.slice(0, +MAX_ITEMS);
 
+            // Loosen filters to avoid dropping short poems
             const valid = raw.filter(p => {
-              const title = (p.title || '');
+              const title = (p.title || '').trim();
               const text = this.textOnly(p.content || p.description || '').trim();
               if (/coming\s+soon/i.test(title)) return false;
-              if ((title + ' ' + text).trim().length < 10) return false; // relaxed filter
-              return true;
+              // only require at least a title OR any body text
+              return Boolean(title || text);
             });
 
             if (valid.length) {
@@ -855,13 +879,22 @@
               }
               this.render(valid);
               return;
+            } else if (raw.length) {
+              // Show raw items if filter somehow removed all
+              posts = raw;
+              els.status.textContent = "";
+              this.render(raw);
+              return;
             }
-          } catch(e) { /* try next source */ }
+          } catch(e) {
+            // try next source
+            console.warn('Feed source failed:', url, e);
+          }
         }
         this.fail();
       }
 
-      fetchWithTimeout(url, ms=8000){
+      fetchWithTimeout(url, ms=10000){
         const ctrl = new AbortController(); const id = setTimeout(()=>ctrl.abort(), ms);
         return fetch(url, { credentials:'omit', cache:'no-store', signal: ctrl.signal })
           .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -871,7 +904,7 @@
       fail(){
         els.status.className = 'status error';
         els.status.setAttribute('role','alert');
-        els.status.textContent = "Unable to load poems right now. The words are taking a little break. ☁️";
+        els.status.textContent = "Unable to load poems right now. You can read on Substack via the links below.";
       }
     }
 
