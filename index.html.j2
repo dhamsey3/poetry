@@ -37,11 +37,15 @@
       --ink-soft: #333333;
       --muted: #7c6f64;
       --muted-light: #b6a999;
+      /* Primary accent: gold/orange for primary actions and highlights */
       --accent: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
       --accent-solid: #f59e0b;
+      /* Secondary accent: red for alerts or destructive actions */
       --accent-2: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
       --accent-2-solid: #dc2626;
+      /* Tertiary accent: blue for informational elements and decoration */
       --accent-3: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+      --accent-3-solid: #0ea5e9;
       --border: rgba(124, 111, 100, 0.2);
       --border-soft: rgba(124, 111, 100, 0.1);
       --shadow-sm: 0 2px 8px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.06);
@@ -61,11 +65,13 @@
       --ink-soft: #e5decf;
       --muted: #a58b75;
       --muted-light: #7c6f64;
+      /* Accent palette mirrors light theme roles */
       --accent: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
       --accent-solid: #fbbf24;
       --accent-2: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
       --accent-2-solid: #ef4444;
       --accent-3: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+      --accent-3-solid: #0ea5e9;
       --border: rgba(245, 158, 11, 0.15);
       --border-soft: rgba(245, 158, 11, 0.08);
       --shadow-sm: 0 2px 8px rgba(251,191,36,0.15), 0 1px 3px rgba(0,0,0,0.25);
@@ -132,7 +138,14 @@
     .btn, .chip{ display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border: 1px solid var(--border); border-radius: 50px; background: var(--paper); backdrop-filter: blur(10px); color: var(--ink); font-weight: 500; font-size: 15px; cursor: pointer; transition: all .3s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
     .btn::before, .chip::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent); transition: left .5s; }
     .btn:hover::before, .chip:hover::before { left: 100%; }
-    .btn:hover, .chip:hover{ transform: translateY(-3px); box-shadow: var(--shadow); background: var(--paper-hover); border-color: var(--accent-solid); }
+    .btn:hover, .chip:hover{ transform: translateY(-3px); box-shadow: var(--shadow); background: var(--paper-hover); }
+    /* Chip accent variants */
+    .chip.accent { color: var(--accent-solid); border-color: var(--accent-solid); }
+    .chip.accent:hover { color: var(--accent-solid); border-color: var(--accent-solid); }
+    .chip.accent-2 { color: var(--accent-2-solid); border-color: var(--accent-2-solid); }
+    .chip.accent-2:hover { color: var(--accent-2-solid); border-color: var(--accent-2-solid); }
+    .chip.accent-3 { color: var(--accent-3-solid); border-color: var(--accent-3-solid); }
+    .chip.accent-3:hover { color: var(--accent-3-solid); border-color: var(--accent-3-solid); }
     .btn-primary { background: var(--accent); color: white; border: none; }
     .btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--shadow-lg); }
 
@@ -156,27 +169,30 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     /* ---------- CARDS ---------- */
-    .card { position: relative; background: var(--paper); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; transition: all .4s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); transform: translateY(20px); opacity: 0; }
+    .card { position: relative; background: var(--paper); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; transition: all .4s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); transform: translateY(20px); opacity: 0; --card-accent: var(--accent); --card-accent-solid: var(--accent-solid); }
+    .card.accent { --card-accent: var(--accent); --card-accent-solid: var(--accent-solid); }
+    .card.accent-2 { --card-accent: var(--accent-2); --card-accent-solid: var(--accent-2-solid); }
+    .card.accent-3 { --card-accent: var(--accent-3); --card-accent-solid: var(--accent-3-solid); }
     .card.show { transform: translateY(0); opacity: 1; }
     .card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); transition: left .6s; z-index: 1; }
     .card:hover::before { left: 100%; }
-    .card:hover { transform: translateY(-8px) rotateX(2deg) rotateY(2deg); box-shadow: var(--shadow-lg); border-color: var(--accent-solid); }
-    .card-thumb { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--accent); }
+    .card:hover { transform: translateY(-8px) rotateX(2deg) rotateY(2deg); box-shadow: var(--shadow-lg); border-color: var(--card-accent-solid); }
+    .card-thumb { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--card-accent); }
     .card-thumb img { width: 100%; height: 100%; object-fit: cover; transition: all .4s cubic-bezier(.4,0,.2,1); filter: blur(8px); }
     .card-thumb img[data-loaded="1"] { filter: blur(0); }
     .card:hover .card-thumb img { transform: scale(1.05); }
     .card-content { padding: 24px; position: relative; z-index: 2; }
     .card-title { font-family: 'Playfair Display', serif; font-weight: 400; font-size: clamp(1.2rem, 2vw, 1.4rem); line-height: 1.3; margin-bottom: 12px; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .card-title a { color: inherit; text-decoration: none; }
-    .card-title a:hover { background: var(--accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .card-title a:hover { background: var(--card-accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
     .card-meta { display: flex; gap: 16px; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 16px; font-weight: 500; }
     .card-summary { color: var(--ink-soft); font-size: 15px; line-height: 1.6; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
     .card-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .badge { display: inline-flex; align-items: center; padding: 4px 12px; background: var(--accent); color: white; font-size: 11px; font-weight: 500; border-radius: 12px; text-transform: lowercase; }
+    .badge { display: inline-flex; align-items: center; padding: 4px 12px; background: var(--card-accent); color: white; font-size: 11px; font-weight: 500; border-radius: 12px; text-transform: lowercase; }
     .card-actions { display: flex; gap: 16px; align-items: center; font-size: 14px; font-weight: 500; }
     .card-actions a { color: var(--muted); transition: color .3s ease; position: relative; }
-    .card-actions a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--accent-solid); transition: width .3s ease; }
-    .card-actions a:hover { color: var(--accent-solid); }
+    .card-actions a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--card-accent-solid); transition: width .3s ease; }
+    .card-actions a:hover { color: var(--card-accent-solid); }
     .card-actions a:hover::after { width: 100%; }
 
     /* ---------- MODALS ---------- */
@@ -223,9 +239,12 @@
     /* ---------- FLOATING SHAPES ---------- */
     .floating-shapes { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
     .shape { position: absolute; opacity: .1; animation: floatShape 20s infinite ease-in-out; }
-    .shape:nth-child(1) { top: 10%; left: 10%; width: 100px; height: 100px; background: var(--accent-solid); border-radius: 50%; animation-delay: 0s; }
-    .shape:nth-child(2) { top: 70%; right: 10%; width: 80px; height: 80px; background: var(--accent-2-solid); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); animation-delay: 5s; }
-    .shape:nth-child(3) { top: 40%; left: 80%; width: 60px; height: 60px; background: var(--accent-3-solid); transform: rotate(45deg); animation-delay: 10s; }
+    .shape.accent { background: var(--accent-solid); border-radius: 50%; }
+    .shape.accent-2 { background: var(--accent-2-solid); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+    .shape.accent-3 { background: var(--accent-3-solid); transform: rotate(45deg); }
+    .shape:nth-child(1) { top: 10%; left: 10%; width: 100px; height: 100px; animation-delay: 0s; }
+    .shape:nth-child(2) { top: 70%; right: 10%; width: 80px; height: 80px; animation-delay: 5s; }
+    .shape:nth-child(3) { top: 40%; left: 80%; width: 60px; height: 60px; animation-delay: 10s; }
     @keyframes floatShape { 0%, 100% { transform: translateY(0) rotate(0deg); } 33% { transform: translateY(-20px) rotate(120deg); } 66% { transform: translateY(10px) rotate(240deg); } }
 
     /* ---------- RESPONSIVE ---------- */
@@ -258,9 +277,9 @@
 
   <!-- Floating Shapes -->
   <div class="floating-shapes" aria-hidden="true">
-    <div class="shape"></div>
-    <div class="shape"></div>
-    <div class="shape"></div>
+    <div class="shape accent"></div>
+    <div class="shape accent-2"></div>
+    <div class="shape accent-3"></div>
   </div>
 
   <!-- Particles -->
@@ -284,11 +303,11 @@
           </div>
 
           <div class="hero-actions">
-            <button id="themeToggle" class="chip" title="Toggle theme" aria-pressed="false">
+            <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
               <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
-            <button id="refreshBtn" class="chip" title="Refresh posts">↻ Refresh</button>
-            <button id="randomBtn" class="chip" title="Surprise me"><span>🎲</span> Random</button>
+            <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
+            <button id="randomBtn" class="chip accent" title="Surprise me"><span>🎲</span> Random</button>
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
             </button>
@@ -314,7 +333,7 @@
       <div class="wrap">
         <div id="statusMessage" class="status" role="status" aria-live="polite">Gathering poems from the digital ether...</div>
         <section id="postsGrid" class="posts-grid" hidden></section>
-        <button id="loadMore" class="chip" style="display:none; margin: 24px auto 0;">Load more</button>
+        <button id="loadMore" class="chip accent" style="display:none; margin: 24px auto 0;">Load more</button>
       </div>
     </main>
 
@@ -354,8 +373,8 @@
         <h2 class="modal-title" id="modalTitle"></h2>
         <div class="modal-meta" id="modalMeta"></div>
         <div class="modal-actions">
-          <button id="prevPost" class="chip" title="Previous (←)">← Prev</button>
-          <button id="nextPost" class="chip" title="Next (→)">Next →</button>
+          <button id="prevPost" class="chip accent" title="Previous (←)">← Prev</button>
+          <button id="nextPost" class="chip accent" title="Next (→)">Next →</button>
         </div>
       </div>
       <div class="modal-body" id="modalBody"></div>
@@ -707,7 +726,9 @@
         const tags = this.vibes(post.title);
 
         const el = document.createElement('article');
-        el.className = 'card';
+        const palettes = ['accent','accent-2','accent-3'];
+        const accentClass = palettes[idx % palettes.length];
+        el.className = `card ${accentClass}`;
         el.style.transitionDelay = `${Math.min(idx,15)*100}ms`;
         el.setAttribute('aria-label', post.title || 'Poem');
 
