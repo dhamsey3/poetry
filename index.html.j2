@@ -214,7 +214,7 @@
     .footer-brand { display: flex; align-items: center; gap: 12px; }
     .footer-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: contain; }
     .footer-info h3 { font-family: 'Playfair Display', serif; font-weight: 400; color: var(--ink); margin-bottom: 4px; }
-    .footeropyright { color: var(--muted); font-size: 13px; }
+    .footerCopyright { color: var(--muted); font-size: 13px; }
     .footer-links { display: flex; gap: 12px; flex-wrap: wrap; }
 
     /* ---------- PROGRESS BAR ---------- */
@@ -287,6 +287,7 @@
             <button id="themeToggle" class="chip" title="Toggle theme" aria-pressed="false">
               <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
+            <button id="refreshBtn" class="chip" title="Refresh posts">↻ Refresh</button>
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
             </button>
@@ -312,6 +313,7 @@
       <div class="wrap">
         <div id="statusMessage" class="status" role="status" aria-live="polite">Gathering poems from the digital ether...</div>
         <section id="postsGrid" class="posts-grid" hidden></section>
+        <button id="loadMore" class="chip" style="display:none; margin: 24px auto 0;">Load more</button>
       </div>
     </main>
 
@@ -324,7 +326,7 @@
             <img src="static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
-              <div class="footeropyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
+              <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
             </div>
           </div>
 
@@ -412,13 +414,18 @@
 
   <script>
     // ===== CONFIG =====
-    const RSS_URL = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
-    let WORKER_BASE = {{ (rss_proxy_url or "") | tojson }}; // e.g., "https://substack-proxy.robinvp3.workers.dev/?rss_url="
-    const PUBLIC_BASE = "https://api.rss2json.com/v1/api.json?rss_url=";
+    const RSS_URL        = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
+    let   WORKER_BASE    = {{ (rss_proxy_url or "") | tojson }}; // e.g., "https://your-worker.example/?rss_url="
+    const RSS2JSON_KEY   = {{ (rss2json_api_key or "") | tojson }}; // add to your Jinja context if you have a key
+    const MAX_ITEMS      = {{ (max_items or 50) | tojson }};       // how many items to request/show
+    const PUBLIC_BASE    =
+      "https://api.rss2json.com/v1/api.json?"
+      + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
+      + "count=" + encodeURIComponent(MAX_ITEMS) + "&rss_url=";
 
     function normalizeBase(base) {
       if (!base) return "";
-      const hasParam = /[\\?&]rss_url=/.test(base);
+      const hasParam = /[?&]rss_url=/.test(base);
       if (hasParam) return base;
       const hasQuery = base.includes("?");
       if (!hasQuery) return base + "?rss_url=";
@@ -438,6 +445,8 @@
       themeToggle: document.getElementById('themeToggle'),
       themeIcon: document.getElementById('themeIcon'),
       themeText: document.getElementById('themeText'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      loadMore: document.getElementById('loadMore'),
       aboutBtn: document.getElementById('aboutBtn'),
       aboutModal: document.getElementById('aboutModal'),
       aboutClose: document.getElementById('aboutModalClose'),
@@ -657,8 +666,15 @@
 
     // Content
     class ContentManager {
+      constructor(){
+        this.viewList = [];
+        this.pageSize = 12;
+        this.shown = 0;
+      }
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
+        els.refreshBtn?.addEventListener('click', () => this.load(true));
+        els.loadMore?.addEventListener('click', () => this.renderNextChunk(false));
         this.load();
       }
       textOnly(html){ const d=document.createElement('div'); d.innerHTML = sanitize(html||''); return d.textContent || d.innerText || ''; }
@@ -669,7 +685,7 @@
         if (source){ const first = (source.getAttribute('srcset')||'').split(',')[0]?.trim().split(' ')[0]; if (first) return first; }
         return null;
       }
-      readTime(txt){ const w=(txt.trim().match(/\\S+/g)||[]).length; return `${Math.max(1, Math.round(w/200))} min read`; }
+      readTime(txt){ const w=(txt.trim().match(/\S+/g)||[]).length; return `${Math.max(1, Math.round(w/200))} min read`; }
       vibes(title=''){ const words = title.toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
 
       card(post, idx){
@@ -699,7 +715,7 @@
             ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${v}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
               <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
-              <a href="#" data-quick-read="${idx}">Quick read</a>
+              <a href="#" data-quick-read="1">Quick read</a>
               <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
             </div>
           </div>
@@ -711,7 +727,8 @@
         share?.addEventListener('click', async e => {
           e.preventDefault();
           const url = post.link, title = post.title || 'Poem from Torchborne';
-          try { if (navigator.share) await navigator.share({ title, url });
+          try {
+            if (navigator.share) await navigator.share({ title, url });
             else { await navigator.clipboard.writeText(url); const t = share.textContent; share.textContent='Copied ✓'; setTimeout(()=> share.textContent=t, 1500); }
           } catch {}
         });
@@ -722,47 +739,73 @@
       }
 
       render(list){
-        els.status.classList.add('hidden');
         els.grid.hidden = false;
-        els.grid.innerHTML = '';
-        list.forEach((p, i) => {
-          const c = this.card(p, i);
+        this.viewList = list;
+        this.renderNextChunk(true);
+      }
+
+      renderNextChunk(reset=false){
+        if (reset) { els.grid.innerHTML = ""; this.shown = 0; }
+        const slice = this.viewList.slice(this.shown, this.shown + this.pageSize);
+        slice.forEach((p) => {
+          const idx = posts.indexOf(p); // ensure modal nav uses global posts index
+          const c = this.card(p, idx >= 0 ? idx : 0);
           els.grid.appendChild(c);
           requestAnimationFrame(() => c.classList.add('show'));
         });
+        this.shown += slice.length;
+        els.loadMore.style.display = this.shown < this.viewList.length ? "inline-flex" : "none";
       }
 
       search(){
         const q = (els.search.value || '').trim().toLowerCase();
-        const cards = els.grid.querySelectorAll('.card');
-        if (!q) { cards.forEach(c => c.classList.remove('hidden')); return; }
-        posts.forEach((p, i) => {
+        if (!q) { this.render(posts); return; }
+        const filtered = posts.filter(p => {
           const text = [p.title || '', this.textOnly(p.content || p.description || '')].join(' ').toLowerCase();
-          const show = text.includes(q);
-          const card = cards[i];
-          if (card) card.classList.toggle('hidden', !show);
+          return text.includes(q);
         });
+        this.render(filtered);
       }
 
-      async load(){
+      async load(force=false){
+        els.status.classList.remove('hidden');
+        els.status.textContent = "Gathering poems from the digital ether...";
         const sources = [];
-        const worker = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
-        const publicUrl = PUBLIC_BASE + encodeURIComponent(RSS_URL);
-        if (worker) sources.push(worker);
-        sources.push(publicUrl);
+        const worker   = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
+        const publicUrl= PUBLIC_BASE + encodeURIComponent(RSS_URL);
+        if (worker) sources.push(worker + (force ? `&_=${Date.now()}` : ''));
+        sources.push(publicUrl + (force ? `&_=${Date.now()}` : ''));
 
         for (const url of sources){
           try {
             const data = await this.fetchWithTimeout(url, 9000);
-            const raw = Array.isArray(data?.items) ? data.items : [];
+            let raw = Array.isArray(data?.items) ? data.items : [];
+            if (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) raw = raw.slice(0, +MAX_ITEMS);
+
             const valid = raw.filter(p => {
-              const title = (p.title || '').toLowerCase();
+              const title = (p.title || '');
               const text = this.textOnly(p.content || p.description || '').trim();
-              if (/coming\\s+soon/i.test(title)) return false;
-              if (text.length < 50) return false;
+              if (/coming\s+soon/i.test(title)) return false;
+              if ((title + ' ' + text).trim().length < 10) return false; // relaxed filter
               return true;
             });
-            if (valid.length) { posts = valid; this.render(valid); return; }
+
+            if (valid.length) {
+              posts = valid;
+              // status: show the newest pubDate we see
+              const newest = valid
+                .map(v => new Date(v.pubDate || v.pubdate || 0).getTime())
+                .filter(n => !isNaN(n))
+                .sort((a,b)=>b-a)[0];
+              if (newest) {
+                const d = new Date(newest);
+                els.status.textContent = `Last updated ${d.toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}`;
+              } else {
+                els.status.textContent = "";
+              }
+              this.render(valid);
+              return;
+            }
           } catch(e) { /* try next source */ }
         }
         this.fail();
