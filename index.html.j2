@@ -288,6 +288,7 @@
               <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
             <button id="refreshBtn" class="chip" title="Refresh posts">↻ Refresh</button>
+            <button id="randomBtn" class="chip" title="Surprise me"><span>🎲</span> Random</button>
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
             </button>
@@ -422,6 +423,11 @@
       "https://api.rss2json.com/v1/api.json?"
       + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
       + "count=" + encodeURIComponent(MAX_ITEMS) + "&rss_url=";
+    const TAGLINES = [
+      "where words carry the flame ✨",
+      "poetry for wandering souls ✍️",
+      "verses that glow in the dark 🌙"
+    ];
 
     function normalizeBase(base) {
       if (!base) return "";
@@ -446,6 +452,7 @@
       themeIcon: document.getElementById('themeIcon'),
       themeText: document.getElementById('themeText'),
       refreshBtn: document.getElementById('refreshBtn'),
+      randomBtn: document.getElementById('randomBtn'),
       loadMore: document.getElementById('loadMore'),
       aboutBtn: document.getElementById('aboutBtn'),
       aboutModal: document.getElementById('aboutModal'),
@@ -674,6 +681,7 @@
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
         els.refreshBtn?.addEventListener('click', () => this.load(true));
+        els.randomBtn?.addEventListener('click', () => this.random());
         els.loadMore?.addEventListener('click', () => this.renderNextChunk(false));
         this.load();
       }
@@ -757,6 +765,12 @@
         els.loadMore.style.display = this.shown < this.viewList.length ? "inline-flex" : "none";
       }
 
+      random(){
+        if (!posts.length) return;
+        const idx = Math.floor(Math.random() * posts.length);
+        modal.openReading(posts[idx], idx);
+      }
+
       search(){
         const q = (els.search.value || '').trim().toLowerCase();
         if (!q) { this.render(posts); return; }
@@ -836,6 +850,8 @@
       particles.init();
       modal.init();
       content.init();
+      const tag = document.querySelector('.hero-tagline');
+      if (tag) tag.textContent = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
       console.log('✨ Torchborne — ready to inspire');
     }, { passive: true });
   </script>
