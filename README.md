@@ -1,4 +1,4 @@
-# Stattic Poetry site (Torchborne) 
+# Static Poetry site (Torchborne) 
 
 Minimal, single-page reader for a Substack (or any RSS) feed.  
 Renders a Jinja template to `dist/` and (optionally) uses a Cloudflare Worker as a tiny RSS→JSON proxy.
