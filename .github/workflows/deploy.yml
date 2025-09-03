@@ -56,8 +56,44 @@ jobs:
       - name: Build site (templating only)
         run: python fetch.py
 
+      # ✅ Copy static assets into the published artifact (dist)
+      - name: Copy static assets into dist
+        shell: bash
+        run: |
+          if [ -d static ]; then
+            mkdir -p dist/static
+            # Prefer rsync for clean sync if available; otherwise cp
+            if command -v rsync >/dev/null 2>&1; then
+              rsync -av --delete static/ dist/static/
+            else
+              rm -rf dist/static/* 2>/dev/null || true
+              cp -r static/* dist/static/
+            fi
+          else
+            echo "No ./static directory found; skipping copy" >&2
+          fi
+
+      # Optional but helpful: avoid Jekyll processing oddities on Pages
+      - name: Add .nojekyll
+        run: echo > dist/.nojekyll
+
       - name: Verify dist exists
         run: test -d dist && ls -la dist
+
+      - name: Sanity check dist contents
+        shell: bash
+        run: |
+          test -f dist/index.html
+          if [ -d dist/static ]; then
+            ls -la dist/static | sed 's/^/dist\/static\//'
+            # Ensure critical files are present if you expect them
+            test -f dist/static/styles.css || echo "WARN: dist/static/styles.css missing" >&2
+            # Logos are optional; warn if absent
+            [ -f dist/static/logo-light.png ] || echo "WARN: logo-light.png missing" >&2
+            [ -f dist/static/logo-dark.png ] || echo "WARN: logo-dark.png missing" >&2
+          else
+            echo "WARN: dist/static directory not found" >&2
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
