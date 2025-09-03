@@ -17,10 +17,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="static/styles.css{% if generated_at %}?v={{ generated_at.strftime('%Y%m%d%H%M%S') }}{% endif %}">
+  <link rel="stylesheet" href="/static/styles.css$1">
 
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
-  <link rel="icon" href="static/logo-light.png" />
+  <link rel="icon" href="/static/logo-light.png" />
 
   <!-- Open Graph -->
   <meta property="og:title" content="{{ site_title or 'Torchborne' }}" />
@@ -82,8 +82,8 @@
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
-              <img src="static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
-              <img src="static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
+              <img src="/static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
+              <img src="/static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
               <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
             <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
@@ -129,8 +129,8 @@
       <div class="wrap">
         <div class="footer-content">
           <div class="footer-brand">
-            <img src="static/logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
-            <img src="static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
+            <img src="/static/logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
+            <img src="/static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
               <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
@@ -174,7 +174,7 @@
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
         <div class="about-header">
-          <img class="about-avatar" src="static/avatar.jpg" alt="Torchborne" onerror="this.src='static/logo-light.png'">
+          <img class="about-avatar" src="/static/avatar.jpg" alt="Torchborne" onerror="this.src='static/logo-light.png'">
           <div class="about-info">
             <h2 id="aboutTitle">About Torchborne</h2>
             <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
@@ -410,10 +410,13 @@
     // Sanitizer using DOMPurify and safe link normalization
     function sanitize(html){
       const raw = stripSubstackBoilerplate(html || '');
-      const cleaned = DOMPurify.sanitize(raw, {
-        RETURN_TRUSTED_TYPE: false,
-        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data:image\/(?:png|gif|jpeg|webp|svg\+xml));?)/i
-      });
+      const useDOMPurify = typeof DOMPurify !== 'undefined' && DOMPurify?.sanitize;
+      const cleaned = useDOMPurify
+        ? DOMPurify.sanitize(raw, {
+            RETURN_TRUSTED_TYPE: false,
+            ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data:image\/(?:png|gif|jpeg|webp|svg\+xml));?)/i
+          })
+        : raw;
       const div = document.createElement('div');
       div.innerHTML = cleaned;
       // Normalize links (open safely, block javascript:)
