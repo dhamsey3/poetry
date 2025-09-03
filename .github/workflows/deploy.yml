@@ -56,7 +56,7 @@ jobs:
       - name: Build site (templating only)
         run: python fetch.py
 
-      # ✅ Copy static assets into the published artifact (dist)
+      # ✅ Copy static/public assets into the published artifact (dist)
       - name: Copy static assets into dist
         shell: bash
         run: |
@@ -69,8 +69,15 @@ jobs:
               rm -rf dist/static/* 2>/dev/null || true
               cp -r static/* dist/static/
             fi
+          elif [ -d public ]; then
+            mkdir -p dist
+            if command -v rsync >/dev/null 2>&1; then
+              rsync -av --delete public/ dist/
+            else
+              cp -r public/* dist/
+            fi
           else
-            echo "No ./static directory found; skipping copy" >&2
+            echo "No ./static or ./public directory found; skipping copy" >&2
           fi
 
       # Optional but helpful: avoid Jekyll processing oddities on Pages
