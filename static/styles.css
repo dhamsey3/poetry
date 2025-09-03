@@ -8,10 +8,13 @@
   --ink-soft: #333333;
   --muted: #7c6f64;
   --muted-light: #b6a999;
+  /* Primary accent: gold/orange for primary actions and highlights */
   --accent: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
   --accent-solid: #f59e0b;
+  /* Secondary accent: red for alerts or destructive actions */
   --accent-2: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
   --accent-2-solid: #dc2626;
+  /* Tertiary accent: blue for informational elements and decoration */
   --accent-3: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
   --accent-3-solid: #0ea5e9;
   --border: rgba(124, 111, 100, 0.2);
@@ -33,6 +36,7 @@
   --ink-soft: #e5decf;
   --muted: #a58b75;
   --muted-light: #7c6f64;
+  /* Accent palette mirrors light theme roles */
   --accent: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
   --accent-solid: #fbbf24;
   --accent-2: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
@@ -106,6 +110,7 @@ a:hover { color: var(--accent-solid); }
 .btn::before, .chip::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent); transition: left .5s; }
 .btn:hover::before, .chip:hover::before { left: 100%; }
 .btn:hover, .chip:hover{ transform: translateY(-3px); box-shadow: var(--shadow); background: var(--paper-hover); }
+/* Chip accent variants */
 .chip.accent { color: var(--accent-solid); border-color: var(--accent-solid); }
 .chip.accent:hover { color: var(--accent-solid); border-color: var(--accent-solid); }
 .chip.accent-2 { color: var(--accent-2-solid); border-color: var(--accent-2-solid); }
@@ -114,12 +119,6 @@ a:hover { color: var(--accent-solid); }
 .chip.accent-3:hover { color: var(--accent-3-solid); border-color: var(--accent-3-solid); }
 .btn-primary { background: var(--accent); color: white; border: none; }
 .btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--shadow-lg); }
-
-/* Link-like button (for Quick read) */
-.linklike { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; position: relative; }
-.card-actions .linklike::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--card-accent-solid); transition: width .3s ease; }
-.card-actions .linklike:hover { color: var(--card-accent-solid); }
-.card-actions .linklike:hover::after { width: 100%; }
 
 /* ---------- SEARCH ---------- */
 .search-section { opacity: 0; animation: fadeInUp 1.2s ease-out 1.1s forwards; }
@@ -158,7 +157,7 @@ a:hover { color: var(--accent-solid); }
 .card-title a { color: inherit; text-decoration: none; }
 .card-title a:hover { background: var(--card-accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .card-meta { display: flex; gap: 16px; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 16px; font-weight: 500; }
-.card-summary { color: var(--ink-soft); font-size: 15px; line-height: 1.6; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.card-summary { color: var(--ink-soft); font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
 .card-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
 .badge { display: inline-flex; align-items: center; padding: 4px 12px; background: var(--card-accent); color: white; font-size: 11px; font-weight: 500; border-radius: 12px; text-transform: lowercase; }
 .card-actions { display: flex; gap: 16px; align-items: center; font-size: 14px; font-weight: 500; }
@@ -183,6 +182,7 @@ a:hover { color: var(--accent-solid); }
 .modal-body::-webkit-scrollbar { width: 6px; }
 .modal-body::-webkit-scrollbar-track { background: var(--border-soft); border-radius: 3px; }
 .modal-body::-webkit-scrollbar-thumb { background: var(--accent-solid); border-radius: 3px; }
+/* Preserve poem spacing for Substack “Poetry” posts */
 .modal-body pre { white-space: pre-wrap; }
 
 /* ---------- ABOUT MODAL ---------- */
@@ -241,4 +241,9 @@ a:hover { color: var(--accent-solid); }
 /* ---------- UTILITY ---------- */
 .hidden { display: none !important; }
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
-.visually-hidden:focus { position: static !important; width: auto !important; height: auto !important; margin: 1rem; padding: .5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--paper); z-index: 1002; }
+
+/* ---------- Small extras for polish ---------- */
+#loadMore { display: none; margin: 24px auto 0; }
+.btn:focus-visible, .chip:focus-visible, .linklike:focus-visible { outline: 2px solid var(--accent-solid); outline-offset: 2px; }
+.btn[disabled], .chip[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; transform: none; }
+.posts-grid[aria-busy="true"] { opacity: .6; transition: opacity .2s ease; }
