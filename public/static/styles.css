@@ -61,6 +61,7 @@ body{
   background: var(--bg);
   background-attachment: fixed;
   color: var(--ink);
+  transition: background 0.4s ease, color 0.4s ease;
   font: 400 17px/1.75 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
   overflow-x: hidden;
@@ -95,7 +96,7 @@ a:hover { color: var(--accent-solid); }
 .brand-section { margin-bottom: 48px; }
 .brand-link { display: inline-flex; align-items: center; gap: 20px; color: inherit; margin-bottom: 16px; transition: transform .4s cubic-bezier(.4,0,.2,1); }
 .brand-link:hover { transform: translateY(-2px); }
-.logo-img{ height: 64px; width: auto; object-fit: contain; border-radius: 16px; transition: all .4s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); }
+.logo-img{ height: 64px; width: auto; object-fit: contain; border-radius: 16px; transition: opacity 0.4s ease, transform .4s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); }
 .brand-link:hover .logo-img{ transform: rotate(-3deg) scale(1.05); box-shadow: var(--shadow); }
 .logo-dark{ display: none; }
 [data-theme="dark"] .logo-light{ display: none; }
