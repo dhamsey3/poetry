@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en" data-theme="light">
 <head>
+  {% set STATIC = static_base or '/static/' %}
+  {% set STATICPUB = static_public_base or (public_url.rstrip('/') + '/static/') if public_url else STATIC %}
   <meta charset="utf-8" />
   <title>{{ site_title or "Torchborne" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,22 +19,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="preload" as="style" href="/static/styles.css$1">
-  <link id="mainCss" rel="stylesheet" href="/static/styles.css$1">
-  <noscript><link rel="stylesheet" href="/static/styles.css$1"></noscript>
+  <link rel="preload" as="style" href="{{ STATIC }}styles.css$1">
+  <link id="mainCss" rel="stylesheet" href="{{ STATIC }}styles.css$1">
+  <noscript><link rel="stylesheet" href="{{ STATIC }}styles.css$1"></noscript>
 
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
-  <link rel="icon" href="/static/logo-light.png" />
+  <link rel="icon" href="{{ STATIC }}logo-light.png" />
 
   <!-- Open Graph -->
   <meta property="og:title" content="{{ site_title or 'Torchborne' }}" />
   <meta property="og:description" content="Poetry & musings by Dami." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{ public_url or '' }}" />
-  <meta property="og:image" content="{{ public_url.rstrip('/') + '/static/logo-light.png' if public_url else 'static/logo-light.png' }}" />
+  <meta property="og:image" content="{{ STATICPUB ~ 'logo-light.png' }}" />
   <meta property="og:site_name" content="{{ site_title or 'Torchborne' }}" />
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="{{ public_url.rstrip('/') + '/static/logo-light.png' if public_url else 'static/logo-light.png' }}" />
+  <meta name="twitter:image" content="{{ STATICPUB ~ 'logo-light.png' }}" />
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -49,8 +51,8 @@
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
     img-src 'self' https: data:;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    font-src https://fonts.gstatic.com;
+    style-src 'self' 'unsafe-inline' https:;
+    font-src https:;
     script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
     connect-src 'self' https:;
     base-uri 'self';
@@ -84,8 +86,8 @@
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
-              <img src="/static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
-              <img src="/static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
+              <img src="{{ STATIC }}logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
+              <img src="{{ STATIC }}logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
               <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
             <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
@@ -131,8 +133,8 @@
       <div class="wrap">
         <div class="footer-content">
           <div class="footer-brand">
-            <img src="/static/logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
-            <img src="/static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
+            <img src="{{ STATIC }}logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
+            <img src="{{ STATIC }}logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
               <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
@@ -176,7 +178,7 @@
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
         <div class="about-header">
-          <img class="about-avatar" src="/static/avatar.jpg" alt="Torchborne" onerror="this.src='static/logo-light.png'">
+          <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="Torchborne" onerror="this.src='static/logo-light.png'">
           <div class="about-info">
             <h2 id="aboutTitle">About Torchborne</h2>
             <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
@@ -762,7 +764,7 @@
       // Verify CSS actually loaded; if not, show a helpful status
       (function ensureCss(){
         const link = document.getElementById('mainCss');
-        const flag = () => { try { els.status.classList.add('error'); els.status.textContent = 'Styles failed to load. Check /static/styles.css path.'; } catch(e){} };
+        const flag = () => { try { els.status.classList.add('error'); els.status.textContent = 'Styles failed to load. Check your static_base and styles.css URL.'; } catch(e){} };
         if (link) link.addEventListener('error', flag, { once: true });
         // After a tick, test a CSS-dependent property
         setTimeout(() => {
