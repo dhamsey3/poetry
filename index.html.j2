@@ -24,17 +24,17 @@
   <noscript><link rel="stylesheet" href="{{ STATIC }}styles.css"></noscript>
 
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
-  <link rel="icon" type="image/png" sizes="64x64" href="{{ STATIC }}logo-light.png">
+  <link rel="icon" type="image/svg+xml" sizes="64x64" href="{{ STATIC }}logo-light.svg">
 
   <!-- Open Graph -->
   <meta property="og:title" content="{{ site_title or 'Torchborne' }}" />
   <meta property="og:description" content="Poetry & musings by Dami." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{ public_url or '' }}" />
-  <meta property="og:image" content="{{ STATICPUB ~ 'logo-light.png' }}" />
+  <meta property="og:image" content="{{ STATICPUB ~ 'logo-light.svg' }}" />
   <meta property="og:site_name" content="{{ site_title or 'Torchborne' }}" />
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="{{ STATICPUB ~ 'logo-light.png' }}" />
+  <meta name="twitter:image" content="{{ STATICPUB ~ 'logo-light.svg' }}" />
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -86,8 +86,8 @@
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
-              <img src="{{ STATIC }}logo-light.png" alt="Torchborne logo" class="logo-img logo-light" fetchpriority="high" width="64" height="64" />
-              <img src="{{ STATIC }}logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
+              <img src="{{ STATIC }}logo-light.svg" alt="Torchborne logo" class="logo-img logo-light" fetchpriority="high" width="64" height="64" />
+              <img src="{{ STATIC }}logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
               <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
             <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
@@ -133,8 +133,8 @@
       <div class="wrap">
         <div class="footer-content">
           <div class="footer-brand">
-            <img src="{{ STATIC }}logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
-            <img src="{{ STATIC }}logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
+            <img src="{{ STATIC }}logo-light.svg" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
+            <img src="{{ STATIC }}logo-dark.svg" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
               <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
@@ -178,7 +178,7 @@
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
         <div class="about-header">
-          <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="Torchborne" onerror="this.src='{{ STATIC }}logo-light.png'">
+          <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="Torchborne" onerror="this.src='{{ STATIC }}logo-light.svg'">
           <div class="about-info">
             <h2 id="aboutTitle">About Torchborne</h2>
             <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
