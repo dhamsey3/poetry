@@ -17,7 +17,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/static/styles.css$1">
+  <link rel="preload" as="style" href="/static/styles.css$1">
+  <link id="mainCss" rel="stylesheet" href="/static/styles.css$1">
+  <noscript><link rel="stylesheet" href="/static/styles.css$1"></noscript>
 
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
   <link rel="icon" href="/static/logo-light.png" />
@@ -756,6 +758,22 @@
       const tag = document.querySelector('.hero-tagline');
       if (tag) tag.textContent = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
       console.log('✨ Torchborne — ready to inspire');
+      
+      // Verify CSS actually loaded; if not, show a helpful status
+      (function ensureCss(){
+        const link = document.getElementById('mainCss');
+        const flag = () => { try { els.status.classList.add('error'); els.status.textContent = 'Styles failed to load. Check /static/styles.css path.'; } catch(e){} };
+        if (link) link.addEventListener('error', flag, { once: true });
+        // After a tick, test a CSS-dependent property
+        setTimeout(() => {
+          const probe = document.createElement('div');
+          probe.className = 'posts-grid';
+          document.body.appendChild(probe);
+          const disp = getComputedStyle(probe).display || '';
+          document.body.removeChild(probe);
+          if (!/grid/i.test(disp)) flag();
+        }, 1200);
+      })();
     }, { passive: true });
   </script>
 </body>
