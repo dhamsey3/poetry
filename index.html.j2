@@ -7,13 +7,17 @@
   <meta name="robots" content="index,follow" />
   <meta name="description" content="Poetry & musings by Dami." />
   <meta name="color-scheme" content="light dark" />
-  <meta name="theme-color" content="#f59e0b" />
+  <meta id="themeColorMeta" name="theme-color" content="#f59e0b" />
   <link rel="canonical" href="{{ public_url or '' }}" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.rss2json.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="static/styles.css{% if generated_at %}?v={{ generated_at.strftime('%Y%m%d%H%M%S') }}{% endif %}">
 
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
   <link rel="icon" href="static/logo-light.png" />
@@ -24,255 +28,36 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{ public_url or '' }}" />
   <meta property="og:image" content="{{ public_url.rstrip('/') + '/static/logo-light.png' if public_url else 'static/logo-light.png' }}" />
+  <meta property="og:site_name" content="{{ site_title or 'Torchborne' }}" />
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="{{ public_url.rstrip('/') + '/static/logo-light.png' if public_url else 'static/logo-light.png' }}" />
 
-  <style>
-    /* ---------- THEME TOKENS ---------- */
-    :root{
-      --bg: linear-gradient(135deg, #fdfcf8 0%, #f8f5ef 100%);
-      --bg-solid: #fdfcf8;
-      --paper: rgba(255, 252, 245, 0.9);
-      --paper-hover: rgba(255, 252, 245, 0.98);
-      --ink: #1a1a1a;
-      --ink-soft: #333333;
-      --muted: #7c6f64;
-      --muted-light: #b6a999;
-      /* Primary accent: gold/orange for primary actions and highlights */
-      --accent: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
-      --accent-solid: #f59e0b;
-      /* Secondary accent: red for alerts or destructive actions */
-      --accent-2: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-      --accent-2-solid: #dc2626;
-      /* Tertiary accent: blue for informational elements and decoration */
-      --accent-3: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
-      --accent-3-solid: #0ea5e9;
-      --border: rgba(124, 111, 100, 0.2);
-      --border-soft: rgba(124, 111, 100, 0.1);
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.06);
-      --shadow: 0 8px 30px rgba(0,0,0,0.12), 0 4px 15px rgba(0,0,0,0.06);
-      --shadow-lg: 0 20px 60px rgba(0,0,0,0.2), 0 8px 25px rgba(0,0,0,0.12);
-      --grain:
-        radial-gradient(circle at 25% 25%, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.06) 0%, transparent 50%),
-        radial-gradient(circle at 50% 10%, rgba(14, 165, 233, 0.06) 0%, transparent 50%);
-    }
-    [data-theme="dark"]{
-      --bg: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
-      --bg-solid: #0d0d0d;
-      --paper: rgba(24, 24, 24, 0.85);
-      --paper-hover: rgba(24, 24, 24, 0.95);
-      --ink: #fefae0;
-      --ink-soft: #e5decf;
-      --muted: #a58b75;
-      --muted-light: #7c6f64;
-      /* Accent palette mirrors light theme roles */
-      --accent: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
-      --accent-solid: #fbbf24;
-      --accent-2: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-      --accent-2-solid: #ef4444;
-      --accent-3: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
-      --accent-3-solid: #0ea5e9;
-      --border: rgba(245, 158, 11, 0.15);
-      --border-soft: rgba(245, 158, 11, 0.08);
-      --shadow-sm: 0 2px 8px rgba(251,191,36,0.15), 0 1px 3px rgba(0,0,0,0.25);
-      --shadow: 0 8px 30px rgba(251,191,36,0.25), 0 4px 15px rgba(0,0,0,0.35);
-      --shadow-lg: 0 20px 60px rgba(251,191,36,0.35), 0 8px 25px rgba(0,0,0,0.45);
-      --grain:
-        radial-gradient(circle at 25% 25%, rgba(251, 191, 36, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.10) 0%, transparent 50%),
-        radial-gradient(circle at 50% 10%, rgba(14, 165, 233, 0.08) 0%, transparent 50%);
-    }
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"CollectionPage",
+    "name": {{ (site_title or "Torchborne") | tojson }},
+    "description":"Poetry & musings by Dami.",
+    "url": {{ (public_url or '') | tojson }}
+  }
+  </script>
 
-    /* ---------- BASE ---------- */
-    *{ box-sizing: border-box; margin: 0; padding: 0; }
-    html, body{ height: 100%; scroll-behavior: smooth; }
-    body{
-      background: var(--bg);
-      background-attachment: fixed;
-      color: var(--ink);
-      font: 400 17px/1.75 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
-      overflow-x: hidden;
-    }
-    body::before { content: ''; position: fixed; inset: 0; background: var(--grain); pointer-events: none; z-index: 1; }
-    .main-content { position: relative; z-index: 2; }
-    a{ color: inherit; text-decoration: none; position: relative; transition: all .3s cubic-bezier(.4,0,.2,1); }
-    a:hover { color: var(--accent-solid); }
-    .wrap{ max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      .particles, .floating-shapes { display: none !important; }
-      * { animation: none !important; transition: none !important; }
-    }
-
-    /* ---------- PARTICLES ---------- */
-    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .6; }
-    .particle { position: absolute; width: 3px; height: 3px; background: var(--accent-solid); border-radius: 50%; }
-
-    /* ---------- HERO ---------- */
-    .hero{ position: relative; min-height: 85vh; display: flex; align-items: center; background:
-      radial-gradient(ellipse at top, rgba(251,191,36,.10) 0%, transparent 60%),
-      radial-gradient(ellipse at bottom right, rgba(239,68,68,.08) 0%, transparent 60%);
-      backdrop-filter: blur(1px); border-bottom: 1px solid var(--border-soft);
-    }
-    [data-theme="dark"] .hero{ background:
-      radial-gradient(ellipse at top, rgba(251,191,36,.15) 0%, transparent 60%),
-      radial-gradient(ellipse at bottom right, rgba(239,68,68,.10) 0%, transparent 60%);
-    }
-    .hero-content { text-align: center; padding: 80px 0; }
-    .brand-section { margin-bottom: 48px; }
-    .brand-link { display: inline-flex; align-items: center; gap: 20px; color: inherit; margin-bottom: 16px; transition: transform .4s cubic-bezier(.4,0,.2,1); }
-    .brand-link:hover { transform: translateY(-2px); }
-    .logo-img{ height: 64px; width: auto; object-fit: contain; border-radius: 16px; transition: all .4s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); }
-    .brand-link:hover .logo-img{ transform: rotate(-3deg) scale(1.05); box-shadow: var(--shadow); }
-    .logo-dark{ display: none; }
-    [data-theme="dark"] .logo-light{ display: none; }
-    [data-theme="dark"] .logo-dark{ display: inline; }
-    .brand-name{ font-family: 'Playfair Display', serif; font-weight: 700; font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: -0.02em; background: var(--accent); -webkit-background-clip: text; background-clip: text; color: transparent; position: relative; }
-    .hero-tagline{ font-family: 'Crimson Text', serif; font-style: italic; font-size: clamp(1.1rem, 2vw, 1.3rem); color: var(--muted); margin-bottom: 40px; opacity: 0; animation: fadeInUp 1s ease-out .5s forwards; }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; opacity: 0; animation: fadeInUp 1s ease-out .8s forwards; }
-
-    /* ---------- BUTTONS ---------- */
-    .btn, .chip{ display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border: 1px solid var(--border); border-radius: 50px; background: var(--paper); backdrop-filter: blur(10px); color: var(--ink); font-weight: 500; font-size: 15px; cursor: pointer; transition: all .3s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
-    .btn::before, .chip::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent); transition: left .5s; }
-    .btn:hover::before, .chip:hover::before { left: 100%; }
-    .btn:hover, .chip:hover{ transform: translateY(-3px); box-shadow: var(--shadow); background: var(--paper-hover); }
-    /* Chip accent variants */
-    .chip.accent { color: var(--accent-solid); border-color: var(--accent-solid); }
-    .chip.accent:hover { color: var(--accent-solid); border-color: var(--accent-solid); }
-    .chip.accent-2 { color: var(--accent-2-solid); border-color: var(--accent-2-solid); }
-    .chip.accent-2:hover { color: var(--accent-2-solid); border-color: var(--accent-2-solid); }
-    .chip.accent-3 { color: var(--accent-3-solid); border-color: var(--accent-3-solid); }
-    .chip.accent-3:hover { color: var(--accent-3-solid); border-color: var(--accent-3-solid); }
-    .btn-primary { background: var(--accent); color: white; border: none; }
-    .btn-primary:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--shadow-lg); }
-
-    /* ---------- SEARCH ---------- */
-    .search-section { opacity: 0; animation: fadeInUp 1.2s ease-out 1.1s forwards; }
-    .search-wrapper { position: relative; max-width: 600px; margin: 0 auto; }
-    .search-input { width: 100%; padding: 18px 24px 18px 56px; border: 1px solid var(--border); border-radius: 50px; background: var(--paper); backdrop-filter: blur(10px); color: var(--ink); font-size: 16px; outline: none; transition: all .3s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); }
-    .search-input:focus { border-color: var(--accent-solid); box-shadow: var(--shadow), 0 0 0 3px rgba(245,158,11,.18); transform: translateY(-1px); }
-    .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
-
-    /* ---------- CONTENT ---------- */
-    .content { padding: 80px 0 120px; position: relative; }
-    .status { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 18px; font-family: 'Crimson Text', serif; font-style: italic; }
-    .status[aria-live] { min-height: 3em; }
-    .error { background: rgba(248,113,113,.1); border: 1px dashed rgba(248,113,113,.3); border-radius: 16px; color: #dc2626; }
-
-    /* ---------- GRID ---------- */
-    .posts-grid { display: grid; gap: 32px; grid-template-columns: 1fr; opacity: 0; animation: fadeIn 1s ease-out .5s forwards; }
-    @media (min-width: 768px) { .posts-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width: 1200px) { .posts-grid { grid-template-columns: repeat(3, 1fr); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    /* ---------- CARDS ---------- */
-    .card { position: relative; background: var(--paper); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 24px; overflow: hidden; transition: all .4s cubic-bezier(.4,0,.2,1); box-shadow: var(--shadow-sm); transform: translateY(20px); opacity: 0; --card-accent: var(--accent); --card-accent-solid: var(--accent-solid); }
-    .card.accent { --card-accent: var(--accent); --card-accent-solid: var(--accent-solid); }
-    .card.accent-2 { --card-accent: var(--accent-2); --card-accent-solid: var(--accent-2-solid); }
-    .card.accent-3 { --card-accent: var(--accent-3); --card-accent-solid: var(--accent-3-solid); }
-    .card.show { transform: translateY(0); opacity: 1; }
-    .card::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent); transition: left .6s; z-index: 1; }
-    .card:hover::before { left: 100%; }
-    .card:hover { transform: translateY(-8px) rotateX(2deg) rotateY(2deg); box-shadow: var(--shadow-lg); border-color: var(--card-accent-solid); }
-    .card-thumb { position: relative; aspect-ratio: 16/10; overflow: hidden; background: var(--card-accent); }
-    .card-thumb img { width: 100%; height: 100%; object-fit: cover; transition: all .4s cubic-bezier(.4,0,.2,1); filter: blur(8px); }
-    .card-thumb img[data-loaded="1"] { filter: blur(0); }
-    .card:hover .card-thumb img { transform: scale(1.05); }
-    .card-content { padding: 24px; position: relative; z-index: 2; }
-    .card-title { font-family: 'Playfair Display', serif; font-weight: 400; font-size: clamp(1.2rem, 2vw, 1.4rem); line-height: 1.3; margin-bottom: 12px; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .card-title a { color: inherit; text-decoration: none; }
-    .card-title a:hover { background: var(--card-accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .card-meta { display: flex; gap: 16px; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 16px; font-weight: 500; }
-    .card-summary { color: var(--ink-soft); font-size: 15px; line-height: 1.6; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-    .card-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .badge { display: inline-flex; align-items: center; padding: 4px 12px; background: var(--card-accent); color: white; font-size: 11px; font-weight: 500; border-radius: 12px; text-transform: lowercase; }
-    .card-actions { display: flex; gap: 16px; align-items: center; font-size: 14px; font-weight: 500; }
-    .card-actions a { color: var(--muted); transition: color .3s ease; position: relative; }
-    .card-actions a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: var(--card-accent-solid); transition: width .3s ease; }
-    .card-actions a:hover { color: var(--card-accent-solid); }
-    .card-actions a:hover::after { width: 100%; }
-
-    /* ---------- MODALS ---------- */
-    .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 24px; z-index: 1000; opacity: 0; transition: opacity .3s ease; }
-    .modal.open { display: flex; opacity: 1; }
-    .modal-content { max-width: 900px; max-height: 85vh; width: 100%; background: var(--paper); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow-lg); overflow: hidden; transform: scale(.9) translateY(20px); transition: transform .3s cubic-bezier(.4,0,.2,1); }
-    .modal.open .modal-content { transform: scale(1) translateY(0); }
-    .modal-header { padding: 32px 32px 0; position: relative; }
-    .modal-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 50%; background: var(--paper); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all .3s ease; }
-    .modal-close:hover { background: var(--accent-solid); color: white; transform: scale(1.1); }
-    .modal-title { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 400; margin-bottom: 12px; color: var(--ink); line-height: 1.3; }
-    .modal-meta { color: var(--muted); font-size: 14px; margin-bottom: 16px; font-weight: 500; }
-    .modal-actions { display: flex; gap: 8px; margin-bottom: 8px; }
-    .modal-body { padding: 0 32px 32px; font-size: 17px; line-height: 1.8; color: var(--ink-soft); max-height: 60vh; overflow-y: auto; font-family: 'Crimson Text', serif; }
-    .modal-body img{ max-width: 100%; height: auto; }
-    .modal-body::-webkit-scrollbar { width: 6px; }
-    .modal-body::-webkit-scrollbar-track { background: var(--border-soft); border-radius: 3px; }
-    .modal-body::-webkit-scrollbar-thumb { background: var(--accent-solid); border-radius: 3px; }
-    /* Preserve poem spacing for Substack “Poetry” posts */
-    .modal-body pre { white-space: pre-wrap; }
-
-    /* ---------- ABOUT MODAL ---------- */
-    .about-header { display: flex; gap: 20px; align-items: center; margin-bottom: 24px; }
-    .about-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--border); box-shadow: var(--shadow); }
-    .about-info h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: 8px; color: var(--ink); }
-    .about-tagline { color: var(--muted); font-style: italic; font-family: 'Crimson Text', serif; }
-    .about-body { font-family: 'Crimson Text', serif; font-size: 17px; line-height: 1.7; color: var(--ink-soft); margin-bottom: 32px; }
-    .about-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
-    .about-links { display: flex; gap: 12px; flex-wrap: wrap; }
-    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1px solid var(--border); border-radius: 50px; background: var(--paper); color: var(--ink); text-decoration: none; font-weight: 500; font-size: 14px; transition: all .3s ease; }
-    .pill:hover { background: var(--accent-solid); color: white; transform: translateY(-2px); box-shadow: var(--shadow); }
-
-    /* ---------- FOOTER ---------- */
-    .footer { background: linear-gradient(180deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.3) 100%), var(--bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-soft); padding: 60px 0 40px; margin-top: 80px; }
-    [data-theme="dark"] .footer { background: linear-gradient(180deg, rgba(0,0,0,.4) 0%, rgba(0,0,0,.2) 100%), var(--bg); }
-    .footer-content { display: flex; justify-content: space-between; align-items: center; gap: 32px; flex-wrap: wrap; }
-    .footer-brand { display: flex; align-items: center; gap: 12px; }
-    .footer-logo { width: 32px; height: 32px; border-radius: 8px; object-fit: contain; }
-    .footer-info h3 { font-family: 'Playfair Display', serif; font-weight: 400; color: var(--ink); margin-bottom: 4px; }
-    .footerCopyright { color: var(--muted); font-size: 13px; }
-    .footer-links { display: flex; gap: 12px; flex-wrap: wrap; }
-
-    /* ---------- PROGRESS BAR ---------- */
-    .progress-bar { position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: var(--accent); z-index: 1001; transition: width .1s ease; }
-
-    /* ---------- FLOATING SHAPES ---------- */
-    .floating-shapes { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
-    .shape { position: absolute; opacity: .1; animation: floatShape 20s infinite ease-in-out; }
-    .shape.accent { background: var(--accent-solid); border-radius: 50%; }
-    .shape.accent-2 { background: var(--accent-2-solid); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
-    .shape.accent-3 { background: var(--accent-3-solid); transform: rotate(45deg); }
-    .shape:nth-child(1) { top: 10%; left: 10%; width: 100px; height: 100px; animation-delay: 0s; }
-    .shape:nth-child(2) { top: 70%; right: 10%; width: 80px; height: 80px; animation-delay: 5s; }
-    .shape:nth-child(3) { top: 40%; left: 80%; width: 60px; height: 60px; animation-delay: 10s; }
-    @keyframes floatShape { 0%, 100% { transform: translateY(0) rotate(0deg); } 33% { transform: translateY(-20px) rotate(120deg); } 66% { transform: translateY(10px) rotate(240deg); } }
-
-    /* ---------- RESPONSIVE ---------- */
-    @media (max-width: 768px) {
-      .wrap { padding: 0 16px; }
-      .hero-actions { flex-direction: column; align-items: stretch; }
-      .btn, .chip { justify-content: center; }
-      .card-content { padding: 20px; }
-      .modal-content { margin: 16px; }
-      .modal-header, .modal-body { padding-left: 24px; padding-right: 24px; }
-      .footer-content { flex-direction: column; text-align: center; }
-      .about-header { flex-direction: column; text-align: center; }
-      .hero-content { padding: 60px 0; }
-      .content { padding: 60px 0 80px; }
-    }
-
-    /* ---------- ANIMATIONS ---------- */
-    @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
-    .shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent); background-size: 200px 100%; animation: shimmer 2s infinite; }
-
-    /* ---------- UTILITY ---------- */
-    .hidden { display: none !important; }
-    .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
-  </style>
+  <!-- Relaxed CSP for this static setup -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    img-src 'self' https: data:;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src https://fonts.gstatic.com;
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+    connect-src 'self' https:;
+    base-uri 'self';
+    form-action 'self';
+    upgrade-insecure-requests
+  ">
 </head>
 <body>
+  <a href="#postsGrid" class="visually-hidden" id="skipLink">Skip to posts</a>
   <noscript>
     <div class="status error" role="alert">JavaScript is disabled. Some features (search, quick read) won't work. You can still read directly on Substack via the links below.</div>
   </noscript>
@@ -297,9 +82,9 @@
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
-              <img src="static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" />
-              <img src="static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" />
-              <span class="brand-name">{{ site_title or "Torchborne" }}</span>
+              <img src="static/logo-light.png" alt="Torchborne logo" class="logo-img logo-light" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
+              <img src="static/logo-dark.png" alt="Torchborne logo" class="logo-img logo-dark" loading="lazy" decoding="async" width="64" height="64" fetchpriority="high" />
+              <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
             <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
           </div>
@@ -335,7 +120,7 @@
       <div class="wrap">
         <div id="statusMessage" class="status" role="status" aria-live="polite">Gathering poems from the digital ether...</div>
         <section id="postsGrid" class="posts-grid" hidden></section>
-        <button id="loadMore" class="chip accent" style="display:none; margin: 24px auto 0;">Load more</button>
+        <button id="loadMore" class="chip accent" style="display:none; margin: 24px auto 0;" aria-controls="postsGrid">Load older</button>
       </div>
     </main>
 
@@ -344,8 +129,8 @@
       <div class="wrap">
         <div class="footer-content">
           <div class="footer-brand">
-            <img src="static/logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true">
-            <img src="static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true">
+            <img src="static/logo-light.png" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
+            <img src="static/logo-dark.png" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
               <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
@@ -434,12 +219,15 @@
     </div>
   </div>
 
+  <!-- DOMPurify for robust sanitization -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
   <script>
     // ===== CONFIG =====
     const RSS_URL        = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
-    let   WORKER_BASE    = {{ (rss_proxy_url or "") | tojson }}; // e.g., "https://your-worker.example/?rss_url="
-    const RSS2JSON_KEY   = {{ (rss2json_api_key or "") | tojson }}; // add to your Jinja context if you have a key
-    const MAX_ITEMS      = {{ (max_items or 50) | tojson }};       // how many items to request/show
+    let   WORKER_BASE    = {{ (rss_proxy_url or "") | tojson }};
+    const RSS2JSON_KEY   = {{ (rss2json_api_key or "") | tojson }};
+    const MAX_ITEMS      = {{ (max_items or 50) | tojson }};
     const PUBLIC_BASE    =
       "https://api.rss2json.com/v1/api.json?"
       + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
@@ -504,9 +292,31 @@
     class ThemeManager {
       init(){
         const saved = localStorage.getItem('vv-theme');
-        if (saved) document.documentElement.setAttribute('data-theme', saved);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const mode = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', mode);
         this.syncButton();
+        this.setThemeColor(mode);
         els.themeToggle?.addEventListener('click', () => this.toggle(), { passive: true });
+
+        const mql = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mql.addEventListener) {
+          mql.addEventListener('change', e => {
+            if (!localStorage.getItem('vv-theme')) {
+              const m = e.matches ? 'dark' : 'light';
+              document.documentElement.setAttribute('data-theme', m);
+              this.syncButton(); this.setThemeColor(m);
+            }
+          });
+        } else if (mql.addListener) {
+          mql.addListener(e => {
+            if (!localStorage.getItem('vv-theme')) {
+              const m = e.matches ? 'dark' : 'light';
+              document.documentElement.setAttribute('data-theme', m);
+              this.syncButton(); this.setThemeColor(m);
+            }
+          });
+        }
       }
       toggle(){
         const cur = document.documentElement.getAttribute('data-theme') || 'light';
@@ -516,11 +326,16 @@
         els.themeToggle.setAttribute('aria-pressed', String(next === 'dark'));
         this.bump(els.themeToggle);
         this.syncButton();
+        this.setThemeColor(next);
       }
       syncButton(){
         const mode = document.documentElement.getAttribute('data-theme') || 'light';
         if (els.themeIcon) els.themeIcon.textContent = mode === 'dark' ? '☀️' : '🌙';
         if (els.themeText) els.themeText.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode';
+      }
+      setThemeColor(mode){
+        const meta = document.getElementById('themeColorMeta');
+        if (meta) meta.setAttribute('content', mode === 'dark' ? '#0d0d0d' : '#f59e0b');
       }
       bump(el){ el.style.transform = 'scale(0.96)'; setTimeout(() => el.style.transform='', 120); }
     }
@@ -592,12 +407,27 @@
       return d.innerHTML;
     }
 
-    // Sanitizer
+    // Sanitizer using DOMPurify and safe link normalization
     function sanitize(html){
+      const raw = stripSubstackBoilerplate(html || '');
+      const cleaned = DOMPurify.sanitize(raw, {
+        RETURN_TRUSTED_TYPE: false,
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data:image\/(?:png|gif|jpeg|webp|svg\+xml));?)/i
+      });
       const div = document.createElement('div');
-      // strip Substack helper line first (common in Poetry posts)
-      div.innerHTML = stripSubstackBoilerplate(html || '');
-      div.querySelectorAll('script, iframe, object, embed, link, style').forEach(el => el.remove());
+      div.innerHTML = cleaned;
+      // Normalize links (open safely, block javascript:)
+      div.querySelectorAll('a[href]').forEach(a => {
+        const href = (a.getAttribute('href') || '').trim();
+        if (/^javascript:/i.test(href)) a.removeAttribute('href');
+        if (/^https?:\/\//i.test(href)) {
+          a.setAttribute('target','_blank');
+          a.setAttribute('rel','noopener');
+        }
+      });
+      // Remove risky embeds entirely
+      div.querySelectorAll('iframe, object, embed, link, style').forEach(el => el.remove());
+      // Remove inline event handlers
       div.querySelectorAll('*').forEach(el => {
         [...el.attributes].forEach(attr => {
           const n = attr.name.toLowerCase();
@@ -605,6 +435,7 @@
           if (n.startsWith('on') || v.startsWith('javascript:')) el.removeAttribute(attr.name);
         });
       });
+      // Remove substack widgets
       div.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(el => el.remove());
       return div.innerHTML;
     }
@@ -672,6 +503,7 @@
         els.readingModal.setAttribute('aria-hidden','true');
         els.bar.style.width = '0%';
         els.bar.setAttribute('aria-valuenow','0');
+        els.modalBody.scrollTop = 0;
         this.lockMain(false);
         this.releaseTrap && this.releaseTrap();
         lastFocus?.focus();
@@ -709,7 +541,7 @@
     class ContentManager {
       constructor(){
         this.viewList = [];
-        this.pageSize = 12;
+        this.pageSize = 6; // show 6 at a time
         this.shown = 0;
       }
       init(){
@@ -723,7 +555,6 @@
       textOnly(html){
         const d=document.createElement('div');
         d.innerHTML = sanitize(html||'');
-        // Normalize whitespace a bit but keep newlines for length calc
         const t = (d.textContent || d.innerText || '').replace(/\u00a0/g, ' ');
         return t;
       }
@@ -775,7 +606,7 @@
             ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${v}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
               <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
-              <a href="#" data-quick-read="1">Quick read</a>
+              <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
               <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
             </div>
           </div>
@@ -836,6 +667,7 @@
       }
 
       async load(force=false){
+        els.grid.setAttribute('aria-busy','true');
         els.status.classList.remove('hidden','error');
         els.status.textContent = "Gathering poems from the digital ether...";
         const sources = [];
@@ -848,25 +680,23 @@
           try {
             const data = await this.fetchWithTimeout(url, 12000);
             let raw = Array.isArray(data?.items) ? data.items : [];
-            // If rss2json returns objects without content for Poetry, try content:encoded field name variants
             raw = raw.map(it => {
               if (!it.content && it["content:encoded"]) it.content = it["content:encoded"];
               return it;
             });
             if (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) raw = raw.slice(0, +MAX_ITEMS);
 
-            // Loosen filters to avoid dropping short poems
             const valid = raw.filter(p => {
               const title = (p.title || '').trim();
               const text = this.textOnly(p.content || p.description || '').trim();
               if (/coming\s+soon/i.test(title)) return false;
-              // only require at least a title OR any body text
               return Boolean(title || text);
             });
 
             if (valid.length) {
+              // sort newest → oldest so Load older reveals older poems
+              valid.sort((a,b) => new Date(b.pubDate || b.pubdate || 0) - new Date(a.pubDate || a.pubdate || 0));
               posts = valid;
-              // status: show the newest pubDate we see
               const newest = valid
                 .map(v => new Date(v.pubDate || v.pubdate || 0).getTime())
                 .filter(n => !isNaN(n))
@@ -878,20 +708,21 @@
                 els.status.textContent = "";
               }
               this.render(valid);
+              els.grid.removeAttribute('aria-busy');
               return;
             } else if (raw.length) {
-              // Show raw items if filter somehow removed all
               posts = raw;
               els.status.textContent = "";
               this.render(raw);
+              els.grid.removeAttribute('aria-busy');
               return;
             }
           } catch(e) {
-            // try next source
             console.warn('Feed source failed:', url, e);
           }
         }
         this.fail();
+        els.grid.removeAttribute('aria-busy');
       }
 
       fetchWithTimeout(url, ms=10000){
