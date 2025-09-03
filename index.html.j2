@@ -759,6 +759,11 @@
       content.init();
       const tag = document.querySelector('.hero-tagline');
       if (tag) tag.textContent = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+      let i = 0;
+      setInterval(() => {
+        i = (i + 1) % TAGLINES.length;
+        tag.textContent = TAGLINES[i];
+      }, 5000);
       console.log('✨ Torchborne — ready to inspire');
       
       // Verify CSS actually loaded; if not, show a helpful status
