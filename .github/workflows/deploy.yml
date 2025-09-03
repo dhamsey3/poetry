@@ -72,7 +72,7 @@ jobs:
           elif [ -d public ]; then
             mkdir -p dist
             if command -v rsync >/dev/null 2>&1; then
-              rsync -av --delete public/ dist/
+              rsync -av --delete --exclude='index.html' public/ dist/
             else
               cp -r public/* dist/
             fi
