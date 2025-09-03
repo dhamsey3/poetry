@@ -636,6 +636,19 @@
         return el;
       }
 
+      skeleton(){
+        const el = document.createElement('div');
+        el.className = 'card-skeleton';
+        el.innerHTML = `
+          <div class="skeleton-thumb shimmer"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line shimmer"></div>
+            <div class="skeleton-line shimmer"></div>
+            <div class="skeleton-line shimmer short"></div>
+          </div>`;
+        return el;
+      }
+
       render(list){
         els.grid.hidden = false;
         this.viewList = list;
@@ -677,6 +690,10 @@
         els.grid.setAttribute('aria-busy','true');
         els.status.classList.remove('hidden','error');
         els.status.textContent = "Gathering poems from the digital ether...";
+        els.grid.innerHTML = '';
+        for (let i = 0; i < this.pageSize; i++) {
+          els.grid.appendChild(this.skeleton());
+        }
         const sources = [];
         const worker   = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
         const publicUrl= PUBLIC_BASE + encodeURIComponent(RSS_URL);
@@ -729,6 +746,7 @@
           }
         }
         this.fail();
+        els.grid.innerHTML = '';
         els.grid.removeAttribute('aria-busy');
       }
 
