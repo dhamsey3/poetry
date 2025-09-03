@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-theme="light">
 <head>
-  {% set STATIC = static_base or '/static/' %}
+  {% set STATIC = static_base or 'static/' %}
   {% set STATICPUB = static_public_base or (public_url.rstrip('/') + '/static/') if public_url else STATIC %}
   <meta charset="utf-8" />
   <title>{{ site_title or "Torchborne" }}</title>
