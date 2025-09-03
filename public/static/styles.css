@@ -167,6 +167,38 @@ a:hover { color: var(--accent-solid); }
 .card-actions a:hover { color: var(--card-accent-solid); }
 .card-actions a:hover::after { width: 100%; }
 
+/* Skeleton placeholder cards */
+.card-skeleton {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-skeleton .skeleton-thumb {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: var(--border);
+}
+.card-skeleton .skeleton-content {
+  padding: 24px;
+}
+.card-skeleton .skeleton-line {
+  height: 14px;
+  margin-bottom: 12px;
+  background: var(--border);
+  border-radius: 4px;
+}
+.card-skeleton .skeleton-line.short {
+  width: 60%;
+}
+.card-skeleton .shimmer {
+  background: var(--border);
+  background-image: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
 /* ---------- MODALS ---------- */
 .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 24px; z-index: 1000; opacity: 0; transition: opacity .3s ease; }
 .modal.open { display: flex; opacity: 1; }
