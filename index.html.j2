@@ -104,7 +104,7 @@
             </button>
             {% if featured_ebook %}
             <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener">
-              <span>📘</span> {{ featured_ebook.cta_text or 'Read eBook' }}
+
             </a>
             {% endif %}
             <a class="btn btn-primary" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">
@@ -463,9 +463,7 @@
       });
       div.querySelectorAll('[style]').forEach(el => {
         const rawStyle = el.getAttribute('style') || '';
-        const blockedPosition = /position\s*:\s*(?:fixed|sticky|absolute)/i.test(rawStyle);
-        const hasAbsolute = /position\s*:\s*absolute/i.test(rawStyle);
-        const absoluteOverlay = hasAbsolute && /(?:top|right|bottom|left|inset)\s*:/i.test(rawStyle);
+
         const cleaned = [];
         const blockedDirectional = new Set(['top','right','bottom','left','inset']);
         rawStyle.split(';').forEach(rule => {
@@ -477,11 +475,7 @@
           const value = parts.slice(1).join(':').trim();
           const propLower = prop.toLowerCase();
           const valueLower = value.toLowerCase();
-          if (propLower === 'position' && /absolute|fixed|sticky/.test(valueLower)) return;
-          if (propLower === 'z-index') return;
-          if (propLower === 'pointer-events' && valueLower !== 'auto') return;
-          if ((blockedPosition || absoluteOverlay) && blockedDirectional.has(propLower)) return;
-          if ((absoluteOverlay || blockedPosition) && (propLower === 'width' || propLower === 'height') && /100%/.test(valueLower)) return;
+
           cleaned.push(`${prop}: ${value}`);
         });
         if (cleaned.length) el.setAttribute('style', cleaned.join('; '));
@@ -539,10 +533,7 @@
         } else if (post.pubDate) {
           meta = new Date(post.pubDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
         }
-        const heading = isEbook
-          ? (post.feature?.modalTitle || post.title || 'Featured eBook')
-          : (post.title || 'Untitled');
-        els.modalTitle.textContent = heading;
+
         els.modalMeta.textContent = meta;
         els.modalBody.innerHTML = sanitize(post.content || post.description || '');
         els.modalBody.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; img.removeAttribute('width'); img.removeAttribute('height'); });
@@ -637,156 +628,6 @@
         this.load();
       }
 
-      normalizeUrl(url){
-        if (!url) return '';
-        try {
-          const base = typeof window !== 'undefined' && window.location ? window.location.origin : undefined;
-          const target = base ? new URL(url, base) : new URL(url);
-          const cleanPath = target.pathname.replace(/\/+$/, '');
-          return `${target.protocol}//${target.host.toLowerCase()}${cleanPath}`;
-        } catch {
-          return String(url).trim().replace(/\/+$/, '');
-        }
-      }
-
-      prepareFeatured(){
-        if (!FEATURED_EBOOK || !FEATURED_EBOOK.url) return null;
-        const url = (FEATURED_EBOOK.url || '').trim();
-        if (!url) return null;
-        const desc = (FEATURED_EBOOK.description || '').trim();
-        const note = (FEATURED_EBOOK.note || '').trim();
-        const previewHtml = (FEATURED_EBOOK.preview_html || '').trim();
-        const poemTitle = (FEATURED_EBOOK.poem_title || '').trim();
-        const poemText = (FEATURED_EBOOK.poem_text || '').replace(/\r\n?/g, '\n').trim();
-        const hasPreview = previewHtml.length > 0;
-        const hasPoem = poemText.length > 0;
-        const previewTitle = (FEATURED_EBOOK.preview_title || '').trim();
-        const previewButton = (FEATURED_EBOOK.preview_button_text || '').trim();
-        const ctaRaw = (FEATURED_EBOOK.cta_text || 'Read eBook').trim() || 'Read eBook';
-        const quick = [];
-        if (previewTitle) {
-          quick.push(`<h3 class="ebook-preview-title">${escapeHtml(previewTitle)}</h3>`);
-        }
-        if (hasPreview) {
-          quick.push(`<div class="ebook-preview">${previewHtml}</div>`);
-        }
-        if (hasPoem) {
-          quick.push(this.poemHtml(poemTitle, poemText));
-        }
-        if (!hasPreview && !hasPoem) {
-          if (desc) quick.push(`<p>${escapeHtml(desc)}</p>`);
-          if (note) quick.push(`<p class="ebook-note">${escapeHtml(note)}</p>`);
-        }
-        if (!quick.length) quick.push('<p class="ebook-note">Preview coming soon.</p>');
-        const normalized = this.normalizeUrl(url);
-        const summary = desc
-          || (hasPreview ? this.textOnly(previewHtml) : '')
-          || (hasPoem ? this.poemSummary(poemText) : '')
-          || note;
-        return {
-          url,
-          normalized,
-          title: FEATURED_EBOOK.title || 'Poetry eBook',
-          pubDate: (FEATURED_EBOOK.pub_date || '').trim(),
-          summary,
-          quickHtml: quick.join('\n'),
-          feature: {
-            tag: (FEATURED_EBOOK.tag || 'Featured').trim() || 'Featured',
-            ctaText: ctaRaw,
-            cover: (FEATURED_EBOOK.cover || '').trim(),
-            meta: (FEATURED_EBOOK.meta || '').trim(),
-            shareText: (FEATURED_EBOOK.share_text || 'Share').trim() || 'Share',
-            modalTitle: previewTitle || FEATURED_EBOOK.title || 'Poetry eBook',
-            note,
-            hasPreview,
-            hasPoem,
-            poemTitle,
-            poemText,
-            quickLabel: previewButton || (hasPreview ? 'Read sample' : hasPoem ? 'Read poem' : 'Preview'),
-            description: desc,
-          },
-        };
-      }
-
-      poemSummary(text=''){
-        const lines = text.split(/\n+/).map(line => line.trim()).filter(Boolean);
-        if (!lines.length) return '';
-        const snippet = lines.slice(0, 3).join(' / ');
-        return snippet.length > 280 ? snippet.slice(0, 277) + '…' : snippet;
-      }
-
-      poemHtml(title='', text=''){
-        if (!text) return '';
-        const normalized = text.split(/\n/);
-        const stanzas = [];
-        let current = [];
-        for (const rawLine of normalized) {
-          const line = rawLine.replace(/\s+$/,'');
-          if (!line.trim()) {
-            if (current.length) { stanzas.push(current); current = []; }
-            continue;
-          }
-          current.push(line);
-        }
-        if (current.length) stanzas.push(current);
-        const renderLine = (line) => {
-          const escaped = escapeHtml(line);
-          const leading = escaped.match(/^[\s\u00a0]+/);
-          if (!leading) return escaped;
-          const prefix = leading[0]
-            .replace(/ /g, '&nbsp;')
-            .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-          return prefix + escaped.slice(leading[0].length);
-        };
-        const body = stanzas.length
-          ? stanzas.map(lines => `<p>${lines.map(renderLine).join('<br>')}</p>`).join('')
-          : `<p>${renderLine(text)}</p>`;
-        const heading = title ? `<h3 class="ebook-poem-title">${escapeHtml(title)}</h3>` : '';
-        return `<div class="ebook-poem">${heading}${body}</div>`;
-      }
-
-      featuredExtras(){
-        if (!this.featured) return [];
-        return [{
-          title: this.featured.title,
-          link: this.featured.url,
-          pubDate: this.featured.pubDate || '',
-          content: this.featured.quickHtml,
-          description: this.featured.summary || this.featured.feature.description || '',
-          featureType: 'ebook',
-          feature: { ...this.featured.feature },
-        }];
-      }
-
-      decorateFeatured(list){
-        if (!this.featured) return { posts: [...list], extras: [], matched: false };
-        const target = this.featured.normalized;
-        let matchedIndex = -1;
-        const decorated = list.map((item, idx) => {
-          if (matchedIndex >= 0) return item;
-          const linkNorm = this.normalizeUrl(item.link || item.guid || '');
-          if (linkNorm && target && linkNorm === target) {
-            matchedIndex = idx;
-            const copy = { ...item };
-            copy.featureType = 'ebook';
-            copy.feature = {
-              ...this.featured.feature,
-              hasPreview: false,
-              hasPoem: false,
-              poemText: '',
-              quickLabel: 'Read poem'
-            };
-            if (!copy.title) copy.title = this.featured.title;
-            if (!copy.pubDate && this.featured.pubDate) copy.pubDate = this.featured.pubDate;
-            if (!copy.description && this.featured.summary) copy.description = this.featured.summary;
-            return copy;
-          }
-          return item;
-        });
-        if (matchedIndex >= 0) {
-          return { posts: decorated, extras: [], matched: true };
-        }
-        return { posts: decorated, extras: this.featuredExtras(), matched: false };
       }
 
       textOnly(html){
@@ -819,26 +660,7 @@
         const date = post.pubDate ? new Date(post.pubDate) : null;
         const html = post.content || post.description || '';
         const txt = this.textOnly(html);
-        const hasPreview = isEbook ? Boolean(post.feature?.hasPreview) : false;
-        const hasPoem = isEbook ? Boolean(post.feature?.hasPoem) : false;
-        const poemTitle = isEbook ? (post.feature?.poemTitle || '').trim() : '';
-        const poemText = isEbook ? (post.feature?.poemText || '').trim() : '';
-        const poemSnippet = hasPoem ? this.poemSummary(poemText) : '';
-        const noteText = isEbook ? (post.feature?.note || '').trim() : '';
-        const summary = isEbook
-          ? ((post.feature?.description || '').trim()
-              || (post.description || '').trim()
-              || (poemSnippet ? (poemTitle ? `${poemTitle} — ${poemSnippet}` : poemSnippet) : '')
-              || (hasPreview ? this.textOnly(post.content || '') : '')
-              || noteText
-              || txt)
-          : (txt.length > 280 ? txt.slice(0,280) + '…' : txt);
-        const img = isEbook ? null : this.firstImage(html);
-        const rt = !isEbook && txt ? this.readTime(txt) : '';
-        const tags = isEbook ? [] : this.vibes(post.title);
-        const quickLabel = isEbook
-          ? (post.feature?.quickLabel || (hasPoem ? 'Read poem' : (hasPreview ? 'Read sample' : 'Preview')))
-          : 'Quick read';
+
 
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
@@ -849,12 +671,7 @@
 
         if (isEbook) {
           const tag = post.feature?.tag || 'Featured';
-          const ctaText = post.feature?.ctaText || 'Read eBook';
-          const shareText = post.feature?.shareText || 'Share';
-          const meta = post.feature?.meta || '';
-          const cover = post.feature?.cover || '';
-          const hasPreview = Boolean(post.feature?.hasPreview);
-          const hasPoem = Boolean(post.feature?.hasPoem);
+
           el.innerHTML = `
             <div class="card-content ebook">
               <div class="ebook-flag">${escapeHtml(tag)}</div>
@@ -866,10 +683,7 @@
                   <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Poetry eBook')}</a></h2>
                   ${meta ? `<div class="card-meta single">${escapeHtml(meta)}</div>` : ''}
                   <div class="card-summary">${escapeHtml(summary)}</div>
-                  ${noteText && (hasPreview || hasPoem) ? `<div class="ebook-note">${escapeHtml(noteText)}</div>` : ''}
-                  <div class="card-actions ebook-actions">
-                    <a class="btn btn-primary" href="${post.link}" target="_blank" rel="noopener">${escapeHtml(ctaText)}</a>
-                    <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">${escapeHtml(quickLabel)}</button>
+
                     <a href="#" data-share="${encodeURIComponent(post.link)}">${escapeHtml(shareText)}</a>
                   </div>
                 </div>
@@ -995,23 +809,7 @@
               return Boolean(title || text);
             });
 
-            const decorated = this.decorateFeatured(valid);
-            const extras = decorated.extras;
-            const withFeature = decorated.posts;
 
-            if (valid.length) {
-              // sort newest → oldest so Load older reveals older poems
-              withFeature.sort((a,b) => new Date(b.pubDate || b.pubdate || 0) - new Date(a.pubDate || a.pubdate || 0));
-              if (decorated.matched) {
-                const idxFeat = withFeature.findIndex(p => p.featureType === 'ebook');
-                if (idxFeat > 0) {
-                  const [feat] = withFeature.splice(idxFeat, 1);
-                  withFeature.unshift(feat);
-                }
-              }
-              const combined = extras.concat(withFeature);
-              posts = combined;
-              const newest = withFeature
                 .map(v => new Date(v.pubDate || v.pubdate || 0).getTime())
                 .filter(n => !isNaN(n))
                 .sort((a,b)=>b-a)[0];
@@ -1025,16 +823,7 @@
               els.grid.removeAttribute('aria-busy');
               return;
             } else if (raw.length) {
-              const fallbackDecorated = this.decorateFeatured(raw);
-              const orderedFallback = [...fallbackDecorated.posts];
-              if (fallbackDecorated.matched) {
-                const idxFeat = orderedFallback.findIndex(p => p.featureType === 'ebook');
-                if (idxFeat > 0) {
-                  const [feat] = orderedFallback.splice(idxFeat, 1);
-                  orderedFallback.unshift(feat);
-                }
-              }
-              const combined = fallbackDecorated.extras.concat(orderedFallback);
+
               posts = combined;
               els.status.textContent = "";
               this.render(combined);

@@ -31,14 +31,6 @@ def _env_trim(name: str, default: str = "") -> str:
     return value.strip()
 
 
-def _env_multiline(name: str, default: str = "") -> str:
-    """Return an environment variable preserving internal newlines."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    normalized = value.replace("\r\n", "\n").replace("\r", "\n")
-    return normalized.strip("\n")
-
 
 def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str):
     env = Environment(
@@ -53,21 +45,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
         "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
         "description": _env_trim(
             "EBOOK_DESCRIPTION",
-            "A lovingly curated digital chapbook—now available on Amazon Kindle.",
-        ),
-        "url": _env_trim("EBOOK_URL", ebook_default_url),
-        "cta_text": _env_trim("EBOOK_CTA_TEXT", "Read eBook"),
-        "note": _env_multiline("EBOOK_NOTE"),
-        "tag": _env_trim("EBOOK_TAG", "Featured"),
-        "cover": _env_trim("EBOOK_COVER"),
-        "pub_date": _env_trim("EBOOK_PUB_DATE"),
-        "meta": _env_trim("EBOOK_META", "Amazon Kindle Edition"),
-        "share_text": _env_trim("EBOOK_SHARE_TEXT", "Share"),
-        "preview_title": _env_trim("EBOOK_PREVIEW_TITLE"),
-        "preview_html": _env_multiline("EBOOK_PREVIEW_HTML"),
-        "preview_button_text": _env_trim("EBOOK_PREVIEW_BUTTON_TEXT"),
-        "poem_title": _env_trim("EBOOK_POEM_TITLE"),
-        "poem_text": _env_multiline("EBOOK_POEM_TEXT"),
+
     }
     if not featured_ebook["url"]:
         featured_ebook = {}

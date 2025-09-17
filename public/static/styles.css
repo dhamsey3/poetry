@@ -247,13 +247,7 @@ a:hover { color: var(--accent-solid); }
 .ebook-actions .btn-primary:hover {
   transform: translateY(-2px) scale(1.01);
 }
-.ebook-details .ebook-note {
-  font-family: 'Crimson Text', serif;
-  font-size: 14px;
-  color: var(--muted);
-  font-style: italic;
-  white-space: pre-line;
-}
+
 .ebook-actions a[data-share] {
   color: var(--muted);
 }
@@ -314,10 +308,7 @@ a:hover { color: var(--accent-solid); }
 /* ---------- MODALS ---------- */
 .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 24px; z-index: 1000; opacity: 0; transition: opacity .3s ease; }
 .modal.open { display: flex; opacity: 1; }
-.modal-content { max-width: 900px; max-height: 85vh; width: 100%; background: var(--paper); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow-lg); overflow: hidden; transform: scale(.9) translateY(20px); transition: transform .3s cubic-bezier(.4,0,.2,1); position: relative; isolation: isolate; }
-.modal.open .modal-content { transform: scale(1) translateY(0); }
-.modal-header { padding: 32px 32px 0; position: relative; }
-.modal-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border: 1px solid var(--border); border-radius: 50%; background: var(--paper); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all .3s ease; z-index: 40; pointer-events: auto; box-shadow: var(--shadow-sm); }
+
 .modal-close:hover { background: var(--accent-solid); color: white; transform: scale(1.1); }
 .modal-title { font-family: 'Playfair Display', serif; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 400; margin-bottom: 12px; color: var(--ink); line-height: 1.3; }
 .modal-meta { color: var(--muted); font-size: 14px; margin-bottom: 16px; font-weight: 500; }
