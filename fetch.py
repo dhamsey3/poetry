@@ -45,7 +45,15 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
         "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
         "description": _env_trim(
             "EBOOK_DESCRIPTION",
-
+            "A lovingly curated selection of Torchborne poems."
+        ),
+        "url": _env_trim("EBOOK_URL", ebook_default_url),
+        "cover": _env_trim("EBOOK_COVER", ""),
+        "tag": _env_trim("EBOOK_TAG", "Featured"),
+        "meta": _env_trim("EBOOK_META", "Poetry eBook"),
+        "note": _env_trim("EBOOK_NOTE", ""),
+        "ctaText": _env_trim("EBOOK_CTA_TEXT", "Read eBook"),
+        "shareText": _env_trim("EBOOK_SHARE_TEXT", "Share eBook"),
     }
     if not featured_ebook["url"]:
         featured_ebook = {}
