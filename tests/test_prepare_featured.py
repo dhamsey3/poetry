@@ -62,3 +62,15 @@ def test_poem_html_handles_blank_stanza_and_indent():
     assert "<p><br></p>" in html
     assert "Second lantern" in html
     assert "&nbsp;&nbsp;lingering glow" in html
+
+
+def test_poem_html_starts_with_indentation_without_padding_newline():
+    poem = "  Kindling path\nEmber follows\n"
+    html = render_poem_html(poem)
+    assert html.startswith("<p>&nbsp;&nbsp;Kindling path<br>Ember follows</p>")
+
+
+def test_poem_html_leading_blank_stanza_with_indentation():
+    poem = "\n  \nLighthouse hum\n"
+    html = render_poem_html(poem)
+    assert html.startswith("<p><br></p><p>Lighthouse hum</p>")
