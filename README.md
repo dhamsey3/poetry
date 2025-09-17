@@ -15,7 +15,7 @@ export SITE_TITLE="Torchborne"
 export SUBSTACK_FEED="https://YOUR.substack.com/feed"
 export PUBLIC_SUBSTACK_URL="https://YOUR.substack.com/"
 export RSS_PROXY_URL="https://your-worker.example/?rss_url="  # optional
-python build.py
+python fetch.py
 cd dist && python -m http.server 8080
 
 # Optional: Featured eBook spotlight
