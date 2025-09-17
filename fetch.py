@@ -23,17 +23,46 @@ def ensure_dist():
         return "public"
     return None
 
+def _env_trim(name: str, default: str = "") -> str:
+    """Return an environment variable with leading/trailing whitespace removed."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip()
+
+
 def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str):
     env = Environment(
         loader=FileSystemLoader("."),
         autoescape=select_autoescape(["html", "xml"])
     )
     tpl = env.get_template(TEMPLATE_FILE.name)
+    ebook_default_url = ""
+    if public_url:
+        ebook_default_url = public_url.rstrip("/") + "/p/torchborne-poetry-ebook"
+    featured_ebook = {
+        "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
+        "description": _env_trim(
+            "EBOOK_DESCRIPTION",
+            "A lovingly curated digital chapbook gathering Torchborne poems in one place.",
+        ),
+        "url": _env_trim("EBOOK_URL", ebook_default_url),
+        "cta_text": _env_trim("EBOOK_CTA_TEXT", "Download the eBook"),
+        "note": _env_trim("EBOOK_NOTE"),
+        "tag": _env_trim("EBOOK_TAG", "Featured"),
+        "cover": _env_trim("EBOOK_COVER"),
+        "pub_date": _env_trim("EBOOK_PUB_DATE"),
+        "meta": _env_trim("EBOOK_META", "Digital chapbook • PDF & EPUB"),
+        "share_text": _env_trim("EBOOK_SHARE_TEXT", "Share"),
+    }
+    if not featured_ebook["url"]:
+        featured_ebook = {}
     html = tpl.render(
         site_title=site_title or "torchborne",
         public_url=public_url,
         feed_url=feed_url,
         rss_proxy_url=(proxy_url or "").rstrip("?&"),
+        featured_ebook=featured_ebook,
         generated_at=datetime.now(timezone.utc),
         items=[]  # client-side populates
     )
