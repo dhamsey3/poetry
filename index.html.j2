@@ -104,7 +104,7 @@
             </button>
             {% if featured_ebook %}
             <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener">
-              <span>📘</span> {{ featured_ebook.cta_text or 'Download the eBook' }}
+
             </a>
             {% endif %}
             <a class="btn btn-primary" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">
@@ -463,7 +463,7 @@
       });
       div.querySelectorAll('[style]').forEach(el => {
         const rawStyle = el.getAttribute('style') || '';
-        const overlayPosition = /position\s*:\s*(fixed|sticky)/i.test(rawStyle);
+
         const cleaned = [];
         const blockedDirectional = new Set(['top','right','bottom','left','inset']);
         rawStyle.split(';').forEach(rule => {
@@ -475,10 +475,7 @@
           const value = parts.slice(1).join(':').trim();
           const propLower = prop.toLowerCase();
           const valueLower = value.toLowerCase();
-          if (propLower === 'position' && /fixed|sticky/.test(valueLower)) return;
-          if (propLower === 'z-index') return;
-          if (propLower === 'pointer-events' && valueLower !== 'auto') return;
-          if (overlayPosition && blockedDirectional.has(propLower)) return;
+
           cleaned.push(`${prop}: ${value}`);
         });
         if (cleaned.length) el.setAttribute('style', cleaned.join('; '));
@@ -536,10 +533,33 @@
         } else if (post.pubDate) {
           meta = new Date(post.pubDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
         }
-        els.modalTitle.textContent = post.title || (isEbook ? 'Featured eBook' : 'Untitled');
+
         els.modalMeta.textContent = meta;
         els.modalBody.innerHTML = sanitize(post.content || post.description || '');
         els.modalBody.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; img.removeAttribute('width'); img.removeAttribute('height'); });
+
+        if (isEbook) {
+          if (post.feature?.note) {
+            const existing = els.modalBody.querySelector('.ebook-note');
+            if (!existing) {
+              const note = document.createElement('p');
+              note.className = 'ebook-note';
+              note.textContent = post.feature.note;
+              els.modalBody.prepend(note);
+            }
+          }
+          const ctaWrap = document.createElement('p');
+          ctaWrap.className = 'ebook-preview-cta';
+          const link = document.createElement('a');
+          link.className = 'btn btn-primary';
+          link.href = post.link;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          const ctaText = (post.feature?.ctaText || 'Read eBook').trim() || 'Read eBook';
+          link.textContent = ctaText;
+          ctaWrap.appendChild(link);
+          els.modalBody.appendChild(ctaWrap);
+        }
 
         lastFocus = document.activeElement;
         els.readingModal.classList.add('open');
@@ -598,6 +618,7 @@
         this.viewList = [];
         this.pageSize = 6; // show 6 posts at a time
         this.shown = 0;
+        this.featured = this.prepareFeatured();
       }
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
@@ -607,33 +628,6 @@
         this.load();
       }
 
-      featuredExtras(){
-        const extras = [];
-        if (FEATURED_EBOOK && FEATURED_EBOOK.url) {
-          const desc = (FEATURED_EBOOK.description || '').trim();
-          const note = (FEATURED_EBOOK.note || '').trim();
-          const ctaRaw = (FEATURED_EBOOK.cta_text || 'Download the eBook').trim() || 'Download the eBook';
-          const quick = [];
-          if (desc) quick.push(`<p>${escapeHtml(desc)}</p>`);
-          if (note) quick.push(`<p>${escapeHtml(note)}</p>`);
-          quick.push(`<p><a class="btn btn-primary" href="${FEATURED_EBOOK.url}" target="_blank" rel="noopener">${escapeHtml(ctaRaw)}</a></p>`);
-          extras.push({
-            title: FEATURED_EBOOK.title || 'Poetry eBook',
-            link: FEATURED_EBOOK.url,
-            pubDate: FEATURED_EBOOK.pub_date || '',
-            content: quick.join(''),
-            description: desc,
-            featureType: 'ebook',
-            feature: {
-              tag: (FEATURED_EBOOK.tag || 'Featured').trim() || 'Featured',
-              ctaText: ctaRaw,
-              cover: (FEATURED_EBOOK.cover || '').trim(),
-              meta: (FEATURED_EBOOK.meta || '').trim(),
-              shareText: (FEATURED_EBOOK.share_text || 'Share').trim() || 'Share',
-            },
-          });
-        }
-        return extras;
       }
 
       textOnly(html){
@@ -666,10 +660,7 @@
         const date = post.pubDate ? new Date(post.pubDate) : null;
         const html = post.content || post.description || '';
         const txt = this.textOnly(html);
-        const summary = isEbook ? (post.description || txt) : (txt.length > 280 ? txt.slice(0,280) + '…' : txt);
-        const img = isEbook ? null : this.firstImage(html);
-        const rt = !isEbook && txt ? this.readTime(txt) : '';
-        const tags = isEbook ? [] : this.vibes(post.title);
+
 
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
@@ -680,10 +671,7 @@
 
         if (isEbook) {
           const tag = post.feature?.tag || 'Featured';
-          const ctaText = post.feature?.ctaText || 'Download the eBook';
-          const shareText = post.feature?.shareText || 'Share';
-          const meta = post.feature?.meta || '';
-          const cover = post.feature?.cover || '';
+
           el.innerHTML = `
             <div class="card-content ebook">
               <div class="ebook-flag">${escapeHtml(tag)}</div>
@@ -695,9 +683,7 @@
                   <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Poetry eBook')}</a></h2>
                   ${meta ? `<div class="card-meta single">${escapeHtml(meta)}</div>` : ''}
                   <div class="card-summary">${escapeHtml(summary)}</div>
-                  <div class="card-actions ebook-actions">
-                    <a class="btn btn-primary" href="${post.link}" target="_blank" rel="noopener">${escapeHtml(ctaText)}</a>
-                    <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Preview</button>
+
                     <a href="#" data-share="${encodeURIComponent(post.link)}">${escapeHtml(shareText)}</a>
                   </div>
                 </div>
@@ -823,14 +809,7 @@
               return Boolean(title || text);
             });
 
-            const extras = this.featuredExtras();
 
-            if (valid.length) {
-              // sort newest → oldest so Load older reveals older poems
-              valid.sort((a,b) => new Date(b.pubDate || b.pubdate || 0) - new Date(a.pubDate || a.pubdate || 0));
-              const combined = extras.concat(valid);
-              posts = combined;
-              const newest = valid
                 .map(v => new Date(v.pubDate || v.pubdate || 0).getTime())
                 .filter(n => !isNaN(n))
                 .sort((a,b)=>b-a)[0];
@@ -844,7 +823,7 @@
               els.grid.removeAttribute('aria-busy');
               return;
             } else if (raw.length) {
-              const combined = extras.concat(raw);
+
               posts = combined;
               els.status.textContent = "";
               this.render(combined);

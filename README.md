@@ -22,4 +22,4 @@ cd dist && python -m http.server 8080
 # export EBOOK_URL="https://your.substack.com/p/your-ebook"
 # export EBOOK_TITLE="Your Poetry eBook"
 # export EBOOK_DESCRIPTION="Short blurb that appears in the featured card"
-# export EBOOK_CTA_TEXT="Read the eBook"
+

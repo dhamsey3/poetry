@@ -31,6 +31,7 @@ def _env_trim(name: str, default: str = "") -> str:
     return value.strip()
 
 
+
 def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str):
     env = Environment(
         loader=FileSystemLoader("."),
@@ -44,16 +45,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
         "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
         "description": _env_trim(
             "EBOOK_DESCRIPTION",
-            "A lovingly curated digital chapbook gathering Torchborne poems in one place.",
-        ),
-        "url": _env_trim("EBOOK_URL", ebook_default_url),
-        "cta_text": _env_trim("EBOOK_CTA_TEXT", "Download the eBook"),
-        "note": _env_trim("EBOOK_NOTE"),
-        "tag": _env_trim("EBOOK_TAG", "Featured"),
-        "cover": _env_trim("EBOOK_COVER"),
-        "pub_date": _env_trim("EBOOK_PUB_DATE"),
-        "meta": _env_trim("EBOOK_META", "Digital chapbook • PDF & EPUB"),
-        "share_text": _env_trim("EBOOK_SHARE_TEXT", "Share"),
+
     }
     if not featured_ebook["url"]:
         featured_ebook = {}
