@@ -102,6 +102,11 @@
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
             </button>
+            {% if featured_ebook %}
+            <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener">
+              <span>📘</span> {{ featured_ebook.cta_text or 'Read eBook' }}
+            </a>
+            {% endif %}
             <a class="btn btn-primary" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">
               <span>💌</span> Subscribe
             </a>
@@ -241,6 +246,7 @@
       "https://api.rss2json.com/v1/api.json?"
       + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
       + "count=" + encodeURIComponent(MAX_ITEMS) + "&rss_url=";
+    const FEATURED_EBOOK = {{ (featured_ebook or {}) | tojson }};
     const TAGLINES = [
       "where words carry the flame ✨",
       "poetry for wandering souls ✍️",
@@ -296,6 +302,14 @@
     const debounce = (fn, ms=200) => {
       let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
     };
+
+    const escapeHtml = (str='') =>
+      String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 
     // Theme
     class ThemeManager {
@@ -447,6 +461,35 @@
           if (n.startsWith('on') || v.startsWith('javascript:')) el.removeAttribute(attr.name);
         });
       });
+      div.querySelectorAll('[style]').forEach(el => {
+        const rawStyle = el.getAttribute('style') || '';
+        const overlayPosition = /position\s*:\s*(fixed|sticky)/i.test(rawStyle);
+        const hasAbsolute = /position\s*:\s*absolute/i.test(rawStyle);
+        const absoluteOverlay = hasAbsolute && /(?:top|right|bottom|left|inset)\s*:/i.test(rawStyle);
+        const cleaned = [];
+        const blockedDirectional = new Set(['top','right','bottom','left','inset']);
+        rawStyle.split(';').forEach(rule => {
+          const trimmed = rule.trim();
+          if (!trimmed) return;
+          const parts = trimmed.split(':');
+          if (parts.length < 2) return;
+          const prop = parts[0].trim();
+          const value = parts.slice(1).join(':').trim();
+          const propLower = prop.toLowerCase();
+          const valueLower = value.toLowerCase();
+          if (propLower === 'position') {
+            if (/fixed|sticky/.test(valueLower)) return;
+            if (absoluteOverlay && valueLower === 'absolute') return;
+          }
+          if (propLower === 'z-index') return;
+          if (propLower === 'pointer-events' && valueLower !== 'auto') return;
+          if ((overlayPosition || absoluteOverlay) && blockedDirectional.has(propLower)) return;
+          if (absoluteOverlay && (propLower === 'width' || propLower === 'height') && /100%/.test(valueLower)) return;
+          cleaned.push(`${prop}: ${value}`);
+        });
+        if (cleaned.length) el.setAttribute('style', cleaned.join('; '));
+        else el.removeAttribute('style');
+      });
       // Remove substack widgets
       div.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(el => el.remove());
       return div.innerHTML;
@@ -492,11 +535,52 @@
         lastFocus?.focus();
       }
       openReading(post, idx){
-        const date = post.pubDate ? new Date(post.pubDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : '';
-        els.modalTitle.textContent = post.title || 'Untitled';
-        els.modalMeta.textContent = date;
+        const isEbook = post.featureType === 'ebook';
+        let meta = '';
+        if (isEbook) {
+          meta = post.feature?.meta || '';
+        } else if (post.pubDate) {
+          meta = new Date(post.pubDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        const heading = isEbook
+          ? (post.feature?.modalTitle || post.title || 'Featured eBook')
+          : (post.title || 'Untitled');
+        els.modalTitle.textContent = heading;
+        els.modalMeta.textContent = meta;
         els.modalBody.innerHTML = sanitize(post.content || post.description || '');
         els.modalBody.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; img.removeAttribute('width'); img.removeAttribute('height'); });
+
+        if (isEbook) {
+          const hasPreview = Boolean(post.feature?.hasPreview);
+          if (post.feature?.note) {
+            if (hasPreview) {
+              const note = document.createElement('p');
+              note.className = 'ebook-note';
+              note.textContent = post.feature.note;
+              els.modalBody.prepend(note);
+            } else {
+              const existing = els.modalBody.querySelector('.ebook-note');
+              if (existing) existing.classList.add('ebook-note');
+              else {
+                const note = document.createElement('p');
+                note.className = 'ebook-note';
+                note.textContent = post.feature.note;
+                els.modalBody.prepend(note);
+              }
+            }
+          }
+          const ctaWrap = document.createElement('p');
+          ctaWrap.className = 'ebook-preview-cta';
+          const link = document.createElement('a');
+          link.className = 'btn btn-primary';
+          link.href = post.link;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          const ctaText = (post.feature?.ctaText || 'Read eBook').trim() || 'Read eBook';
+          link.textContent = ctaText;
+          ctaWrap.appendChild(link);
+          els.modalBody.appendChild(ctaWrap);
+        }
 
         lastFocus = document.activeElement;
         els.readingModal.classList.add('open');
@@ -564,6 +648,49 @@
         this.load();
       }
 
+      featuredExtras(){
+        const extras = [];
+        if (FEATURED_EBOOK && FEATURED_EBOOK.url) {
+          const desc = (FEATURED_EBOOK.description || '').trim();
+          const note = (FEATURED_EBOOK.note || '').trim();
+          const previewHtml = (FEATURED_EBOOK.preview_html || '').trim();
+          const hasPreview = previewHtml.length > 0;
+          const previewTitle = (FEATURED_EBOOK.preview_title || '').trim();
+          const previewButton = (FEATURED_EBOOK.preview_button_text || '').trim();
+          const ctaRaw = (FEATURED_EBOOK.cta_text || 'Read eBook').trim() || 'Read eBook';
+          const summary = desc || (hasPreview ? this.textOnly(previewHtml) : note);
+          const quick = [];
+          if (hasPreview) {
+            quick.push(`<div class="ebook-preview">${previewHtml}</div>`);
+          } else {
+            if (desc) quick.push(`<p>${escapeHtml(desc)}</p>`);
+            if (note) quick.push(`<p class="ebook-note">${escapeHtml(note)}</p>`);
+          }
+          if (!quick.length) quick.push('<p class="ebook-note">Preview coming soon.</p>');
+          extras.push({
+            title: FEATURED_EBOOK.title || 'Poetry eBook',
+            link: FEATURED_EBOOK.url,
+            pubDate: FEATURED_EBOOK.pub_date || '',
+            content: quick.join('\n'),
+            description: summary || desc,
+            featureType: 'ebook',
+            feature: {
+              tag: (FEATURED_EBOOK.tag || 'Featured').trim() || 'Featured',
+              ctaText: ctaRaw,
+              cover: (FEATURED_EBOOK.cover || '').trim(),
+              meta: (FEATURED_EBOOK.meta || '').trim(),
+              shareText: (FEATURED_EBOOK.share_text || 'Share').trim() || 'Share',
+              modalTitle: previewTitle || FEATURED_EBOOK.title || 'Poetry eBook',
+              note,
+              hasPreview,
+              quickLabel: previewButton || (hasPreview ? 'Read sample' : 'Preview'),
+              description: desc,
+            },
+          });
+        }
+        return extras;
+      }
+
       textOnly(html){
         const d=document.createElement('div');
         d.innerHTML = sanitize(html||'');
@@ -590,53 +717,92 @@
       }
 
       card(post, idx){
+        const isEbook = post.featureType === 'ebook';
         const date = post.pubDate ? new Date(post.pubDate) : null;
-        const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
         const html = post.content || post.description || '';
         const txt = this.textOnly(html);
-        const img = this.firstImage(html);
-        const summary = txt.length > 280 ? txt.slice(0,280) + '…' : txt;
-        const rt = txt ? this.readTime(txt) : '';
-        const tags = this.vibes(post.title);
+        const previewPlain = isEbook ? this.textOnly(post.content || '') : '';
+        const summary = isEbook
+          ? ((post.feature?.description || '').trim()
+              || (post.description || '').trim()
+              || previewPlain
+              || txt)
+          : (txt.length > 280 ? txt.slice(0,280) + '…' : txt);
+        const img = isEbook ? null : this.firstImage(html);
+        const rt = !isEbook && txt ? this.readTime(txt) : '';
+        const tags = isEbook ? [] : this.vibes(post.title);
+        const noteText = isEbook ? (post.feature?.note || '').trim() : '';
+        const quickLabel = isEbook ? (post.feature?.quickLabel || 'Preview') : 'Quick read';
 
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
         const accentClass = palettes[idx % palettes.length];
-        el.className = `card ${accentClass}`;
+        el.className = `card ${isEbook ? 'ebook-card accent-3' : accentClass}`;
         el.style.transitionDelay = `${Math.min(idx,15)*100}ms`;
-        el.setAttribute('aria-label', post.title || 'Poem');
+        el.setAttribute('aria-label', post.title || (isEbook ? 'Featured eBook' : 'Poem'));
 
-        el.innerHTML = `
-          ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
-          <div class="card-content">
-            <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${post.title || 'Untitled'}</a></h2>
-            <div class="card-meta">
-              ${dateStr ? `<span>📅 ${dateStr}</span>` : '' }
-              ${rt ? `<span>⏱️ ${rt}</span>` : '' }
+        if (isEbook) {
+          const tag = post.feature?.tag || 'Featured';
+          const ctaText = post.feature?.ctaText || 'Read eBook';
+          const shareText = post.feature?.shareText || 'Share';
+          const meta = post.feature?.meta || '';
+          const cover = post.feature?.cover || '';
+          const hasPreview = Boolean(post.feature?.hasPreview);
+          el.innerHTML = `
+            <div class="card-content ebook">
+              <div class="ebook-flag">${escapeHtml(tag)}</div>
+              <div class="ebook-layout">
+                <div class="ebook-cover${cover ? '' : ' placeholder'}">
+                  ${cover ? `<img loading="lazy" decoding="async" src="${cover}" alt="" />` : '<span aria-hidden="true">📘</span>'}
+                </div>
+                <div class="ebook-details">
+                  <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Poetry eBook')}</a></h2>
+                  ${meta ? `<div class="card-meta single">${escapeHtml(meta)}</div>` : ''}
+                  <div class="card-summary">${escapeHtml(summary)}</div>
+                  ${noteText && hasPreview ? `<div class="ebook-note">${escapeHtml(noteText)}</div>` : ''}
+                  <div class="card-actions ebook-actions">
+                    <a class="btn btn-primary" href="${post.link}" target="_blank" rel="noopener">${escapeHtml(ctaText)}</a>
+                    <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">${escapeHtml(quickLabel)}</button>
+                    <a href="#" data-share="${encodeURIComponent(post.link)}">${escapeHtml(shareText)}</a>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="card-summary">${summary}</div>
-            ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${v}</span>`).join('')}</div>` : ''}
-            <div class="card-actions">
-              <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
-              <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
-              <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
+          `;
+        } else {
+          const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
+          el.innerHTML = `
+            ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
+            <div class="card-content">
+              <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
+              <div class="card-meta">
+                ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
+                ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
+              </div>
+              <div class="card-summary">${escapeHtml(summary)}</div>
+              ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
+              <div class="card-actions">
+                <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
+                <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
+                <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        }
 
         // events
         el.querySelector('[data-quick-read]')?.addEventListener('click', e => { e.preventDefault(); modal.openReading(post, idx); });
         const share = el.querySelector('[data-share]');
         share?.addEventListener('click', async e => {
           e.preventDefault();
-          const url = post.link, title = post.title || 'Poem from Torchborne';
+          const url = post.link, title = post.title || (isEbook ? 'Torchborne Poetry eBook' : 'Poem from Torchborne');
           try {
             if (navigator.share) await navigator.share({ title, url });
             else { await navigator.clipboard.writeText(url); const t = share.textContent; share.textContent='Copied ✓'; setTimeout(()=> share.textContent=t, 1500); }
           } catch {}
         });
 
-        const im = el.querySelector('.card-thumb img');
+        const im = el.querySelector('.card-thumb img, .ebook-cover img');
         if (im) { if (im.complete) im.setAttribute('data-loaded','1'); else im.addEventListener('load', () => im.setAttribute('data-loaded','1')); }
         return el;
       }
@@ -722,10 +888,13 @@
               return Boolean(title || text);
             });
 
+            const extras = this.featuredExtras();
+
             if (valid.length) {
               // sort newest → oldest so Load older reveals older poems
               valid.sort((a,b) => new Date(b.pubDate || b.pubdate || 0) - new Date(a.pubDate || a.pubdate || 0));
-              posts = valid;
+              const combined = extras.concat(valid);
+              posts = combined;
               const newest = valid
                 .map(v => new Date(v.pubDate || v.pubdate || 0).getTime())
                 .filter(n => !isNaN(n))
@@ -736,13 +905,14 @@
               } else {
                 els.status.textContent = "";
               }
-              this.render(valid);
+              this.render(combined);
               els.grid.removeAttribute('aria-busy');
               return;
             } else if (raw.length) {
-              posts = raw;
+              const combined = extras.concat(raw);
+              posts = combined;
               els.status.textContent = "";
-              this.render(raw);
+              this.render(combined);
               els.grid.removeAttribute('aria-busy');
               return;
             }
@@ -751,7 +921,14 @@
           }
         }
         this.fail();
-        els.grid.innerHTML = '';
+        const extras = this.featuredExtras();
+        if (extras.length) {
+          posts = extras;
+          els.grid.innerHTML = '';
+          this.render(extras);
+        } else {
+          els.grid.innerHTML = '';
+        }
         els.grid.removeAttribute('aria-busy');
       }
 
