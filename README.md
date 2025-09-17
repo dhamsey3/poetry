@@ -17,3 +17,13 @@ export PUBLIC_SUBSTACK_URL="https://YOUR.substack.com/"
 export RSS_PROXY_URL="https://your-worker.example/?rss_url="  # optional
 python build.py
 cd dist && python -m http.server 8080
+
+# Optional: Featured eBook spotlight
+# export EBOOK_URL="https://your.substack.com/p/your-ebook"
+# export EBOOK_TITLE="Your Poetry eBook"
+# export EBOOK_DESCRIPTION="Short blurb that appears in the featured card"
+# export EBOOK_CTA_TEXT="Read eBook"
+# export EBOOK_NOTE="Optional dedication or note shown with the preview"
+# export EBOOK_PREVIEW_TITLE="Sneak Peek"
+# export EBOOK_PREVIEW_HTML="<p>First line of the poem</p><p>Second line of the poem</p>"
+# export EBOOK_PREVIEW_BUTTON_TEXT="Read sample"
