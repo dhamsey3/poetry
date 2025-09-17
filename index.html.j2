@@ -677,8 +677,12 @@ line them on the porch
           }
         ];
 
-        const stripEdgeNewlines = (poem = '') =>
-          String(poem || '').replace(/^[\r\n]+/, '').replace(/[\r\n]+$/, '');
+        const stripEdgeNewlines = (poem = '') => {
+          const poemText = poem == null ? '' : String(poem);
+          return poemText
+            .replace(/^(?:\r\n|\r|\n)+/, '')
+            .replace(/(?:\r\n|\r|\n)+$/, '');
+        };
 
         const renderLine = (line='') => {
           const match = line.match(/^[ \t]+/);
