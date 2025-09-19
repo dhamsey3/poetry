@@ -3,6 +3,7 @@
 <head>
   {% set STATIC = static_base or './static/' %}
   {% set STATICPUB = static_public_base or (public_url.rstrip('/') + '/static/') if public_url else STATIC %}
+  {% set POSTS_BASE = public_url.rstrip('/') if public_url else 'https://versesvibez.substack.com' %}
   <meta charset="utf-8" />
   <title>{{ site_title or "Torchborne" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -62,8 +63,14 @@
 </head>
 <body>
   <a href="#postsGrid" class="visually-hidden" id="skipLink">Skip to posts</a>
+  <div id="noJsBanner" class="status error" role="alert" hidden>JavaScript is disabled. Some features (search, quick read) won't work. You can still read directly on Substack via the links below.</div>
   <noscript>
-    <div class="status error" role="alert">JavaScript is disabled. Some features (search, quick read) won't work. You can still read directly on Substack via the links below.</div>
+    <style>
+      #noJsBanner,
+      #noJsBanner[hidden] {
+        display: block !important;
+      }
+    </style>
   </noscript>
 
   <!-- Floating Shapes -->
@@ -127,8 +134,36 @@
     <!-- MAIN CONTENT -->
     <main class="content">
       <div class="wrap">
-        <div id="statusMessage" class="status" role="status" aria-live="polite">Gathering poems from the digital ether...</div>
-        <section id="postsGrid" class="posts-grid" hidden></section>
+        <div id="statusMessage" class="status" role="status" aria-live="polite"{% if posts %} hidden{% endif %}>
+          {% if not posts %}Gathering poems from the digital ether...{% endif %}
+        </div>
+        <section id="postsGrid" class="posts-grid"{% if not posts %} hidden{% endif %}>
+          {% if posts %}
+            {% set accent_classes = ['accent', 'accent-2', 'accent-3'] %}
+            {% for post in posts[:9] %}
+              {% set slug = post.slug or '' %}
+              {% set candidate_url = post.url or post.link %}
+              {% set post_url = candidate_url if candidate_url else (POSTS_BASE ~ '/p/' ~ slug if slug else POSTS_BASE) %}
+              {% set iso_date = post.date or post.pubDate or post.published_at %}
+              {% set display_date = post.date_human or (iso_date[:10] if iso_date else '') %}
+              {% set accent = accent_classes[loop.index0 % (accent_classes | length)] %}
+              {% set card_title = post.title if post.title else (slug.replace('-', ' ') if slug else 'Untitled') %}
+              <article class="card {{ accent }}" data-post-slug="{{ slug }}">
+                <div class="card-thumb" aria-hidden="true"></div>
+                <div class="card-content">
+                  <h2 class="card-title"><a href="{{ post_url }}" target="_blank" rel="noopener">{{ card_title }}</a></h2>
+                  <div class="card-meta">
+                    {% if display_date %}<span>📅 {{ display_date }}</span>{% endif %}
+                  </div>
+                  <div class="card-summary">{{ post.excerpt or post.description or '' }}</div>
+                  <div class="card-actions">
+                    <a href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack →</a>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          {% endif %}
+        </section>
         <button id="loadMore" class="chip accent" style="display:none; margin: 24px auto 0;" aria-controls="postsGrid">Load older</button>
       </div>
     </main>
@@ -162,7 +197,7 @@
   </div>
 
   <!-- READING MODAL -->
-  <div id="readingModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalBody" tabindex="-1">
+  <div id="readingModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalBody" tabindex="-1" hidden>
     <div class="modal-content">
       <button class="modal-close" id="readingModalClose" aria-label="Close">✕</button>
       <div class="modal-header">
@@ -178,7 +213,7 @@
   </div>
 
   <!-- ABOUT MODAL -->
-  <div id="aboutModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" tabindex="-1">
+  <div id="aboutModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" tabindex="-1" hidden>
     <div class="modal-content">
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
@@ -229,6 +264,7 @@
   </div>
 
   <!-- DOMPurify for robust sanitization -->
+  <script id="initialPostsData" type="application/json">{{ (posts or []) | tojson }}</script>
   <script
     src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"
     integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
@@ -252,6 +288,8 @@
       "poetry for wandering souls ✍️",
       "verses that glow in the dark 🌙"
     ];
+    const SUBSTACK_BASE = {{ POSTS_BASE | tojson }};
+    const STATIC_DATA_URL = '/data/posts.json';
 
     function normalizeBase(base) {
       if (!base) return "";
@@ -263,6 +301,126 @@
       return base + "rss_url=";
     }
     WORKER_BASE = normalizeBase(WORKER_BASE);
+
+    const CLEAN_SUBSTACK_BASE = SUBSTACK_BASE.replace(/\/$/, '');
+
+    function normalizePost(raw = {}) {
+      if (!raw || typeof raw !== 'object') return null;
+      const slug = typeof raw.slug === 'string' ? raw.slug.trim() : '';
+      const candidates = [raw.link, raw.url, raw.href];
+      let link = '';
+      for (const cand of candidates) {
+        if (typeof cand === 'string' && cand.trim()) { link = cand.trim(); break; }
+      }
+      if (!link && slug) link = `${CLEAN_SUBSTACK_BASE}/p/${slug}`;
+      const pubDate = typeof raw.pubDate === 'string' ? raw.pubDate
+        : typeof raw.pubdate === 'string' ? raw.pubdate
+        : typeof raw.date === 'string' ? raw.date
+        : '';
+      const excerpt = typeof raw.excerpt === 'string' && raw.excerpt.trim()
+        ? raw.excerpt
+        : typeof raw.description === 'string' ? raw.description : '';
+      const content = typeof raw.content === 'string' ? raw.content
+        : typeof raw.html === 'string' ? raw.html
+        : typeof raw.body === 'string' ? raw.body
+        : '';
+      let title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : '';
+      if (!title) {
+        if (slug) {
+          title = slug
+            .replace(/[-_]+/g, ' ')
+            .replace(/\b\w/g, s => s.toUpperCase());
+        } else {
+          title = 'Untitled';
+        }
+      }
+      const tags = Array.isArray(raw.tags)
+        ? raw.tags.filter(tag => typeof tag === 'string' && tag.trim()).map(tag => tag.trim())
+        : [];
+      return {
+        ...raw,
+        slug,
+        title,
+        link: link || '#',
+        url: link || '#',
+        pubDate: pubDate || '',
+        description: excerpt || '',
+        excerpt: excerpt || '',
+        content,
+        tags,
+      };
+    }
+
+    function normalizePostsList(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map(normalizePost).filter(Boolean);
+    }
+
+    function mergeEntries(base = {}, extra = {}) {
+      const merged = { ...base };
+      for (const key of Object.keys(extra)) {
+        const val = extra[key];
+        if (val == null) continue;
+        if (typeof val === 'string') {
+          if (!val.trim()) continue;
+        } else if (Array.isArray(val)) {
+          if (!val.length) continue;
+        }
+        merged[key] = val;
+      }
+      return merged;
+    }
+
+    function postTimestamp(post) {
+      if (!post) return 0;
+      const dateStr = post.pubDate || post.pubdate || post.date;
+      if (!dateStr) return 0;
+      const ts = Date.parse(dateStr);
+      return Number.isFinite(ts) ? ts : 0;
+    }
+
+    function mergePostLists(existing = [], incoming = []) {
+      const merged = [];
+      const indexByKey = new Map();
+      const add = item => {
+        if (!item) return;
+        const slugKey = typeof item.slug === 'string' && item.slug.trim() ? item.slug.trim().toLowerCase() : '';
+        const guid = typeof item.guid === 'string' && item.guid.trim() ? item.guid.trim() : '';
+        const id = typeof item.id === 'string' && item.id.trim() ? item.id.trim() : '';
+        const linkKey = typeof item.link === 'string' && item.link.trim() ? item.link.trim() : '';
+        const urlKey = typeof item.url === 'string' && item.url.trim() ? item.url.trim() : '';
+        const titleKey = typeof item.title === 'string' && item.title.trim() ? item.title.trim() : '';
+        const key = slugKey || guid || id || linkKey || urlKey || titleKey;
+        if (!key) return;
+        if (indexByKey.has(key)) {
+          const idx = indexByKey.get(key);
+          merged[idx] = mergeEntries(merged[idx], item);
+        } else {
+          indexByKey.set(key, merged.length);
+          merged.push(item);
+        }
+      };
+      (existing || []).forEach(add);
+      (incoming || []).forEach(add);
+      merged.sort((a, b) => postTimestamp(b) - postTimestamp(a));
+      return merged;
+    }
+
+    const inlineDataElement = document.getElementById('initialPostsData');
+    const INLINE_POSTS = (() => {
+      if (!inlineDataElement) return [];
+      const rawText = (inlineDataElement.textContent || inlineDataElement.innerText || '').trim();
+      if (!rawText) return [];
+      try {
+        const parsed = JSON.parse(rawText);
+        if (Array.isArray(parsed)) return normalizePostsList(parsed);
+        if (parsed && Array.isArray(parsed.posts)) return normalizePostsList(parsed.posts);
+      } catch (err) {
+        console.warn('Inline posts JSON invalid', err);
+      }
+      return [];
+    })();
+    if (inlineDataElement) inlineDataElement.remove();
 
     // ===== DOM =====
     const els = {
@@ -293,7 +451,7 @@
     };
 
     // ===== STATE =====
-    let posts = [];
+    let posts = INLINE_POSTS.slice();
     let iModal = 0;
     let lastFocus = null;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -512,6 +670,7 @@
       }
       openAbout(){
         lastFocus = document.activeElement;
+        if (els.aboutModal) els.aboutModal.removeAttribute('hidden');
         els.aboutModal.classList.add('open');
         els.aboutModal.setAttribute('aria-hidden','false');
         this.lockMain(true);
@@ -521,6 +680,7 @@
       closeAbout(){
         els.aboutModal.classList.remove('open');
         els.aboutModal.setAttribute('aria-hidden','true');
+        if (els.aboutModal) els.aboutModal.setAttribute('hidden','');
         this.lockMain(false);
         this.releaseTrap && this.releaseTrap();
         lastFocus?.focus();
@@ -562,6 +722,7 @@
         }
 
         lastFocus = document.activeElement;
+        if (els.readingModal) els.readingModal.removeAttribute('hidden');
         els.readingModal.classList.add('open');
         els.readingModal.setAttribute('aria-hidden','false');
         els.readingModal.dataset.index = idx;
@@ -576,6 +737,7 @@
       closeReading(){
         els.readingModal.classList.remove('open');
         els.readingModal.setAttribute('aria-hidden','true');
+        if (els.readingModal) els.readingModal.setAttribute('hidden','');
         els.bar.style.width = '0%';
         els.bar.setAttribute('aria-valuenow','0');
         els.modalBody.scrollTop = 0;
@@ -616,15 +778,22 @@
     class ContentManager {
       constructor(){
         this.viewList = [];
-        this.pageSize = 6; // show 6 posts at a time
+        this.pageSize = 9; // show 9 posts at a time for initial render
         this.shown = 0;
         this.featured = this.prepareFeatured();
+        this.inlineConsumed = Boolean(posts.length);
       }
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
         els.refreshBtn?.addEventListener('click', () => this.load(true));
         els.randomBtn?.addEventListener('click', () => this.random());
         els.loadMore?.addEventListener('click', () => this.renderNextChunk(false));
+        const initialCards = els.grid ? els.grid.querySelectorAll('[data-post-slug]').length : 0;
+        if (initialCards > this.pageSize) this.pageSize = initialCards;
+        if (posts.length) {
+          this.applyData(posts);
+          this.inlineConsumed = true;
+        }
         this.load();
       }
 
@@ -919,6 +1088,7 @@ line them on the porch
         els.grid.innerHTML = ""; // reset
         this.shown = 0;
         this.renderNextChunk(true);
+        this.finishLoading('');
       }
 
       renderNextChunk(reset=false){
@@ -951,81 +1121,169 @@ line them on the porch
       }
 
       async load(force=false){
-        els.grid.setAttribute('aria-busy','true');
-        els.status.classList.remove('hidden','error');
-        els.status.textContent = "Gathering poems from the digital ether...";
-        els.grid.innerHTML = '';
-        for (let i = 0; i < this.pageSize; i++) {
-          els.grid.appendChild(this.skeleton());
+        const hadInitial = posts.length > 0;
+        const showSkeleton = force || !hadInitial;
+        let updated = false;
+        let success = hadInitial;
+
+        if (showSkeleton) {
+          els.grid.setAttribute('aria-busy','true');
+          els.status.className = 'status';
+          els.status.hidden = false;
+          els.status.removeAttribute('role');
+          els.status.textContent = force
+            ? 'Refreshing poems from the digital ether...'
+            : 'Gathering poems from the digital ether...';
+          els.grid.innerHTML = '';
+          for (let i = 0; i < this.pageSize; i++) {
+            els.grid.appendChild(this.skeleton());
+          }
+        } else {
+          this.finishLoading('');
         }
-        const sources = [];
-        const worker   = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
-        const publicUrl= PUBLIC_BASE + encodeURIComponent(RSS_URL);
-        if (worker) sources.push(worker + (force ? `&_=${Date.now()}` : ''));
-        sources.push(publicUrl + (force ? `&_=${Date.now()}` : ''));
 
-        for (const url of sources){
-          try {
-            const data = await this.fetchWithTimeout(url, 12000);
-            let raw = Array.isArray(data?.items) ? data.items : [];
-            raw = raw.map(it => {
-              if (!it.content && it["content:encoded"]) it.content = it["content:encoded"];
-              return it;
-            });
-            if (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) raw = raw.slice(0, +MAX_ITEMS);
+        if (!this.inlineConsumed && !force && INLINE_POSTS.length) {
+          if (this.applyData(INLINE_POSTS, { forceRender: showSkeleton })) {
+            success = true;
+            updated = true;
+          }
+          this.inlineConsumed = true;
+        }
 
-            const valid = raw.filter(p => {
-              const title = (p.title || '').trim();
-              const text = this.textOnly(p.content || p.description || '').trim();
-              if (/coming\s+soon/i.test(title)) return false;
-              return Boolean(title || text);
-            });
-
-
-                .map(v => new Date(v.pubDate || v.pubdate || 0).getTime())
-                .filter(n => !isNaN(n))
-                .sort((a,b)=>b-a)[0];
-              if (newest) {
-                const d = new Date(newest);
-                els.status.textContent = `Last updated ${d.toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}`;
-              } else {
-                els.status.textContent = "";
-              }
-              this.render(combined);
-              els.grid.removeAttribute('aria-busy');
-              return;
-            } else if (raw.length) {
-
-              posts = combined;
-              els.status.textContent = "";
-              this.render(combined);
-              els.grid.removeAttribute('aria-busy');
-              return;
-            }
-          } catch(e) {
-            console.warn('Feed source failed:', url, e);
+        const cacheBust = force ? `?_=${Date.now()}` : '';
+        try {
+          const localData = await this.fetchWithTimeout(`${STATIC_DATA_URL}${cacheBust}`, 8000);
+          const localPosts = this.extractPosts(localData);
+          if (this.applyData(localPosts, { forceRender: showSkeleton })) {
+            success = true;
+            updated = true;
+          }
+        } catch (err) {
+          if (err && err.name !== 'AbortError') {
+            console.warn('Local posts unavailable:', err);
           }
         }
-        this.fail();
-        const extras = this.featuredExtras();
-        if (extras.length) {
-          posts = extras;
-          els.grid.innerHTML = '';
-          this.render(extras);
-        } else {
-          els.grid.innerHTML = '';
+
+        if (!success || force) {
+          const worker = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
+          const publicUrl = PUBLIC_BASE + encodeURIComponent(RSS_URL);
+          const sources = [];
+          if (worker) sources.push(worker + (force ? `&_=${Date.now()}` : ''));
+          sources.push(publicUrl + (force ? `&_=${Date.now()}` : ''));
+          for (const url of sources) {
+            try {
+              const data = await this.fetchWithTimeout(url, 12000);
+              const list = this.extractPosts(data);
+              if (this.applyData(list, { forceRender: showSkeleton })) {
+                success = true;
+                updated = true;
+                break;
+              }
+            } catch (e) {
+              if (e && e.name !== 'AbortError') {
+                console.warn('Feed source failed:', url, e);
+              }
+            }
+          }
         }
+
+        if (showSkeleton && !updated && posts.length) {
+          this.render(posts);
+        }
+
+        if (!success) {
+          const extras = this.featuredExtras();
+          if (!posts.length && extras.length) {
+            if (this.applyData(extras, { forceRender: true })) {
+              success = true;
+              updated = true;
+              this.finishLoading('Showing curated poems while we reconnect…');
+            }
+          }
+        }
+
+        if (!success) {
+          this.fail();
+          if (!posts.length) {
+            els.grid.innerHTML = '';
+          }
+        } else if (!updated) {
+          this.finishLoading('');
+        }
+
         els.grid.removeAttribute('aria-busy');
       }
 
-      fetchWithTimeout(url, ms=10000){
-        const ctrl = new AbortController(); const id = setTimeout(()=>ctrl.abort(), ms);
-        return fetch(url, { credentials:'omit', cache:'no-store', signal: ctrl.signal })
-          .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-          .finally(() => clearTimeout(id));
+      async fetchWithTimeout(url, ms=10000){
+        const ctrl = new AbortController();
+        const id = setTimeout(() => ctrl.abort(), ms);
+        try {
+          const res = await fetch(url, { credentials:'omit', cache:'no-store', signal: ctrl.signal });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const text = await res.text();
+          const trimmed = text.trim();
+          if (!trimmed) return null;
+          try {
+            return JSON.parse(trimmed);
+          } catch (err) {
+            throw new Error('Invalid JSON');
+          }
+        } finally {
+          clearTimeout(id);
+        }
+      }
+
+      extractPosts(payload){
+        if (!payload) return [];
+        let list = [];
+        if (Array.isArray(payload)) list = payload;
+        else if (Array.isArray(payload.posts)) list = payload.posts;
+        else if (Array.isArray(payload.items)) list = payload.items;
+        else if (Array.isArray(payload.data)) list = payload.data;
+        return (list || []).map(item => {
+          if (item && !item.content && item["content:encoded"]) {
+            return { ...item, content: item["content:encoded"] };
+          }
+          return item;
+        });
+      }
+
+      applyData(rawList, { forceRender = false } = {}){
+        const normalized = normalizePostsList(rawList).filter(item => {
+          if (!item) return false;
+          const title = (item.title || '').trim();
+          const text = this.textOnly(item.content || item.description || '').trim();
+          if (/coming\s+soon/i.test(title)) return false;
+          return Boolean(title || text);
+        });
+        if (!normalized.length) return false;
+        const merged = mergePostLists(posts, normalized);
+        const limited = (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) ? merged.slice(0, +MAX_ITEMS) : merged;
+        const changed = limited.length !== posts.length || limited.some((item, idx) => item !== posts[idx]);
+        posts = limited;
+        if (changed || forceRender || !this.viewList.length) {
+          this.render(posts);
+        } else {
+          this.finishLoading('');
+        }
+        return true;
+      }
+
+      finishLoading(message=''){
+        els.status.className = 'status';
+        if (message) {
+          els.status.hidden = false;
+          els.status.removeAttribute('role');
+          els.status.textContent = message;
+        } else {
+          els.status.hidden = true;
+          els.status.removeAttribute('role');
+          els.status.textContent = '';
+        }
       }
 
       fail(){
+        els.status.hidden = false;
         els.status.className = 'status error';
         els.status.setAttribute('role','alert');
         els.status.textContent = "Unable to load poems right now. You can read on Substack via the links below.";
