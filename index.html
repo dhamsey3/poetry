@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Torchborne Poems</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      min-height: 100vh;
+    }
+    header {
+      padding: 2.5rem 1.5rem 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(2rem, 3vw + 1rem, 3rem);
+      letter-spacing: -0.02em;
+    }
+    header p {
+      margin: 0;
+      color: #475569;
+      font-size: 1rem;
+    }
+    main {
+      padding: 0 1.5rem 3rem;
+    }
+    .poem-list {
+      list-style: none;
+      display: grid;
+      gap: 1.5rem;
+      padding: 0;
+      margin: 0 auto;
+      max-width: 58rem;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    }
+    .poem-card {
+      margin: 0;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 25px 60px -35px rgba(15, 23, 42, 0.55);
+      transition: transform 180ms ease, box-shadow 180ms ease;
+      overflow: hidden;
+    }
+    .poem-card__trigger {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+      height: 100%;
+      padding: 1.75rem 1.5rem;
+    }
+    .poem-card__trigger strong {
+      font-size: 1.2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .poem-card__trigger span {
+      font-size: 0.95rem;
+      color: #64748b;
+    }
+    .poem-card__excerpt {
+      margin: 0.75rem 0 0;
+      font-size: 0.95rem;
+      color: #475569;
+    }
+    .poem-card__trigger:focus-visible {
+      outline: 3px solid #f59e0b;
+      outline-offset: 4px;
+    }
+    .poem-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 35px 70px -40px rgba(15, 23, 42, 0.65);
+    }
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+      z-index: 20;
+    }
+    .backdrop.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(1.5rem, 4vw, 3.5rem);
+      z-index: 30;
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+    .modal.is-open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .modal__shell {
+      background: #ffffff;
+      color: inherit;
+      width: min(100%, 44rem);
+      max-height: min(85vh, 720px);
+      border-radius: 20px;
+      box-shadow: 0 40px 80px -45px rgba(15, 23, 42, 0.6);
+      padding: clamp(1.75rem, 3vw, 2.5rem);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .modal__header {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding-right: 3rem;
+    }
+    .modal__heading {
+      margin: 0;
+      font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+      letter-spacing: -0.015em;
+    }
+    .modal__meta {
+      margin: 0.35rem 0 0;
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+    .modal__close {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      border: none;
+      background: rgba(15, 23, 42, 0.07);
+      color: inherit;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 999px;
+      font-size: 1.2rem;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 160ms ease, transform 160ms ease;
+    }
+    .modal__close:hover {
+      background: rgba(15, 23, 42, 0.12);
+      transform: scale(1.05);
+    }
+    .modal__close:focus-visible {
+      outline: 3px solid #f59e0b;
+      outline-offset: 3px;
+    }
+    .modal__body {
+      margin-top: 1.5rem;
+      padding-right: 0.25rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 1.02rem;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Torchborne Poetry</h1>
+    <p>Curated verses with a quick-read modal for quiet nights.</p>
+  </header>
+  <main>
+    <ul class="poem-list" data-poem-list></ul>
+  </main>
+
+  <div class="backdrop" hidden></div>
+  <section
+    id="poemModal"
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+    aria-labelledby="poemTitle"
+    aria-describedby="poemBody"
+    tabindex="-1"
+    hidden
+  >
+    <div class="modal__shell">
+      <div class="modal__header">
+        <div>
+          <h2 id="poemTitle" class="modal__heading" data-slot="title"></h2>
+          <p id="poemAuthor" class="modal__meta" data-slot="author"></p>
+        </div>
+      </div>
+      <button type="button" class="modal__close" data-action="close" aria-label="Close poem">✕</button>
+      <article id="poemBody" class="modal__body" data-slot="body"></article>
+    </div>
+  </section>
+
+  <script>
+    (function renderPoems() {
+      const poems = [
+        {
+          title: "Midnight Ember",
+          author: "Dami",
+          body: "I keep a lantern by the window\nIts flame remembers every dusk.\nThe city hums in amber verses\nAnd rooftops listen without fuss.\nA hush collects along the railing\nWhile constellations catch their breath.\nI pour the quiet into stanzas\nUntil the ember learns to rest.",
+        },
+        {
+          title: "River Letters",
+          author: "Dami",
+          body: "We fold our wishes into paper\nAnd send them drifting down the stream.\nThe current braids our patient secrets\nWith cedar, tide, and twilight gleam.\nEach ripple smooths the brittle edges\nOf promises we could not say.\nBy dawn the river writes us back\nIn murmured ink of silver spray.",
+        },
+        {
+          title: "Aurora Notes",
+          author: "Dami",
+          body: "Morning inks the frost with color\nAnd hums a vow across the pines.\nThe skyline loosens threads of lilac\nTo stitch our breath with northern lines.\nWe cup the shimmer in our palms\nBefore the rhythm thins to mist.\nThe day begins with whispered chords\nAnd every shadow learns to lift.",
+        },
+      ];
+
+      const list = document.querySelector('[data-poem-list]');
+      if (!list) return;
+
+      const fragment = document.createDocumentFragment();
+      poems.forEach((poem) => {
+        const item = document.createElement('li');
+        item.className = 'poem-card';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'poem-card__trigger';
+        button.dataset.modalTarget = 'poemModal';
+        button.dataset.poemTitle = poem.title;
+        if (poem.author) button.dataset.poemAuthor = poem.author;
+        button.dataset.poemBody = poem.body;
+        button.setAttribute('aria-label', `Read ${poem.title}`);
+
+        const heading = document.createElement('strong');
+        heading.textContent = poem.title;
+        button.appendChild(heading);
+
+        if (poem.author) {
+          const meta = document.createElement('span');
+          meta.textContent = `by ${poem.author}`;
+          button.appendChild(meta);
+        }
+
+        const excerptLines = poem.body
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .slice(0, 2);
+        if (excerptLines.length) {
+          const excerpt = document.createElement('p');
+          excerpt.className = 'poem-card__excerpt';
+          excerpt.textContent = excerptLines.join(' · ');
+          button.appendChild(excerpt);
+        }
+
+        item.appendChild(button);
+        fragment.appendChild(item);
+      });
+
+      list.appendChild(fragment);
+    })();
+  </script>
+  <script>
+    (function setupPoemModal() {
+      const modal = document.getElementById('poemModal');
+      const backdrop = document.querySelector('.backdrop');
+      if (!modal || !backdrop) return;
+
+      const focusableSelector = [
+        'a[href]',
+        'area[href]',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        'button:not([disabled])',
+        'iframe',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(', ');
+
+      let activeTrigger = null;
+      let previousOverflow = '';
+
+      const syncHidden = (element, shouldHide) => {
+        if (shouldHide) {
+          if (!element.hasAttribute('hidden')) element.setAttribute('hidden', '');
+        } else {
+          element.removeAttribute('hidden');
+        }
+      };
+
+      const isOpen = () => modal.classList.contains('is-open');
+
+      const updateModalContent = (trigger) => {
+        const { poemTitle = '', poemAuthor = '', poemBody = '', poemHtml = '' } = trigger.dataset;
+        const titleEl = modal.querySelector('[data-slot="title"]');
+        const authorEl = modal.querySelector('[data-slot="author"]');
+        const bodyEl = modal.querySelector('[data-slot="body"]');
+
+        if (titleEl) titleEl.textContent = poemTitle;
+        if (authorEl) authorEl.textContent = poemAuthor ? `by ${poemAuthor}` : '';
+        if (bodyEl) {
+          if (poemHtml) {
+            bodyEl.innerHTML = poemHtml;
+          } else {
+            bodyEl.textContent = poemBody;
+          }
+        }
+      };
+
+      const focusFirst = () => {
+        const focusables = modal.querySelectorAll(focusableSelector);
+        const first = focusables.length ? focusables[0] : modal;
+        first.focus({ preventScroll: true });
+      };
+
+      const openModal = (trigger) => {
+        activeTrigger = trigger || document.activeElement || null;
+        previousOverflow = document.body.style.overflow;
+        syncHidden(backdrop, false);
+        syncHidden(modal, false);
+        modal.classList.add('is-open');
+        backdrop.classList.add('is-visible');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(focusFirst);
+      };
+
+      const closeModal = () => {
+        if (!isOpen()) return;
+        modal.classList.remove('is-open');
+        backdrop.classList.remove('is-visible');
+        modal.setAttribute('aria-hidden', 'true');
+        syncHidden(backdrop, true);
+        syncHidden(modal, true);
+        document.body.style.overflow = previousOverflow;
+        previousOverflow = '';
+        const trigger = activeTrigger;
+        activeTrigger = null;
+        if (trigger && document.contains(trigger)) {
+          trigger.focus({ preventScroll: true });
+        }
+      };
+
+      document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-modal-target="poemModal"]');
+        if (trigger) {
+          event.preventDefault();
+          updateModalContent(trigger);
+          openModal(trigger);
+          return;
+        }
+
+        const closeTrigger = event.target.closest('[data-action="close"]');
+        if (closeTrigger && modal.contains(closeTrigger)) {
+          event.preventDefault();
+          closeModal();
+          return;
+        }
+
+        if (event.target === backdrop) {
+          event.preventDefault();
+          closeModal();
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isOpen()) {
+          event.preventDefault();
+          closeModal();
+        }
+      });
+
+      if (modal.classList.contains('is-open')) {
+        modal.setAttribute('aria-hidden', 'false');
+        syncHidden(backdrop, false);
+        syncHidden(modal, false);
+        document.body.style.overflow = 'hidden';
+      } else {
+        modal.setAttribute('aria-hidden', 'true');
+        syncHidden(backdrop, true);
+        syncHidden(modal, true);
+      }
+
+      window.poemModalController = {
+        open: openModal,
+        close: closeModal,
+        element: modal,
+      };
+    })();
+  </script>
+</body>
+</html>
