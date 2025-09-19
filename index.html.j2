@@ -2,8 +2,10 @@
 <html lang="en" data-theme="light">
 <head>
   {% set STATIC = static_base or './static/' %}
-  {% set STATICPUB = static_public_base or (public_url.rstrip('/') + '/static/') if public_url else STATIC %}
-  {% set POSTS_BASE = public_url.rstrip('/') if public_url else 'https://versesvibez.substack.com' %}
+  {% set PUBLIC_URL = (public_url or '').rstrip('/') %}
+  {% set STATICPUB = static_public_base or (PUBLIC_URL + '/static/') if PUBLIC_URL else STATIC %}
+  {% set POSTS_BASE = PUBLIC_URL if PUBLIC_URL else 'https://versesvibez.substack.com' %}
+  {% set SUBSCRIBE_URL = (PUBLIC_URL + '/subscribe') if PUBLIC_URL else (POSTS_BASE + '/subscribe') %}
   <meta charset="utf-8" />
   <title>{{ site_title or "Torchborne" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,7 +13,7 @@
   <meta name="description" content="Poetry & musings by Dami." />
   <meta name="color-scheme" content="light dark" />
   <meta id="themeColorMeta" name="theme-color" content="#f59e0b" />
-  <link rel="canonical" href="{{ public_url or '' }}" />
+  <link rel="canonical" href="{{ PUBLIC_URL or '' }}" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
@@ -31,7 +33,7 @@
   <meta property="og:title" content="{{ site_title or 'Torchborne' }}" />
   <meta property="og:description" content="Poetry & musings by Dami." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="{{ public_url or '' }}" />
+  <meta property="og:url" content="{{ PUBLIC_URL or '' }}" />
   <meta property="og:image" content="{{ STATICPUB ~ 'logo-light.svg' }}" />
   <meta property="og:site_name" content="{{ site_title or 'Torchborne' }}" />
   <meta name="twitter:card" content="summary_large_image">
@@ -114,7 +116,7 @@
 
             </a>
             {% endif %}
-            <a class="btn btn-primary" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">
+            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">
               <span>💌</span> Subscribe
             </a>
           </div>
@@ -183,8 +185,8 @@
 
           <nav class="footer-links" aria-label="Footer">
             <a href="#" id="footerAboutLink" class="pill">About</a>
-            <a href="{{ public_url.rstrip('/') + '/subscribe' }}" class="pill">Subscribe</a>
-            <a href="{{ public_url.rstrip('/') }}" target="_blank" rel="noopener" class="pill">
+            <a href="{{ SUBSCRIBE_URL }}" class="pill">Subscribe</a>
+            <a href="{{ POSTS_BASE }}" target="_blank" rel="noopener" class="pill">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                 <path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/>
               </svg>
@@ -231,7 +233,7 @@
         </div>
 
         <div class="about-cta">
-          <a class="btn btn-primary" href="{{ public_url.rstrip('/') + '/subscribe' }}" rel="noopener">
+          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">
             <span>💌</span> Subscribe on Substack
           </a>
           <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">
@@ -240,7 +242,7 @@
         </div>
 
         <div class="about-links">
-          <a href="{{ public_url.rstrip('/') }}" target="_blank" rel="noopener" class="pill">
+          <a href="{{ POSTS_BASE }}" target="_blank" rel="noopener" class="pill">
             <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
               <path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/>
             </svg>
