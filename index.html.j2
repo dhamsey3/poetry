@@ -2,10 +2,6 @@
 <html lang="en" data-theme="light">
 <head>
   {% set STATIC = static_base or './static/' %}
-  {% set PUBLIC_URL = (public_url or '').rstrip('/') %}
-  {% set STATICPUB = static_public_base or (PUBLIC_URL + '/static/') if PUBLIC_URL else STATIC %}
-  {% set POSTS_BASE = PUBLIC_URL if PUBLIC_URL else 'https://versesvibez.substack.com' %}
-  {% set SUBSCRIBE_URL = (PUBLIC_URL + '/subscribe') if PUBLIC_URL else (POSTS_BASE + '/subscribe') %}
   <meta charset="utf-8" />
   <title>{{ site_title or "Torchborne" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -147,7 +143,6 @@
               {% set candidate_url = post.url or post.link %}
               {% set post_url = candidate_url if candidate_url else (POSTS_BASE ~ '/p/' ~ slug if slug else POSTS_BASE) %}
               {% set iso_date = post.date or post.pubDate or post.published_at %}
-              {% set display_date = post.date_human or (iso_date[:10] if iso_date else '') %}
               {% set accent = accent_classes[loop.index0 % (accent_classes | length)] %}
               {% set card_title = post.title if post.title else (slug.replace('-', ' ') if slug else 'Untitled') %}
               <article class="card {{ accent }}" data-post-slug="{{ slug }}">
