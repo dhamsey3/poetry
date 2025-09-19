@@ -816,7 +816,22 @@ line them on the porch
         const date = post.pubDate ? new Date(post.pubDate) : null;
         const html = post.content || post.description || '';
         const txt = this.textOnly(html);
-
+        const img = this.firstImage(html);
+        const rt = txt ? this.readTime(txt) : '';
+        const feature = post.feature || {};
+        const tags = Array.isArray(post.tags)
+          ? post.tags
+          : Array.isArray(feature.tags)
+            ? feature.tags
+            : this.vibes(post.title);
+        const cover = feature.cover || '';
+        const meta = feature.meta || '';
+        const shareText = (feature.shareText || 'Share eBook').trim() || 'Share eBook';
+        const ctaText = (feature.ctaText || 'Read eBook').trim() || 'Read eBook';
+        const summaryText = (feature.summary || post.description || txt).trim()
+          || (isEbook
+            ? 'Preview selections from the Torchborne poetry eBook.'
+            : 'A Torchborne poem from the archive.');
 
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
@@ -838,8 +853,9 @@ line them on the porch
                 <div class="ebook-details">
                   <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Poetry eBook')}</a></h2>
                   ${meta ? `<div class="card-meta single">${escapeHtml(meta)}</div>` : ''}
-                  <div class="card-summary">${escapeHtml(summary)}</div>
-
+                  <div class="card-summary">${escapeHtml(summaryText)}</div>
+                  <div class="ebook-actions">
+                    <a class="btn btn-primary" href="${post.link}" target="_blank" rel="noopener">${escapeHtml(ctaText)}</a>
                     <a href="#" data-share="${encodeURIComponent(post.link)}">${escapeHtml(shareText)}</a>
                   </div>
                 </div>
@@ -856,7 +872,7 @@ line them on the porch
                 ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
                 ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
               </div>
-              <div class="card-summary">${escapeHtml(summary)}</div>
+              <div class="card-summary">${escapeHtml(summaryText)}</div>
               ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
               <div class="card-actions">
                 <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
