@@ -1,4 +1,8 @@
-
+#!/usr/bin/env python3
+"""
+Build the site into ./dist by rendering index.html from a Jinja2 template
+and copying static/public assets. Safer autoescaping + better path handling.
+"""
 from __future__ import annotations
 
 import os
