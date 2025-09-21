@@ -143,7 +143,6 @@
               {% set candidate_url = post.url or post.link %}
               {% set post_url = candidate_url if candidate_url else (POSTS_BASE ~ '/p/' ~ slug if slug else POSTS_BASE) %}
               {% set iso_date = post.date or post.pubDate or post.published_at %}
-              {% set display_date = iso_date %}
               {% set accent = accent_classes[loop.index0 % (accent_classes | length)] %}
               {% set card_title = post.title if post.title else (slug.replace('-', ' ') if slug else 'Untitled') %}
               <article class="card {{ accent }}" data-post-slug="{{ slug }}">
@@ -280,6 +279,7 @@
       "https://api.rss2json.com/v1/api.json?"
       + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
       + "count=" + encodeURIComponent(MAX_ITEMS) + "&rss_url=";
+    const FEATURED_EBOOK = {{ (featured_ebook or {}) | tojson }};
     const TAGLINES = [
       "where words carry the flame ✨",
       "poetry for wandering souls ✍️",
@@ -522,7 +522,7 @@
     class ParticleSystem {
       constructor(){ this.pool=[]; this.max = reduceMotion ? 0 : 14; this.t=0; this.anim=null; }
       init(){
-        if (this.max === 0 || !els.particles) return;
+        if (this.max === 0) return;
         for (let i=0;i<this.max;i++) this.spawn();
         const step = ts => { this.update(ts); this.anim = requestAnimationFrame(step); };
         this.anim = requestAnimationFrame(step);
@@ -532,7 +532,6 @@
         }, { passive: true });
       }
       spawn(){
-        if (!els.particles) return;
         const p = document.createElement('div');
         p.className = 'particle';
         p.style.left = (Math.random()*100) + '%';
@@ -563,7 +562,6 @@
     const Focus = {
       trap(container){
         const focusable = container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
-        if (!focusable.length) return () => {};
         const first = focusable[0]; const last = focusable[focusable.length - 1];
         function handle(e){
           if (e.key !== 'Tab') return;
@@ -575,7 +573,7 @@
       }
     };
 
-    // Strip Substack boilerplate line from RSS HTML
+    // --- Remove Substack's poetry boilerplate line from RSS HTML ---
     function stripSubstackBoilerplate(html){
       const d = document.createElement('div');
       d.innerHTML = html || '';
@@ -587,7 +585,7 @@
       return d.innerHTML;
     }
 
-    // Sanitizer using DOMPurify
+    // Sanitizer using DOMPurify and safe link normalization
     function sanitize(html){
       const raw = stripSubstackBoilerplate(html || '');
       const useDOMPurify = typeof DOMPurify !== 'undefined' && DOMPurify?.sanitize;
@@ -599,6 +597,7 @@
         : raw;
       const div = document.createElement('div');
       div.innerHTML = cleaned;
+      // Normalize links (open safely, block javascript:)
       div.querySelectorAll('a[href]').forEach(a => {
         const href = (a.getAttribute('href') || '').trim();
         if (/^javascript:/i.test(href)) a.removeAttribute('href');
@@ -607,7 +606,9 @@
           a.setAttribute('rel','noopener');
         }
       });
+      // Remove risky embeds entirely
       div.querySelectorAll('iframe, object, embed, link, style').forEach(el => el.remove());
+      // Remove inline event handlers
       div.querySelectorAll('*').forEach(el => {
         [...el.attributes].forEach(attr => {
           const n = attr.name.toLowerCase();
@@ -630,6 +631,7 @@
         if (cleaned.length) el.setAttribute('style', cleaned.join('; '));
         else el.removeAttribute('style');
       });
+      // Remove substack widgets
       div.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(el => el.remove());
       return div.innerHTML;
     }
@@ -676,15 +678,40 @@
         lastFocus?.focus();
       }
       openReading(post, idx){
+        const isEbook = post.featureType === 'ebook';
         let meta = '';
-        if (post.pubDate) {
+        if (isEbook) {
+          meta = post.feature?.meta || '';
+        } else if (post.pubDate) {
           meta = new Date(post.pubDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
         }
 
-        els.modalTitle.textContent = post.title || 'Untitled';
         els.modalMeta.textContent = meta;
         els.modalBody.innerHTML = sanitize(post.content || post.description || '');
         els.modalBody.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; img.removeAttribute('width'); img.removeAttribute('height'); });
+
+        if (isEbook) {
+          if (post.feature?.note) {
+            const existing = els.modalBody.querySelector('.ebook-note');
+            if (!existing) {
+              const note = document.createElement('p');
+              note.className = 'ebook-note';
+              note.textContent = post.feature.note;
+              els.modalBody.prepend(note);
+            }
+          }
+          const ctaWrap = document.createElement('p');
+          ctaWrap.className = 'ebook-preview-cta';
+          const link = document.createElement('a');
+          link.className = 'btn btn-primary';
+          link.href = post.link;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          const ctaText = (post.feature?.ctaText || 'Read on Kindle').trim() || 'Read on Kindle';
+          link.textContent = ctaText;
+          ctaWrap.appendChild(link);
+          els.modalBody.appendChild(ctaWrap);
+        }
 
         lastFocus = document.activeElement;
         if (els.readingModal) els.readingModal.removeAttribute('hidden');
@@ -743,8 +770,9 @@
     class ContentManager {
       constructor(){
         this.viewList = [];
-        this.pageSize = 9;
+        this.pageSize = 9; // initial render size
         this.shown = 0;
+        this.featured = this.prepareFeatured();
         this.inlineConsumed = Boolean(posts.length);
       }
       init(){
@@ -759,6 +787,168 @@
           this.inlineConsumed = true;
         }
         this.load();
+      }
+
+      prepareFeatured(){
+        const curated = [
+          {
+            slug: 'embers-of-dawn',
+            title: 'Embers of Dawn',
+            summary: 'A sunrise prayer stitched from soft embers.',
+            tags: ['poem', 'dawn'],
+            link: 'https://versesvibez.substack.com/p/embers-of-dawn',
+            poem: `
+  hush the dark
+    we gather tinder breaths
+and open windows toward the east
+
+    the first light leans in
+  mapping gold across tired knuckles
+`
+          },
+          {
+            slug: 'cartography-of-rest',
+            title: 'Cartography of Rest',
+            summary: 'Tracing the map back to tenderness and home.',
+            tags: ['poem', 'rest'],
+            link: 'https://versesvibez.substack.com/p/cartography-of-rest',
+            poem: `
+we draw the curtains
+and inventory the quiet
+
+  cushions become coordinates
+  for the map back home
+`
+          },
+          {
+            slug: 'blueprint-for-a-firefly-night',
+            title: 'Blueprint for a Firefly Night',
+            summary: 'Instructions for bottling a summer glow.',
+            tags: ['poem', 'night'],
+            link: 'https://versesvibez.substack.com/p/blueprint-for-a-firefly-night',
+            poem: `
+\tmake a sky out of mason jars
+line them on the porch
+
+
+  leave a stanza empty
+
+    so the fireflies can rest
+`
+          }
+        ];
+
+        const stripEdgeNewlines = (poem = '') => {
+          const poemText = poem == null ? '' : String(poem);
+          return poemText
+            .replace(/^(?:\r\n|\r|\n)+/, '')
+            .replace(/(?:\r\n|\r|\n)+$/, '');
+        };
+
+        const renderLine = (line='') => {
+          const match = line.match(/^[ \t]+/);
+          let prefix = '';
+          let rest = line;
+          if (match) {
+            prefix = match[0]
+              .replace(/ /g, '&nbsp;')
+              .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+            rest = line.slice(match[0].length);
+          }
+          return prefix + escapeHtml(rest);
+        };
+
+        const poemHtml = (poem='') => {
+          const normalized = stripEdgeNewlines(poem)
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n');
+          if (!normalized) return '';
+
+          const lines = normalized.split('\n');
+          const paragraphs = [];
+          let current = [];
+
+          const pushCurrent = () => {
+            paragraphs.push(current);
+            current = [];
+          };
+
+          for (const raw of lines) {
+            if (/^[ \t]*$/.test(raw)) {
+              if (current.length) {
+                pushCurrent();
+              } else {
+                paragraphs.push([]);
+              }
+              continue;
+            }
+            current.push(raw);
+          }
+          if (current.length) pushCurrent();
+
+          if (!paragraphs.length) return '';
+
+          return paragraphs
+            .map(linesArr => {
+              if (!linesArr.length) return '<p><br></p>';
+              const htmlLines = linesArr.map(renderLine).join('<br>');
+              return `<p>${htmlLines}</p>`;
+            })
+            .join('');
+        };
+
+        const poems = curated.map(item => {
+          const html = `<div class="ebook-poem"><h3 class="ebook-poem-title">${escapeHtml(item.title)}</h3>${poemHtml(item.poem)}</div>`;
+          return {
+            ...item,
+            html
+          };
+        });
+
+        const extras = [];
+        if (FEATURED_EBOOK?.url) {
+          const summary = (FEATURED_EBOOK.description || '').trim()
+            || 'Preview selections from the Torchborne poetry eBook.';
+          const preview = poems.map(p => p.html).join('');
+          extras.push({
+            featureType: 'ebook',
+            title: FEATURED_EBOOK.title || 'Torchborne Poetry eBook',
+            link: FEATURED_EBOOK.url,
+            description: summary,
+            content: `<div class="ebook-preview">${preview}</div>`,
+            feature: {
+              tag: FEATURED_EBOOK.tag || 'Featured',
+              meta: FEATURED_EBOOK.meta || '',
+              summary,
+              cover: FEATURED_EBOOK.cover || '',
+              shareText: FEATURED_EBOOK.shareText || 'Share eBook',
+              note: FEATURED_EBOOK.note || '',
+              ctaText: (FEATURED_EBOOK.ctaText || 'Read on Kindle').trim() || 'Read on Kindle'
+            }
+          });
+        }
+
+        extras.push(...poems.map(poem => ({
+          featureType: 'poem',
+          title: poem.title,
+          link: poem.link,
+          description: poem.summary,
+          content: poem.html,
+          tags: Array.isArray(poem.tags) ? poem.tags : [],
+          feature: { tags: Array.isArray(poem.tags) ? poem.tags : [] }
+        })));
+
+        return { poems, extras, poemHtml };
+      }
+
+      featuredExtras(){
+        return Array.isArray(this.featured?.extras) ? this.featured.extras : [];
+      }
+
+      // NEW: Always inject curated extras (eBook + poems)
+      injectFeatured(list = []){
+        const extras = this.featuredExtras();
+        return Array.isArray(extras) && extras.length ? mergePostLists(extras, list) : list;
       }
 
       textOnly(html){
@@ -787,51 +977,90 @@
       }
 
       card(post, idx){
+        const isEbook = post.featureType === 'ebook';
         const date = post.pubDate ? new Date(post.pubDate) : null;
         const html = post.content || post.description || '';
         const txt = this.textOnly(html);
         const img = this.firstImage(html);
         const rt = txt ? this.readTime(txt) : '';
-        const tags = Array.isArray(post.tags) ? post.tags : this.vibes(post.title);
+        const feature = post.feature || {};
+        const tags = Array.isArray(post.tags)
+          ? post.tags
+          : Array.isArray(feature.tags)
+            ? feature.tags
+            : this.vibes(post.title);
+        const cover = feature.cover || '';
+        const meta = feature.meta || '';
+        const shareText = (feature.shareText || 'Share eBook').trim() || 'Share eBook';
+        const ctaText = (feature.ctaText || 'Read on Kindle').trim() || 'Read on Kindle';
+        const summaryText = (feature.summary || post.description || txt).trim()
+          || (isEbook
+            ? 'Preview selections from the Torchborne poetry eBook.'
+            : 'A Torchborne poem from the archive.');
 
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
         const accentClass = palettes[idx % palettes.length];
-        el.className = `card ${accentClass}`;
+        el.className = `card ${isEbook ? 'ebook-card accent-3' : accentClass}`;
         el.style.transitionDelay = `${Math.min(idx,15)*100}ms`;
-        el.setAttribute('aria-label', post.title || 'Poem');
+        el.setAttribute('aria-label', post.title || (isEbook ? 'Featured eBook' : 'Poem'));
 
-        const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
-        el.innerHTML = `
-          ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
-          <div class="card-content">
-            <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
-            <div class="card-meta">
-              ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
-              ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
-            </div>
-            <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
-            ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
-            <div class="card-actions">
-              <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
-              <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
-              <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
-            </div>
-          </div>
-        `;
+        if (isEbook) {
+          const tag = post.feature?.tag || 'Featured';
 
+          el.innerHTML = `
+            <div class="card-content ebook">
+              <div class="ebook-flag">${escapeHtml(tag)}</div>
+              <div class="ebook-layout">
+                <div class="ebook-cover${cover ? '' : ' placeholder'}">
+                  ${cover ? `<img loading="lazy" decoding="async" src="${cover}" alt="" />` : '<span aria-hidden="true">📘</span>'}
+                </div>
+                <div class="ebook-details">
+                  <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Poetry eBook')}</a></h2>
+                  ${meta ? `<div class="card-meta single">${escapeHtml(meta)}</div>` : ''}
+                  <div class="card-summary">${escapeHtml(summaryText)}</div>
+                  <div class="ebook-actions">
+                    <a class="btn btn-primary" href="${post.link}" target="_blank" rel="noopener">${escapeHtml(ctaText)}</a>
+                    <a href="#" data-share="${encodeURIComponent(post.link)}">${escapeHtml(shareText)}</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
+          el.innerHTML = `
+            ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
+            <div class="card-content">
+              <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
+              <div class="card-meta">
+                ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
+                ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
+              </div>
+              <div class="card-summary">${escapeHtml(summaryText)}</div>
+              ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
+              <div class="card-actions">
+                <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
+                <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
+                <a href="#" data-share="${encodeURIComponent(post.link)}">Share</a>
+              </div>
+            </div>
+          `;
+        }
+
+        // events
         el.querySelector('[data-quick-read]')?.addEventListener('click', e => { e.preventDefault(); modal.openReading(post, idx); });
         const share = el.querySelector('[data-share]');
         share?.addEventListener('click', async e => {
           e.preventDefault();
-          const url = post.link, title = post.title || 'Poem from Torchborne';
+          const url = post.link, title = post.title || (isEbook ? 'Torchborne Poetry eBook' : 'Poem from Torchborne');
           try {
             if (navigator.share) await navigator.share({ title, url });
             else { await navigator.clipboard.writeText(url); const t = share.textContent; share.textContent='Copied ✓'; setTimeout(()=> share.textContent=t, 1500); }
           } catch {}
         });
 
-        const im = el.querySelector('.card-thumb img');
+        const im = el.querySelector('.card-thumb img, .ebook-cover img');
         if (im) { if (im.complete) im.setAttribute('data-loaded','1'); else im.addEventListener('load', () => im.setAttribute('data-loaded','1')); }
         return el;
       }
@@ -852,16 +1081,17 @@
       render(list){
         els.grid.hidden = false;
         this.viewList = list;
-        els.grid.innerHTML = "";
+        els.grid.innerHTML = ""; // reset
         this.shown = 0;
         this.renderNextChunk(true);
         this.finishLoading('');
       }
 
       renderNextChunk(reset=false){
+        if (reset) { /* already cleared in render */ }
         const slice = this.viewList.slice(this.shown, this.shown + this.pageSize);
         slice.forEach((p) => {
-          const idx = posts.indexOf(p);
+          const idx = posts.indexOf(p); // ensure modal nav uses global posts index
           const c = this.card(p, idx >= 0 ? idx : 0);
           els.grid.appendChild(c);
           requestAnimationFrame(() => c.classList.add('show'));
@@ -958,6 +1188,17 @@
         }
 
         if (!success) {
+          const extras = this.featuredExtras();
+          if (!posts.length && extras.length) {
+            if (this.applyData(extras, { forceRender: true })) {
+              success = true;
+              updated = true;
+              this.finishLoading('Showing curated poems while we reconnect…');
+            }
+          }
+        }
+
+        if (!success) {
           this.fail();
           if (!posts.length) {
             els.grid.innerHTML = '';
@@ -1015,8 +1256,11 @@
         const merged = mergePostLists(posts, normalized);
         const limited = (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) ? merged.slice(0, +MAX_ITEMS) : merged;
 
-        const changed = limited.length !== posts.length || limited.some((item, idx) => item !== posts[idx]);
-        posts = limited;
+        // Always inject curated extras at the top
+        const withExtras = this.injectFeatured(limited);
+
+        const changed = withExtras.length !== posts.length || withExtras.some((item, idx) => item !== posts[idx]);
+        posts = withExtras;
         if (changed || forceRender || !this.viewList.length) {
           this.render(posts);
         } else {
@@ -1071,6 +1315,7 @@
         const link = document.getElementById('mainCss');
         const flag = () => { try { els.status.classList.add('error'); els.status.textContent = 'Styles failed to load. Check your static_base and styles.css URL.'; } catch(e){} };
         if (link) link.addEventListener('error', flag, { once: true });
+        // After a tick, test a CSS-dependent property
         setTimeout(() => {
           const probe = document.createElement('div');
           probe.className = 'posts-grid';

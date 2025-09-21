@@ -1,7 +1,9 @@
+
 from __future__ import annotations
 
 import os
 import shutil
+import sys
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -50,6 +52,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
 
     env = Environment(
         loader=FileSystemLoader(str(template_dir)),
+        # Ensure autoescape is ON for .html.* and common Jinja extensions like .j2
         autoescape=select_autoescape(
             enabled_extensions=("html", "htm", "xml", "xhtml", "j2", "jinja", "jinja2"),
             default=True,
@@ -61,11 +64,11 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
     except TemplateNotFound as e:
         raise SystemExit(f"Template not found: {TEMPLATE_FILE} (searched in {template_dir})") from e
 
-    # Featured ebook CTA remains optional; not injected into posts.
     ebook_default_url = ""
     if public_url:
         ebook_default_url = public_url.rstrip("/") + "/p/torchborne-poetry-ebook"
 
+    # Prefer an explicit Kindle URL if provided
     kindle_url = _env_trim("EBOOK_KINDLE_URL", "")
 
     featured_ebook = {
@@ -74,6 +77,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
             "EBOOK_DESCRIPTION",
             "A lovingly curated selection of Torchborne poems.",
         ),
+        # If EBOOK_URL is set, use it; otherwise prefer kindle_url; then fall back to default
         "url": _env_trim("EBOOK_URL", kindle_url or ebook_default_url),
         "cover": _env_trim("EBOOK_COVER", ""),
         "tag": _env_trim("EBOOK_TAG", "Featured"),
@@ -85,6 +89,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
     if not featured_ebook["url"]:
         featured_ebook = {}
 
+    # Derive additional template vars expected by index.html.j2
     posts_base = (public_url or "https://versesvibez.substack.com/").rstrip("/")
     subscribe_url = f"{posts_base}/subscribe"
     static_base = "./static/"
@@ -98,13 +103,13 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
     html = tpl.render(
         site_title=site_title or "torchborne",
         public_url=public_url,
-        PUBLIC_URL=public_url,
+        PUBLIC_URL=public_url,  # template uses both cases
         feed_url=feed_url,
         rss_proxy_url=(proxy_url or "").rstrip("?&"),
         featured_ebook=featured_ebook,
         generated_at=datetime.now(timezone.utc),
         generated_at_iso=datetime.now(timezone.utc).isoformat(),
-        posts=[],               # client-side loads from Substack only
+        posts=[],  # client-side populates if provided
         display_date=None,
         POSTS_BASE=posts_base,
         SUBSCRIBE_URL=subscribe_url,
