@@ -4,7 +4,6 @@ import os
 import shutil
 from pathlib import Path
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from jinja2.exceptions import TemplateNotFound
@@ -14,7 +13,11 @@ TEMPLATE_FILE = Path("index.html.j2")
 
 
 def ensure_dist() -> list[str]:
-    """Ensure ./dist exists, drop .nojekyll, and copy assets."""
+    """Ensure ./dist exists, drop .nojekyll, and copy assets.
+
+    Copies both ./public (into dist root) and ./static (into dist/static) if present.
+    Returns a list describing which sources were copied in order.
+    """
     DIST_DIR.mkdir(parents=True, exist_ok=True)
     (DIST_DIR / ".nojekyll").write_text("", encoding="utf-8")
 
@@ -39,26 +42,6 @@ def _env_trim(name: str, default: str = "") -> str:
     return default if value is None else value.strip()
 
 
-def _is_kindle_url(url: str) -> bool:
-    """Accept only Amazon Kindle product/store URLs."""
-    if not url:
-        return False
-    try:
-        host = urlparse(url).hostname or ""
-    except Exception:
-        return False
-    host = host.lower()
-    # amazon TLDs and kindle subdomains (e.g., read.amazon, kdp.amazon not needed here)
-    return host.endswith(".amazon.com") or host.endswith(".amazon.co.uk") or \
-           host.endswith(".amazon.ca") or host.endswith(".amazon.de") or \
-           host.endswith(".amazon.fr") or host.endswith(".amazon.es") or \
-           host.endswith(".amazon.it") or host.endswith(".amazon.com.au") or \
-           host.endswith(".amazon.in") or host.endswith(".amazon.co.jp") or \
-           host.endswith(".amazon.com.br") or host.endswith(".amazon.com.mx") or \
-           host.endswith(".amazon.nl") or host.endswith(".amazon.se") or \
-           host.endswith(".amazon.pl") or host.endswith(".amazon.sg")
-
-
 def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str) -> None:
     template_dir = TEMPLATE_FILE.parent if TEMPLATE_FILE.parent != Path("") else Path(".")
 
@@ -75,21 +58,25 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
     except TemplateNotFound as e:
         raise SystemExit(f"Template not found: {TEMPLATE_FILE} (searched in {template_dir})") from e
 
-    # Require an explicit Amazon Kindle URL for the CTA
+    ebook_default_url = ""
+    if public_url:
+        ebook_default_url = public_url.rstrip("/") + "/p/torchborne-poetry-ebook"
+
     kindle_url = _env_trim("EBOOK_KINDLE_URL", "")
-    featured_ebook = {}
-    if _is_kindle_url(kindle_url):
-        featured_ebook = {
-            "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
-            "description": _env_trim("EBOOK_DESCRIPTION", "A lovingly curated selection of Torchborne poems."),
-            "url": kindle_url,  # enforce Amazon Kindle URL
-            "cover": _env_trim("EBOOK_COVER", ""),
-            "tag": _env_trim("EBOOK_TAG", "Featured"),
-            "meta": _env_trim("EBOOK_META", "Poetry eBook"),
-            "note": _env_trim("EBOOK_NOTE", ""),
-            "ctaText": _env_trim("EBOOK_CTA_TEXT", "Read on Kindle"),
-            "shareText": _env_trim("EBOOK_SHARE_TEXT", "Share eBook"),
-        }
+
+    featured_ebook = {
+        "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
+        "description": _env_trim("EBOOK_DESCRIPTION", "A lovingly curated selection of Torchborne poems."),
+        "url": _env_trim("EBOOK_URL", kindle_url or ebook_default_url),
+        "cover": _env_trim("EBOOK_COVER", ""),
+        "tag": _env_trim("EBOOK_TAG", "Featured"),
+        "meta": _env_trim("EBOOK_META", "Poetry eBook"),
+        "note": _env_trim("EBOOK_NOTE", ""),
+        "ctaText": _env_trim("EBOOK_CTA_TEXT", "Read on Kindle"),
+        "shareText": _env_trim("EBOOK_SHARE_TEXT", "Share eBook"),
+    }
+    if not featured_ebook["url"]:
+        featured_ebook = {}
 
     posts_base = (public_url or "https://versesvibez.substack.com/").rstrip("/")
     subscribe_url = f"{posts_base}/subscribe"
@@ -107,7 +94,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
         PUBLIC_URL=public_url,
         feed_url=feed_url,
         rss_proxy_url=(proxy_url or "").rstrip("?&"),
-        featured_ebook=featured_ebook,  # present only if a valid Amazon URL was provided
+        featured_ebook=featured_ebook,
         generated_at=datetime.now(timezone.utc),
         generated_at_iso=datetime.now(timezone.utc).isoformat(),
         posts=[],
