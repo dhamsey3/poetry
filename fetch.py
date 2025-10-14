@@ -78,11 +78,13 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
     kindle_url = _env_trim("EBOOK_KINDLE_URL", "")
     featured_ebook = {}
     if _is_kindle_url(kindle_url):
+        # Use keys expected by the UI template (featured.cover_url, featured.ebook_url, featured.url)
         featured_ebook = {
             "title": _env_trim("EBOOK_TITLE", "Torchborne Poetry eBook"),
             "description": _env_trim("EBOOK_DESCRIPTION", "A lovingly curated selection of Torchborne poems."),
-            "url": kindle_url,  # enforce Amazon Kindle URL
-            "cover": _env_trim("EBOOK_COVER", ""),
+            "ebook_url": kindle_url,  # official download/CTA link
+            "url": kindle_url,        # primary link used for "Read" actions
+            "cover_url": _env_trim("EBOOK_COVER", ""),
             "tag": _env_trim("EBOOK_TAG", "Featured"),
             "meta": _env_trim("EBOOK_META", "Poetry eBook"),
             "note": _env_trim("EBOOK_NOTE", ""),
@@ -106,7 +108,7 @@ def render_index(site_title: str, feed_url: str, public_url: str, proxy_url: str
         PUBLIC_URL=public_url,
         feed_url=feed_url,
         rss_proxy_url=(proxy_url or "").rstrip("?&"),
-        featured_ebook=featured_ebook,  # present only if a valid Amazon URL was provided
+        featured=featured_ebook,  # template expects `featured`
         generated_at=datetime.now(timezone.utc),
         generated_at_iso=datetime.now(timezone.utc).isoformat(),
         posts=[],
