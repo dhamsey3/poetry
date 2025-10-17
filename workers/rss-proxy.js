@@ -73,9 +73,11 @@ function corsHeaders() {
   };
 }
 function withCors(res) {
-  const hdrs = new Headers(res.headers);
+  // clone to avoid locked/body reuse issues
+  const r = res.clone();
+  const hdrs = new Headers(r.headers);
   for (const [k, v] of Object.entries(corsHeaders())) hdrs.set(k, v);
-  return new Response(res.body, { status: res.status, headers: hdrs });
+  return new Response(r.body, { status: r.status, headers: hdrs });
 }
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -113,16 +115,19 @@ function isPrivateHost(host) {
   const blockedNames = new Set(['localhost', 'localhost.localdomain', 'metadata.google.internal']);
   if (blockedNames.has(host)) return true;
 
-  const ipv4 = host.match(/^(?<a>\d{1,3})\.(?<b>\d{1,3})\.(?<c>\d{1,3})\.(?<d>\d{1,3})$/);
+  // IPv4 literal?
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4) {
-    const a = ['a', 'b', 'c', 'd'].map((k) => parseInt(ipv4.groups[k], 10));
-    if (a[0] === 10) return true;
-    if (a[0] === 172 && a[1] >= 16 && a[1] <= 31) return true;
-    if (a[0] === 192 && a[1] === 168) return true;
-    if (a[0] === 127) return true;
-    if (a[0] === 169 && a[1] === 254) return true;
-    if (a[0] === 100 && a[1] >= 64 && a[1] <= 127) return true;
-    if (a.every((x) => x === 0)) return true;
+    const a0 = parseInt(ipv4[1], 10);
+    const a1 = parseInt(ipv4[2], 10);
+    // RFC1918 & other special ranges
+    if (a0 === 10) return true;
+    if (a0 === 172 && a1 >= 16 && a1 <= 31) return true;
+    if (a0 === 192 && a1 === 168) return true;
+    if (a0 === 127) return true;
+    if (a0 === 169 && a1 === 254) return true;
+    if (a0 === 100 && a1 >= 64 && a1 <= 127) return true;
+    if (a0 === 0 && a1 === 0) return true;
   }
 
   if (host === '::1') return true;
@@ -134,11 +139,13 @@ function isPrivateHost(host) {
 
 /* Minimal, dependency-free parser for RSS 2.0 and Atom 1.0 */
 function parseFeed(xml) {
-  const rssItems = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)];
+  if (!xml || typeof xml !== 'string') return [];
+  // match items/entries more robustly (allow attributes)
+  const rssItems = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
   if (rssItems.length) {
     return rssItems.map((m) => parseRssItem(m[1]));
   }
-  const atomEntries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/gi)];
+  const atomEntries = [...xml.matchAll(/<entry\b[^>]*>([\s\S]*?)<\/entry>/gi)];
   if (atomEntries.length) {
     return atomEntries.map((m) => parseAtomEntry(m[1]));
   }
@@ -147,10 +154,14 @@ function parseFeed(xml) {
 
 function parseRssItem(block) {
   const title = cdata(block, 'title') ?? tag(block, 'title') ?? '';
-  const link =
-    tag(block, 'link') ??
-    attr(block, 'link', 'href') ??
-    ((tag(block, 'guid') && /ispermalink=\"?true\"?/i.test(block)) ? tag(block, 'guid') : '');
+  // link: prefer <link>text</link>, then link@href, then guid if it's a permalink
+  const linkText = tag(block, 'link');
+  const linkHref = attr(block, 'link', 'href');
+  const guid = tag(block, 'guid') ?? '';
+  const guidAttrIsPermalink = attr(block, 'guid', 'isPermaLink') || attr(block, 'guid', 'ispermalink');
+  const guidIsPermalink = (typeof guidAttrIsPermalink === 'string' && /^true$/i.test(guidAttrIsPermalink)) ||
+    /isPermaLink\s*=\s*["']?true["']?/i.test(block) || /ispermalink\s*=\s*["']?true["']?/i.test(block);
+  const link = (linkText && safeTrim(linkText)) || linkHref || (guid && guidIsPermalink ? safeTrim(guid) : '');
   const pubDate = tag(block, 'pubDate') ?? tagNS(block, 'dc:date') ?? '';
   const content =
     cdata(block, 'content:encoded') ??
@@ -177,12 +188,12 @@ function parseAtomEntry(block) {
 
 /* --- tiny regex helpers --- */
 function cdata(str, name) {
-  const re = new RegExp(`<${escapeTag(name)}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${escapeTag(name)}>`, 'i');
+  const re = new RegExp(`<${escapeTag(name)}>\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*<\\/${escapeTag(name)}>`, 'i');
   const m = str.match(re);
   return m ? m[1] : null;
 }
 function tag(str, name) {
-  const re = new RegExp(`<${escapeTag(name)}>([\\s\\S]*?)<\\/${escapeTag(name)}>`, 'i');
+  const re = new RegExp(`<${escapeTag(name)}[^>]*>([\\s\\S]*?)<\\/${escapeTag(name)}>`, 'i');
   const m = str.match(re);
   return m ? m[1] : null;
 }
@@ -190,13 +201,13 @@ function tagNS(str, qname) {
   return tag(str, qname);
 }
 function attr(str, tagName, attrName) {
-  const re = new RegExp(`<${escapeTag(tagName)}[^>]*\\b${attrName}=[\"']([^\"']+)[\"'][^>]*>`, 'i');
+  const re = new RegExp(`<${escapeTag(tagName)}[^>]*\\b${attrName}\\s*=\\s*["']([^"']+)["'][^>]*>`, 'i');
   const m = str.match(re);
   return m ? m[1] : null;
 }
 function escapeTag(n) {
-  return n.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return n.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 function safeTrim(s) {
-  return (s || '').trim().replace(/\\s+/g, ' ');
+  return (s || '').toString().trim().replace(/\s+/g, ' ');
 }

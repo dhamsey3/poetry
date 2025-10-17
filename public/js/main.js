@@ -237,66 +237,37 @@ function safeTrim(s) {
   return (s || "").trim().replace(/\\s+/g, " ");
 }
 
+// Client-side UI script: theme, search, random, animations, accessibility
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Theme toggle (persists in localStorage)
+  // Theme toggle (persist)
   const themeToggle = document.getElementById('theme-toggle');
   const root = document.documentElement;
-  const stored =
-    localStorage.getItem('theme') ||
-    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light');
-  if (stored === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const storedTheme = localStorage.getItem('theme') || (prefersDark ? 'dark' : 'light');
+  if (storedTheme === 'dark') root.setAttribute('data-theme', 'dark');
 
   function setTheme(t) {
-    if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-    else document.documentElement.removeAttribute('data-theme');
+    if (t === 'dark') root.setAttribute('data-theme', 'dark');
+    else root.removeAttribute('data-theme');
     localStorage.setItem('theme', t);
   }
 
   if (themeToggle) {
     themeToggle.addEventListener('click', () => {
-      const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-      setTheme(cur === 'dark' ? 'light' : 'dark');
+      const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      setTheme(current === 'dark' ? 'light' : 'dark');
     });
   }
 
   // Random poem button
   const rndBtn = document.getElementById('random-poem-btn');
-  if (rndBtn) {
-    rndBtn.addEventListener('click', () => {
-      const posts = Array.from(document.querySelectorAll('.posts-grid .card'));
-      if (!posts.length) return;
-      const idx = Math.floor(Math.random() * posts.length);
-      const el = posts[idx];
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('highlight');
-      setTimeout(() => el.classList.remove('highlight'), 2200);
-    });
+  function highlightAndScroll(el) {
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('highlight');
+    setTimeout(() => el.classList.remove('highlight'), 2200);
+    // ensure it receives focus for a11y
+    el.setAttribute('tabindex', '-1');
+    el.focus({ preventScroll: true });
   }
-
-  // Accessible focus for cards when clicked/read
-  document.body.addEventListener('click', (e) => {
-    const c = e.target.closest('.card');
-    if (c) c.setAttribute('tabindex', '-1'), c.focus();
-  });
-
-  // Simple progressive reveal for cards if JS renders content
-  const cards = document.querySelectorAll('.card');
-  cards.forEach((card, i) => {
-    card.style.animationDelay = i * 70 + 'ms';
-  });
-
-  // Search filtering (client-side)
-  const search = document.getElementById('search');
-  if (search) {
-    search.addEventListener('input', (e) => {
-      const q = e.target.value.trim().toLowerCase();
-      const items = document.querySelectorAll('.posts-grid .card');
-      items.forEach((it) => {
-        const text = it.textContent.toLowerCase();
-        it.style.display = !q || text.includes(q) ? '' : 'none';
-      });
-    });
-  }
-});
