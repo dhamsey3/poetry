@@ -240,7 +240,6 @@ function safeTrim(s) {
 // Client-side UI script: theme, search, random, animations, accessibility
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Theme toggle (persist)
   const themeToggle = document.getElementById('theme-toggle');
   const root = document.documentElement;
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -248,92 +247,48 @@ document.addEventListener('DOMContentLoaded', () => {
   if (storedTheme === 'dark') root.setAttribute('data-theme', 'dark');
 
   function setTheme(t) {
-    if (t === 'dark') root.setAttribute('data-theme', 'dark');
-    else root.removeAttribute('data-theme');
+    if (t === 'dark') root.setAttribute('data-theme', 'dark'); else root.removeAttribute('data-theme');
     localStorage.setItem('theme', t);
   }
+  if (themeToggle) themeToggle.addEventListener('click', () => setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-      setTheme(current === 'dark' ? 'light' : 'dark');
-    });
-  }
-
-  // Random poem button
   const rndBtn = document.getElementById('random-poem-btn');
   function highlightAndScroll(el) {
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.classList.add('highlight');
     setTimeout(() => el.classList.remove('highlight'), 2200);
-    // ensure it receives focus for a11y
     el.setAttribute('tabindex', '-1');
     try { el.focus({ preventScroll: true }); } catch (e) {}
   }
-  if (rndBtn) {
-    rndBtn.addEventListener('click', () => {
-      const posts = Array.from(document.querySelectorAll('.posts-grid .card'));
-      if (!posts.length) return;
-      const idx = Math.floor(Math.random() * posts.length);
-      highlightAndScroll(posts[idx]);
-    });
-  }
+  if (rndBtn) rndBtn.addEventListener('click', () => {
+    const posts = Array.from(document.querySelectorAll('.posts-grid .card'));
+    if (!posts.length) return;
+    highlightAndScroll(posts[Math.floor(Math.random() * posts.length)]);
+  });
 
-  // Search filtering (client-side)
   const search = document.getElementById('search');
-  if (search) {
-    search.addEventListener('input', (e) => {
-      const q = e.target.value.trim().toLowerCase();
-      const items = document.querySelectorAll('.posts-grid .card');
-      items.forEach((it) => {
-        const text = it.textContent.toLowerCase();
-        it.style.display = !q || text.includes(q) ? '' : 'none';
-      });
-    });
-  }
+  if (search) search.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.posts-grid .card').forEach(it => { it.style.display = (!q || it.textContent.toLowerCase().includes(q)) ? '' : 'none'; });
+  });
 
-  // Add animation delay to cards for staggered reveal
   function applyCardDelays() {
-    const cards = document.querySelectorAll('.posts-grid .card');
-    cards.forEach((card, i) => {
+    document.querySelectorAll('.posts-grid .card').forEach((card, i) => {
       card.style.animationDelay = `${i * 70}ms`;
-      // ensure animation runs
-      card.classList.remove('visible');
-      // force reflow
-      // eslint-disable-next-line no-unused-expressions
-      card.offsetHeight;
-      card.classList.add('visible');
+      card.classList.remove('visible'); card.offsetHeight; card.classList.add('visible');
     });
   }
   applyCardDelays();
-
-  // Observe for dynamic additions (e.g., if posts are injected)
   const postsGrid = document.querySelector('.posts-grid');
-  if (postsGrid) {
-    const mo = new MutationObserver(() => applyCardDelays());
-    mo.observe(postsGrid, { childList: true, subtree: false });
-  }
+  if (postsGrid) new MutationObserver(() => applyCardDelays()).observe(postsGrid, { childList: true });
 
-  // Make cards focusable when clicked (accessibility)
-  document.body.addEventListener('click', (ev) => {
-    const c = ev.target.closest('.card');
-    if (c) {
-      c.setAttribute('tabindex', '-1');
-      try { c.focus(); } catch (e) {}
-    }
-  });
-
-  // Keyboard: Enter/Space on focused card will open first link if present
-  document.body.addEventListener('keydown', (ev) => {
+  document.body.addEventListener('click', ev => { const c = ev.target.closest('.card'); if (c) { c.setAttribute('tabindex','-1'); try { c.focus(); } catch {} } });
+  document.body.addEventListener('keydown', ev => {
     if (ev.key === 'Enter' || ev.key === ' ') {
       const active = document.activeElement;
       if (active && active.classList && active.classList.contains('card')) {
-        const link = active.querySelector('a, button');
-        if (link) {
-          link.click();
-          ev.preventDefault();
-        }
+        const link = active.querySelector('a, button'); if (link) { link.click(); ev.preventDefault(); }
       }
     }
   });

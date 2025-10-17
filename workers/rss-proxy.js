@@ -2,9 +2,7 @@ export default {
   async fetch(request, env, ctx) {
     const { method } = request;
     if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders() });
-    if (method !== 'GET' && method !== 'HEAD') {
-      return json({ status: 'error', error: 'Method Not Allowed' }, 405);
-    }
+    if (method !== 'GET' && method !== 'HEAD') return json({ status: 'error', error: 'Method Not Allowed' }, 405);
 
     const url = new URL(request.url);
     const feed = url.searchParams.get('rss_url');
@@ -12,11 +10,9 @@ export default {
     const count = Number.isFinite(countParam) ? Math.min(Math.max(countParam, 1), 100) : 50;
 
     if (!feed) return json({ status: 'error', error: 'Missing rss_url param' }, 400);
-
     const safe = safeFeedUrl(feed, env);
     if (!safe.ok) return json({ status: 'error', error: `Disallowed feed URL (${safe.reason})` }, 400);
 
-    // Cache key should include the normalized feed + count
     const keyUrl = new URL(request.url);
     keyUrl.searchParams.set('rss_url', safe.url.href);
     keyUrl.searchParams.set('count', String(count));
@@ -28,33 +24,16 @@ export default {
     try {
       const upstream = await fetch(safe.url.href, {
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome Safari',
+          'User-Agent': 'Mozilla/5.0',
           Accept: 'application/rss+xml, application/atom+xml, application/xml;q=0.9,*/*;q=0.8',
         },
       });
-      if (!upstream.ok) {
-        return json({ status: 'error', error: 'Upstream error', code: upstream.status }, 502);
-      }
-
+      if (!upstream.ok) return json({ status: 'error', error: 'Upstream error', code: upstream.status }, 502);
       const xml = await upstream.text();
       const items = parseFeed(xml).slice(0, count);
-
-      const res = new Response(
-        JSON.stringify({
-          status: 'ok',
-          items,
-          count: items.length,
-          source: safe.url.href,
-        }),
-        {
-          headers: {
-            'content-type': 'application/json; charset=utf-8',
-            'cache-control': 'public, max-age=600',
-            ...corsHeaders(),
-          },
-        }
-      );
+      const res = new Response(JSON.stringify({ status: 'ok', items, count: items.length, source: safe.url.href }), {
+        headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=600', ...corsHeaders() },
+      });
       ctx.waitUntil(cache.put(cacheKey, res.clone()));
       return res;
     } catch (err) {
@@ -115,12 +94,10 @@ function isPrivateHost(host) {
   const blockedNames = new Set(['localhost', 'localhost.localdomain', 'metadata.google.internal']);
   if (blockedNames.has(host)) return true;
 
-  // IPv4 literal?
   const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (ipv4) {
     const a0 = parseInt(ipv4[1], 10);
     const a1 = parseInt(ipv4[2], 10);
-    // RFC1918 & other special ranges
     if (a0 === 10) return true;
     if (a0 === 172 && a1 >= 16 && a1 <= 31) return true;
     if (a0 === 192 && a1 === 168) return true;
@@ -140,7 +117,6 @@ function isPrivateHost(host) {
 /* Minimal, dependency-free parser for RSS 2.0 and Atom 1.0 */
 function parseFeed(xml) {
   if (!xml || typeof xml !== 'string') return [];
-  // match items/entries more robustly (allow attributes)
   const rssItems = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
   if (rssItems.length) {
     return rssItems.map((m) => parseRssItem(m[1]));
@@ -154,11 +130,10 @@ function parseFeed(xml) {
 
 function parseRssItem(block) {
   const title = cdata(block, 'title') ?? tag(block, 'title') ?? '';
-  // link: prefer <link>text</link>, then link@href, then guid if it's a permalink
   const linkText = tag(block, 'link');
   const linkHref = attr(block, 'link', 'href');
   const guid = tag(block, 'guid') ?? '';
-  const guidAttrIsPermalink = attr(block, 'guid', 'isPermaLink') || attr(block, 'guid', 'ispermalink');
+  const guidAttrIsPermalink = attr(block, 'guid', 'isPerMaLink') || attr(block, 'guid', 'ispermalink') || attr(block, 'guid', 'isPermaLink');
   const guidIsPermalink = (typeof guidAttrIsPermalink === 'string' && /^true$/i.test(guidAttrIsPermalink)) ||
     /isPermaLink\s*=\s*["']?true["']?/i.test(block) || /ispermalink\s*=\s*["']?true["']?/i.test(block);
   const link = (linkText && safeTrim(linkText)) || linkHref || (guid && guidIsPermalink ? safeTrim(guid) : '');
@@ -206,8 +181,8 @@ function attr(str, tagName, attrName) {
   return m ? m[1] : null;
 }
 function escapeTag(n) {
-  return n.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return n.replace(/[-\\/\\^$*+?.()|[\\]{}]/g, '\\$&');
 }
 function safeTrim(s) {
-  return (s || '').toString().trim().replace(/\s+/g, ' ');
+  return (s || '').toString().trim().replace(/\\s+/g, ' ');
 }
