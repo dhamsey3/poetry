@@ -25,6 +25,18 @@ def ensure_dist() -> list[str]:
         shutil.copytree(public_src, DIST_DIR, dirs_exist_ok=True)
         copied.append("public/")
 
+        # Ensure JS from public/ ends up under dist/static/js so templates
+        # that reference ./static/js/main.js will resolve. Some builds put
+        # client scripts in public/js while templates expect static/js.
+        public_js = public_src / "js"
+        if public_js.exists():
+            target_js = DIST_DIR / "static" / "js"
+            target_js.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(public_js, target_js, dirs_exist_ok=True)
+            # Also record that we copied these JS files for logging
+            if "static/" not in copied:
+                copied.append("static/")
+
     static_src = Path("static")
     if static_src.exists():
         (DIST_DIR / "static").mkdir(parents=True, exist_ok=True)

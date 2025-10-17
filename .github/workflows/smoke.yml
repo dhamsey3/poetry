@@ -1,0 +1,63 @@
+name: Smoke tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Python deps
+        run: pip install jinja2
+      - name: Build site
+        run: python3 fetch.py
+      - name: Install npm deps
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+
+  a11y:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Python deps
+        run: pip install jinja2
+      - name: Build site
+        run: python3 fetch.py
+      - name: Install npm deps
+        run: npm ci
+      - name: Run accessibility checks (axe-core)
+        run: npm run a11y
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: a11y
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Python deps
+        run: pip install jinja2
+      - name: Build site
+        run: python3 fetch.py
+      - name: Install npm deps
+        run: npm ci
+      - name: Run Puppeteer smoke test
+        run: node tools/smoke_test.js
+        env:
+          CI: true

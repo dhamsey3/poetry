@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "a11y": "node tools/a11y_test.js",
+    "smoke": "node tools/smoke_test.js",
+    "preview": "python3 -m http.server 8000 --directory dist",
+    "preview:background": "nohup python3 -m http.server 8000 --directory dist &>/dev/null &"
+  },
+  "dependencies": {
+    "axe-core": "^4.11.0",
+    "jsdom": "^27.0.0",
+    "puppeteer": "^24.25.0"
+  }
+}
