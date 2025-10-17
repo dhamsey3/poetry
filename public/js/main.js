@@ -269,5 +269,72 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => el.classList.remove('highlight'), 2200);
     // ensure it receives focus for a11y
     el.setAttribute('tabindex', '-1');
-    el.focus({ preventScroll: true });
+    try { el.focus({ preventScroll: true }); } catch (e) {}
   }
+  if (rndBtn) {
+    rndBtn.addEventListener('click', () => {
+      const posts = Array.from(document.querySelectorAll('.posts-grid .card'));
+      if (!posts.length) return;
+      const idx = Math.floor(Math.random() * posts.length);
+      highlightAndScroll(posts[idx]);
+    });
+  }
+
+  // Search filtering (client-side)
+  const search = document.getElementById('search');
+  if (search) {
+    search.addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      const items = document.querySelectorAll('.posts-grid .card');
+      items.forEach((it) => {
+        const text = it.textContent.toLowerCase();
+        it.style.display = !q || text.includes(q) ? '' : 'none';
+      });
+    });
+  }
+
+  // Add animation delay to cards for staggered reveal
+  function applyCardDelays() {
+    const cards = document.querySelectorAll('.posts-grid .card');
+    cards.forEach((card, i) => {
+      card.style.animationDelay = `${i * 70}ms`;
+      // ensure animation runs
+      card.classList.remove('visible');
+      // force reflow
+      // eslint-disable-next-line no-unused-expressions
+      card.offsetHeight;
+      card.classList.add('visible');
+    });
+  }
+  applyCardDelays();
+
+  // Observe for dynamic additions (e.g., if posts are injected)
+  const postsGrid = document.querySelector('.posts-grid');
+  if (postsGrid) {
+    const mo = new MutationObserver(() => applyCardDelays());
+    mo.observe(postsGrid, { childList: true, subtree: false });
+  }
+
+  // Make cards focusable when clicked (accessibility)
+  document.body.addEventListener('click', (ev) => {
+    const c = ev.target.closest('.card');
+    if (c) {
+      c.setAttribute('tabindex', '-1');
+      try { c.focus(); } catch (e) {}
+    }
+  });
+
+  // Keyboard: Enter/Space on focused card will open first link if present
+  document.body.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      const active = document.activeElement;
+      if (active && active.classList && active.classList.contains('card')) {
+        const link = active.querySelector('a, button');
+        if (link) {
+          link.click();
+          ev.preventDefault();
+        }
+      }
+    }
+  });
+});
