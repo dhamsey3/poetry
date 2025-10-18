@@ -203,6 +203,20 @@
           integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
+  <!-- Runtime config for client JS (populated from template variables) -->
+  <script>
+    window.SITE_CONFIG = {
+      RSS_URL: {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }},
+      WORKER_BASE: {{ (rss_proxy_url or "") | tojson }},
+      RSS2JSON_KEY: {{ (rss2json_api_key or "") | tojson }},
+      MAX_ITEMS: {{ (max_items or 50) | tojson }},
+      POSTS_BASE: {{ (POSTS_BASE or "https://versesvibez.substack.com/") | tojson }},
+      STATIC_DATA_URL: './data/posts.json',
+      FEATURED_EBOOK: {{ (featured or {}) | tojson }},
+      TAGLINES: ["where words carry the flame ✨","poetry for wandering souls ✍️","verses that glow in the dark 🌙"]
+    };
+  </script>
+
   <!-- Load public JS (extracted from template for maintainability) -->
   <script src="{{ STATIC }}js/main.js" defer></script>
 </body>

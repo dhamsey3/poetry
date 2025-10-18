@@ -1,9 +1,7 @@
-/* Client-side UI script extracted from template: handles theme toggle, search, random post, card animations, and lightweight UI features. */
+/* Unified client script: theme, variants, UI helpers, and content loading/rendering */
 
-// Minimal initialization to wire up template IDs used in index.html.j2
-document.addEventListener('DOMContentLoaded', () => {
-  // --- keyboard vs pointer focus helper ---
-  // Add 'user-is-tabbing' to <html> when user navigates via keyboard (Tab). Remove on mousedown.
+(function(){
+  // Keyboard focus helper
   (function keyboardFocus() {
     const html = document.documentElement;
     function handleFirstTab(e) {
@@ -17,95 +15,89 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('keydown', handleFirstTab);
   })();
 
-  const els = {
-    themeToggle: document.getElementById('themeToggle'),
-    randomBtn: document.getElementById('randomBtn'),
-    searchInput: document.getElementById('searchInput'),
-    postsGrid: document.getElementById('postsGrid'),
-  };
-
-  // Quick preview variant: ?variant=screenshot will add .variant-screenshot to <html>
+  // Variant handling from URL and dev toggle
   try {
     const params = new URLSearchParams(window.location.search);
     const v = params.get('variant');
     if (v === 'screenshot') document.documentElement.classList.add('variant-screenshot');
     if (v === 'polish') document.documentElement.classList.add('variant-polish');
     if (v === 'creative') document.documentElement.classList.add('variant-creative');
-
-    // Developer-only on-screen toggle when ?dev=1 is present
     if (params.get('dev') === '1') {
       const btn = document.createElement('button');
-      btn.textContent = '🎨 Variant';
-      btn.id = 'devVariantToggle';
-      btn.style.position = 'fixed';
-      btn.style.right = '12px';
-      btn.style.bottom = '12px';
-      btn.style.zIndex = 9999;
-      btn.style.padding = '8px 10px';
-      btn.style.borderRadius = '8px';
-      btn.className = 'chip';
+      btn.textContent = '🎨 Variant'; btn.id = 'devVariantToggle'; btn.className = 'chip';
+      Object.assign(btn.style, { position: 'fixed', right: '12px', bottom: '12px', zIndex: 9999, padding: '8px 10px', borderRadius: '8px' });
       document.body.appendChild(btn);
       btn.addEventListener('click', () => {
-        // cycle between none -> polish -> creative -> none
-        if (document.documentElement.classList.contains('variant-creative')) {
-          document.documentElement.classList.remove('variant-creative');
-        } else if (document.documentElement.classList.contains('variant-polish')) {
-          document.documentElement.classList.remove('variant-polish');
-          document.documentElement.classList.add('variant-creative');
-        } else {
-          document.documentElement.classList.add('variant-polish');
-        }
+        if (document.documentElement.classList.contains('variant-creative')) { document.documentElement.classList.remove('variant-creative'); }
+        else if (document.documentElement.classList.contains('variant-polish')) { document.documentElement.classList.remove('variant-polish'); document.documentElement.classList.add('variant-creative'); }
+        else { document.documentElement.classList.add('variant-polish'); }
       });
     }
-  } catch (e) { /* ignore in weird embed contexts */ }
+  } catch (e) {}
 
-  // Theme toggle (sync with data-theme attribute)
-  function getPreferred() {
-    const saved = localStorage.getItem('vv-theme');
-    if (saved) return saved;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-  function applyTheme(mode) {
-    document.documentElement.setAttribute('data-theme', mode);
-    localStorage.setItem('vv-theme', mode);
-    const icon = document.getElementById('themeIcon');
-    const text = document.getElementById('themeText');
-    if (icon) icon.textContent = mode === 'dark' ? '☀️' : '🌙';
-    if (text) text.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode';
-  }
-  applyTheme(getPreferred());
-  els.themeToggle && els.themeToggle.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+  // Small helpers
+  const cfg = window.SITE_CONFIG || {};
+  const getEl = id => document.getElementById(id);
 
-  // Random post
-  function highlightAndScroll(el) {
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.classList.add('highlight');
-    setTimeout(() => el.classList.remove('highlight'), 2200);
-    el.setAttribute('tabindex', '-1');
-    try { el.focus({ preventScroll: true }); } catch (e) {}
-  }
-  if (els.randomBtn) els.randomBtn.addEventListener('click', () => {
-    const posts = Array.from(document.querySelectorAll('.posts-grid .card'));
-    if (!posts.length) return;
-    highlightAndScroll(posts[Math.floor(Math.random() * posts.length)]);
-  });
+  // Theme management
+  const themeToggle = getEl('themeToggle');
+  function applyTheme(mode) { document.documentElement.setAttribute('data-theme', mode); try { localStorage.setItem('vv-theme', mode); } catch(e){} const icon = getEl('themeIcon'); const text = getEl('themeText'); if (icon) icon.textContent = mode === 'dark' ? '☀️' : '🌙'; if (text) text.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode'; }
+  function getPreferred() { try { const saved = localStorage.getItem('vv-theme'); if (saved) return saved; } catch(e){} return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+  applyTheme(getPreferred()); themeToggle && themeToggle.addEventListener('click', () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 
-  // Search filter
-  if (els.searchInput) els.searchInput.addEventListener('input', (e) => {
-    const q = (e.target.value || '').trim().toLowerCase();
-    document.querySelectorAll('.posts-grid .card').forEach(it => {
-      it.style.display = (!q || it.textContent.toLowerCase().includes(q)) ? '' : 'none';
-    });
-  });
+  // Minimal exported UI elements for other modules
+  const els = {
+    themeToggle: getEl('themeToggle'),
+    randomBtn: getEl('randomBtn'),
+    searchInput: getEl('searchInput'),
+    postsGrid: getEl('postsGrid'),
+    refreshBtn: getEl('refreshBtn'),
+    loadMore: getEl('loadMore'),
+    status: getEl('statusMessage'),
+    progressBar: getEl('progressBar'),
+    particles: getEl('particles'),
+    aboutBtn: getEl('aboutBtn'),
+    aboutModal: getEl('aboutModal'),
+    aboutClose: getEl('aboutModalClose'),
+    footerAbout: getEl('footerAboutLink'),
+    readingModal: getEl('readingModal'),
+    readingClose: getEl('readingModalClose'),
+    modalTitle: getEl('modalTitle'),
+    modalMeta: getEl('modalMeta'),
+    modalBody: getEl('modalBody'),
+    prev: getEl('prevPost'), next: getEl('nextPost')
+  };
 
-  // Card animation delays
-  function applyCardDelays() {
-    document.querySelectorAll('.posts-grid .card').forEach((card, i) => {
-      card.style.animationDelay = `${i * 70}ms`;
-      card.classList.remove('show'); card.offsetHeight; card.classList.add('show');
-    });
+  // Light utilities
+  const debounce = (fn, ms=200) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+  const escapeHtml = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+  // Basic modal & sanitization (uses DOMPurify if available)
+  function sanitize(html){ const raw = String(html||''); const cleaned = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(raw) : raw; const d = document.createElement('div'); d.innerHTML = cleaned; d.querySelectorAll('iframe,object,embed,style').forEach(e=>e.remove()); return d.innerHTML; }
+
+  // Content manager (adapted, minimal): builds cards and loads posts from static/proxy sources
+  class ContentManager {
+    constructor(){ this.posts = []; this.pageSize = 6; this.shown = 0; this.viewList = []; this.inlineConsumed = false; }
+    init(){ els.searchInput = getEl('searchInput'); els.refreshBtn && els.refreshBtn.addEventListener('click', ()=> this.load(true)); if (getEl('randomBtn')) getEl('randomBtn').addEventListener('click', ()=> this.random()); if (els.loadMore) els.loadMore.addEventListener('click', ()=> this.renderNextChunk()); const inline = document.getElementById('initialPostsData'); if (inline){ try { const parsed = JSON.parse(inline.textContent || '[]'); if (Array.isArray(parsed)) { this.posts = parsed; this.inlineConsumed = true; this.render(this.posts); } } catch(e){} inline.remove(); } this.load(); }
+
+    card(post, idx){ const date = post.pubDate ? new Date(post.pubDate) : null; const html = post.content || post.description || ''; const txt = (new DOMParser()).parseFromString(sanitize(html), 'text/html').body.textContent || ''; const img = (new DOMParser()).parseFromString(sanitize(html), 'text/html').querySelector('img')?.src || null; const rt = txt ? `${Math.max(1, Math.round((txt.trim().split(/\s+/).length)/180))} min read` : ''; const tags = Array.isArray(post.tags)?post.tags:[]; const el = document.createElement('article'); const palettes = ['accent','accent-2','accent-3']; el.className = `card ${palettes[idx % palettes.length]}`; el.setAttribute('aria-label', post.title || 'Poem'); el.innerHTML = `${img?`<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt=""/></div>`:`<div class="card-thumb" aria-hidden="true"></div>`}<div class="card-content"><h2 class="card-title"><a href="${post.link||post.url||'#'}" target="_blank" rel="noopener">${escapeHtml(post.title||'Untitled')}</a></h2><div class="card-meta">${date?`<span>📅 ${escapeHtml(date.toLocaleDateString())}</span>`:''}${rt?`<span>⏱️ ${escapeHtml(rt)}</span>`:''}</div><div class="card-summary">${escapeHtml(txt.slice(0,240))}${txt.length>240?'…':''}</div>${tags.length?`<div class="card-badges">${tags.map(t=>`<span class="badge">${escapeHtml(t)}</span>`).join('')}</div>`:''}<div class="card-actions"><a href="${post.link||post.url||'#'}" target="_blank" rel="noopener">Read on Substack →</a><button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button><a href="#" data-share="${encodeURIComponent(post.link||post.url||'')}" data-title="${escapeHtml(post.title||'Poem')}">Share</a></div></div>`; el.querySelector('[data-quick-read]')?.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); this.openReading(post); }); const im = el.querySelector('.card-thumb img'); if(im){ if(im.complete) im.setAttribute('data-loaded','1'); else im.addEventListener('load',()=>im.setAttribute('data-loaded','1')); } return el; }
+
+    render(list){ this.viewList = list; this.shown = 0; if (getEl('postsGrid')) getEl('postsGrid').hidden = false; const grid = getEl('postsGrid'); if(!grid) return; grid.innerHTML=''; this.renderNextChunk(); if (els.status) { els.status.hidden = true; } }
+    renderNextChunk(){ const grid = getEl('postsGrid'); const slice = this.viewList.slice(this.shown, this.shown + this.pageSize); slice.forEach((p)=>{ const idx = this.posts.indexOf(p); const c = this.card(p, idx>=0?idx:0); grid.appendChild(c); requestAnimationFrame(()=>c.classList.add('show')); }); this.shown += slice.length; const remaining = Math.max(0, this.viewList.length - this.shown); if (els.loadMore) els.loadMore.style.display = remaining>0?'inline-flex':'none'; }
+    random(){ if(!this.posts.length) return; const idx = Math.floor(Math.random()*this.posts.length); this.openReading(this.posts[idx]); }
+    async load(force=false){ const STATIC = cfg.STATIC_DATA_URL || './data/posts.json'; let success = Boolean(this.posts.length); if (!success) { if (els.postsGrid) els.postsGrid.hidden = false; if (els.status) { els.status.hidden = false; els.status.textContent = 'Gathering poems from the digital ether...'; } } // try local static data
+      try { const res = await fetch(STATIC + (force?`?_=${Date.now()}`:''), { cache:'no-store' }); if (res && res.ok){ const data = await res.json(); if (Array.isArray(data) || Array.isArray(data.posts)) { const list = Array.isArray(data)?data:data.posts; this.posts = list; this.render(this.posts); success = true; } } } catch(e){}
+      // try proxy/public sources
+      if (!success || force){ const worker = cfg.WORKER_BASE ? (cfg.WORKER_BASE + encodeURIComponent(cfg.RSS_URL||'')) : null; const publicBase = (cfg.RSS2JSON_KEY ? `https://api.rss2json.com/v1/api.json?api_key=${encodeURIComponent(cfg.RSS2JSON_KEY)}&count=${encodeURIComponent(cfg.MAX_ITEMS||50)}&rss_url=` : `https://api.rss2json.com/v1/api.json?count=${encodeURIComponent(cfg.MAX_ITEMS||50)}&rss_url=`); const sources = []; if (worker) sources.push(worker + (force?`&_=${Date.now()}`:'')); sources.push(publicBase + encodeURIComponent(cfg.RSS_URL||'')); for (const url of sources){ try { const res = await fetch(url, { cache:'no-store' }); if (!res.ok) continue; const data = await res.json(); const list = Array.isArray(data)?data:(Array.isArray(data.posts)?data.posts:(Array.isArray(data.items)?data.items:(Array.isArray(data.data)?data.data:[]))); if (list && list.length){ this.posts = list; this.render(this.posts); success = true; break; } } catch(e){} } }
+      if (!success){ if (els.status){ els.status.hidden = false; els.status.className = 'status error'; els.status.textContent = 'Unable to load poems right now. You can read on Substack via the links below.'; } }
+    }
+    openReading(post){ const modal = getEl('readingModal'); const body = getEl('modalBody'); const title = getEl('modalTitle'); const meta = getEl('modalMeta'); if (!modal || !body) return; title.textContent = post.title || 'Untitled'; meta.textContent = post.pubDate? new Date(post.pubDate).toLocaleDateString() : ''; body.innerHTML = sanitize(post.content || post.description || ''); modal.removeAttribute('hidden'); modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); }
   }
-  applyCardDelays();
-  if (els.postsGrid) new MutationObserver(() => applyCardDelays()).observe(els.postsGrid, { childList: true });
-});
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const content = new ContentManager(); content.init();
+    // basic search wiring
+    const s = getEl('searchInput'); if (s) s.addEventListener('input', debounce(()=>{ const q=(s.value||'').trim().toLowerCase(); const cards=Array.from(document.querySelectorAll('.posts-grid .card')); if(!q){ cards.forEach(c=>c.style.display=''); return;} cards.forEach(c=> c.style.display = c.textContent.toLowerCase().includes(q)?'':'none' ); }, 120));
+  }, { passive: true });
+})();
