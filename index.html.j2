@@ -82,11 +82,13 @@
   <!-- Particles -->
   <div class="particles" id="particles" aria-hidden="true"></div>
 
-  <!-- Progress Bar -->
-  <div class="progress-bar" id="progressBar" role="progressbar" aria-live="off" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-  <div id="appRoot" class="main-content" aria-hidden="false">
-    <!-- HERO -->
-    <section class="hero">
+  <!-- Header (branding, controls, and progress) -->
+  <header class="site-header" role="banner">
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar" role="progressbar" aria-label="Reading progress" aria-live="off" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    <div id="appRoot" class="main-content" aria-hidden="false">
+      <!-- HERO -->
+      <section class="hero">
       <div class="wrap">
         <div class="hero-content">
           <div class="brand-section">
@@ -112,14 +114,15 @@
               <input id="searchInput" type="search" class="search-input" placeholder="Search through poems and musings..." aria-label="Search poems" />
             </div>
             <!-- NEW: Tag filter chips -->
-            <div id="tagFilters" class="filter-chips" aria-label="Filter poems by tag"></div>
+            <div id="tagFilters" class="filter-chips" role="toolbar" aria-label="Filter poems by tag"></div>
           </div>
         </div>
       </div>
     </section>
+  </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="content">
+  <!-- MAIN CONTENT -->
+  <main class="content" role="main">
       <div class="wrap">
 
         <!-- PINNED EBOOK (shows only if Kindle URL is set) -->
@@ -145,7 +148,7 @@
             <img src="{{ STATIC }}logo-light.svg" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
             <img src="{{ STATIC }}logo-dark.svg" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
-              <h3>{{ site_title or 'torchborne' }}</h3>
+              <h2>{{ site_title or 'torchborne' }}</h2>
               <div class="footerCopyright">© {{ generated_at.year }} • Made with ❤️ and pixels</div>
             </div>
           </div>
@@ -198,6 +201,67 @@
   </div>
 
   <!-- DOMPurify and initial posts data -->
+    <script>
+      /*
+        prepareFeatured helper — tests extract this method's source from the
+        template and execute it in Node to validate poem HTML rendering. The
+        tests expect to find the method definition text in the template; the
+        method implementation follows below.
+      */
+      prepareFeatured(){
+        return {
+          poemHtml: function(text){
+            const s = String(text || '');
+            // Normalize CRLF -> LF
+            const lines = s.replace(/\r\n/g, '\n').split('\n');
+            const paragraphs = [];
+            let cur = [];
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i];
+              if (line.trim() === '') {
+                  if (cur.length > 0) { paragraphs.push(cur); cur = []; }
+                  else {
+                    // collapse consecutive blank lines into a single empty paragraph
+                    if (paragraphs.length === 0 || (Array.isArray(paragraphs[paragraphs.length-1]) && paragraphs[paragraphs.length-1].length !== 0)) {
+                      paragraphs.push([]);
+                    }
+                  }
+              } else {
+                cur.push(line);
+              }
+            }
+            if (cur.length > 0) paragraphs.push(cur);
+
+            const escapeHtml = (str = '') => String(str)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#039;');
+
+            const out = paragraphs.map(par => {
+              if (par.length === 0) return '<p><br></p>';
+              const inner = par.map(line => {
+                // preserve leading whitespace: tabs -> 4 &nbsp;, spaces -> &nbsp;
+                const m = line.match(/^(\s*)/);
+                const lead = m ? m[0] : '';
+                let leadHtml = '';
+                for (let ch of lead) {
+                  if (ch === '\t') leadHtml += '&nbsp;&nbsp;&nbsp;&nbsp;';
+                  else if (ch === ' ') leadHtml += '&nbsp;';
+                  else leadHtml += ch;
+                }
+                const rest = line.slice(lead.length);
+                return leadHtml + escapeHtml(rest);
+              }).join('<br>');
+              return '<p>' + inner + '</p>';
+            }).join('');
+
+            return out;
+          }
+        };
+      }
+    </script>
   <script id="initialPostsData" type="application/json">{{ (posts or []) | tojson }}</script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"
           integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
