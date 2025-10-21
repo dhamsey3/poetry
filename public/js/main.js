@@ -76,8 +76,14 @@
 
   // Content manager (adapted, minimal): builds cards and loads posts from static/proxy sources
   class ContentManager {
-    constructor(){ this.posts = []; this.pageSize = 6; this.shown = 0; this.viewList = []; this.inlineConsumed = false; }
-    constructor(){ this.posts = []; this.pageSize = 6; this.shown = 0; this.viewList = []; this.inlineConsumed = false; this.currentIndex = -1; }
+    constructor(){
+      this.posts = [];
+      this.pageSize = 6;
+      this.shown = 0;
+      this.viewList = [];
+      this.inlineConsumed = false;
+      this.currentIndex = -1;
+    }
     init(){ els.searchInput = getEl('searchInput');
       // refresh and random
       const refresh = getEl('refreshBtn'); if (refresh) refresh.addEventListener('click', ()=> this.load(true));
