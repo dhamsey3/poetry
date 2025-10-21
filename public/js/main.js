@@ -399,28 +399,51 @@
       }
     }
 
+    sanitizeJsonEnvelope(text){
+      if (!text) return '';
+      let cleaned = text.trim();
+      if (!cleaned) return '';
+      // Many Substack APIs prefix responses with `while(1);` or similar guards
+      cleaned = cleaned.replace(/^while\(1\);?/, '');
+      cleaned = cleaned.replace(/^\)\]\}'/, '');
+      return cleaned.trim();
+    }
+
     async fetchJson(url){
       const res = await fetch(url, { cache: 'no-store', credentials: 'omit' });
       if (!res || !res.ok) throw new Error(`HTTP ${res ? res.status : 0}`);
       const text = await res.text();
-      const trimmed = text.trim();
+      const trimmed = this.sanitizeJsonEnvelope(text);
       if (!trimmed) return null;
       try { return JSON.parse(trimmed); } catch (_) { throw new Error('Invalid JSON'); }
     }
 
     async fetchSubstackArchive(force=false){
-      if (!this.archiveEndpoint) return [];
-      let url = this.archiveEndpoint;
       const limit = Number.isFinite(this.maxItems) ? this.maxItems : DEFAULT_LIMIT;
-      if (Number.isFinite(limit)) url += `${url.includes('?') ? '&' : '?'}limit=${encodeURIComponent(limit)}`;
-      if (force) url += `${url.includes('?') ? '&' : '?'}_=${Date.now()}`;
-      try {
-        const data = await this.fetchJson(url);
-        return this.pickList(data);
-      } catch (err) {
-        if (err && err.name !== 'AbortError') console.warn('Archive fallback failed', err);
-        return [];
+      const params = [];
+      if (Number.isFinite(limit)) params.push(`limit=${encodeURIComponent(limit)}`);
+      if (force) params.push(`_=${Date.now()}`);
+      const query = params.length ? `?${params.join('&')}` : '';
+      const endpoints = [];
+      if (this.archiveEndpoint){
+        const hasQuery = this.archiveEndpoint.includes('?');
+        const url = `${this.archiveEndpoint}${hasQuery ? query.replace('?', '&') : query}`;
+        endpoints.push(url);
       }
+      if (SUBSTACK_ORIGIN){
+        const base = `${SUBSTACK_ORIGIN}/api/v1/posts?sort=new`;
+        endpoints.push(`${base}${query}`);
+      }
+      for (const endpoint of endpoints){
+        try {
+          const data = await this.fetchJson(endpoint);
+          const list = this.pickList(data);
+          if (list && list.length) return list;
+        } catch (err) {
+          if (err && err.name !== 'AbortError') console.warn('Archive fallback failed', endpoint, err);
+        }
+      }
+      return [];
     }
 
     openReading(post){
