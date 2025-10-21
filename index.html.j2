@@ -47,11 +47,20 @@
   </script>
 
   <!-- Structured Data: Book (only if Kindle URL present) -->
-            {% if featured_ebook %}
-              <div class="ebook-cta">
-                <a class="btn btn-primary" href="{{ featured_ebook.url }}" target="_blank" rel="noopener">{{ featured_ebook.ctaText or 'Read on Kindle' }}</a>
-              </div>
-            {% endif %}
+  {% if featured_ebook %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    "name": {{ (featured_ebook.title or 'Torchborne Poetry eBook') | tojson }},
+    "bookFormat": "https://schema.org/EBook",
+    "author": { "@type": "Person", "name": "Dami" },
+    {% if featured_ebook.cover %}"image": {{ featured_ebook.cover | tojson }},{% endif %}
+    "description": {{ (featured_ebook.description or "Poetry collection") | tojson }},
+    "potentialAction": { "@type": "ReadAction", "target": {{ featured_ebook.url | tojson }} }
+  }
+  </script>
+  {% endif %}
 
   <!-- Relaxed CSP for this static setup -->
   <meta http-equiv="Content-Security-Policy" content="
@@ -65,8 +74,7 @@
     form-action 'self';
     upgrade-insecure-requests
   ">
-  </head>
-
+</head>
 <body>
   <a href="#postsGrid" class="visually-hidden" id="skipLink">Skip to posts</a>
   <div id="noJsBanner" class="status error" role="alert" hidden>JavaScript is disabled. Some features (search, quick read) won't work. You can still read directly on Substack via the links below.</div>
@@ -82,61 +90,124 @@
   <!-- Particles -->
   <div class="particles" id="particles" aria-hidden="true"></div>
 
-  <!-- Header (branding, controls, and progress) -->
-  <header class="site-header" role="banner">
-    <!-- Progress Bar -->
-    <div class="progress-bar" id="progressBar" role="progressbar" aria-label="Reading progress" aria-live="off" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-    <div id="appRoot" class="main-content" aria-hidden="false">
-      <!-- HERO -->
-      <section class="hero">
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progressBar" role="progressbar" aria-live="off" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+
+  <div id="appRoot" class="main-content" aria-hidden="false">
+    <!-- HERO -->
+    <section class="hero">
       <div class="wrap">
         <div class="hero-content">
           <div class="brand-section">
             <a href="./" class="brand-link">
               <img src="{{ STATIC }}logo-light.svg" alt="Torchborne logo" class="logo-img logo-light" fetchpriority="high" width="64" height="64" />
               <img src="{{ STATIC }}logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
-              <h1 class="brand-name">{{ site_title or 'Torchborne' }}</h1>
+              <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
             <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
           </div>
 
           <div class="hero-actions">
-            <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false"><span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span></button>
+            <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
+              <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
+            </button>
             <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
             <button id="randomBtn" class="chip accent" title="Surprise me"><span>🎲</span> Random</button>
-            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal"><span>👋</span> About</button>
+            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
+              <span>👋</span> About
+            </button>
+            {% if featured_ebook %}
+            <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow" aria-label="Read on Kindle (opens Amazon)">
+              {{ featured_ebook.ctaText or 'Read on Kindle' }}
+            </a>
+            {% endif %}
             <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe</a>
           </div>
 
           <div class="search-section">
             <div class="search-wrapper">
-              <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18A7.5 7.5 0 1010.5 3a7.5 7.5 0 000 15z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M21 21l-4.35-4.35M10.5 18A7.5 7.5 0 1010.5 3a7.5 7.5 0 000 15z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
               <input id="searchInput" type="search" class="search-input" placeholder="Search through poems and musings..." aria-label="Search poems" />
             </div>
             <!-- NEW: Tag filter chips -->
-            <div id="tagFilters" class="filter-chips" role="toolbar" aria-label="Filter poems by tag"></div>
+            <div id="tagFilters" class="filter-chips" aria-label="Filter poems by tag"></div>
           </div>
         </div>
       </div>
     </section>
-  </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="content" role="main">
+    <!-- MAIN CONTENT -->
+    <main class="content">
       <div class="wrap">
 
         <!-- PINNED EBOOK (shows only if Kindle URL is set) -->
-        
+        {% if featured_ebook %}
+        <section class="posts-grid" style="margin-bottom:16px">
+          <article class="card ebook-card accent-3">
+            <div class="card-content ebook">
+              <div class="ebook-flag">{{ featured_ebook.tag or 'Featured' }}</div>
+              <div class="ebook-layout">
+                <div class="ebook-cover{{ '' if featured_ebook.cover else ' placeholder' }}">
+                  {% if featured_ebook.cover %}
+                    <img loading="lazy" decoding="async" src="{{ featured_ebook.cover }}" alt="">
+                  {% else %}<span aria-hidden="true">📘</span>{% endif %}
+                </div>
+                <div class="ebook-details">
+                  <h2 class="card-title">
+                    <a href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow">
+                      {{ featured_ebook.title or 'Torchborne Poetry eBook' }}
+                    </a>
+                  </h2>
+                  {% if featured_ebook.meta %}<div class="card-meta single">{{ featured_ebook.meta }}</div>{% endif %}
+                  {% if featured_ebook.description %}<div class="card-summary">{{ featured_ebook.description }}</div>{% endif %}
+                  <div class="ebook-actions">
+                    <a class="btn btn-primary" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow">
+                      {{ featured_ebook.ctaText or 'Read on Kindle' }}
+                    </a>
+                    {% if featured_ebook.shareText %}
+                    <a href="#" data-share="{{ featured_ebook.url | urlencode }}" data-title="{{ featured_ebook.title }}"> {{ featured_ebook.shareText }} </a>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+        {% endif %}
 
-        <div id="statusMessage" class="status" role="status" aria-live="polite">
-          Gathering poems from the digital ether...
+        <div id="statusMessage" class="status" role="status" aria-live="polite"{% if posts %} hidden{% endif %}>
+          {% if not posts %}Gathering poems from the digital ether...{% endif %}
         </div>
 
-        <section id="postsGrid" class="posts-grid" hidden>
-          
+        <section id="postsGrid" class="posts-grid"{% if not posts %} hidden{% endif %}>
+          {% if posts %}
+            {% set accent_classes = ['accent', 'accent-2', 'accent-3'] %}
+            {% for post in posts[:6] %}
+              {% set slug = post.slug or '' %}
+              {% set candidate_url = post.url or post.link %}
+              {% set post_url = candidate_url if candidate_url else (POSTS_BASE ~ '/p/' ~ slug if slug else POSTS_BASE) %}
+              {% set iso_date = post.date or post.pubDate or post.published_at %}
+              {% set display_date = iso_date %}
+              {% set accent = accent_classes[loop.index0 % (accent_classes | length)] %}
+              {% set card_title = post.title if post.title else (slug.replace('-', ' ') if slug else 'Untitled') %}
+              <article class="card {{ accent }}" data-post-slug="{{ slug }}">
+                <div class="card-thumb" aria-hidden="true"></div>
+                <div class="card-content">
+                  <h2 class="card-title"><a href="{{ post_url }}" target="_blank" rel="noopener">{{ card_title }}</a></h2>
+                  <div class="card-meta">{% if display_date %}<span>📅 {{ display_date }}</span>{% endif %}</div>
+                  <div class="card-summary">{{ post.excerpt or post.description or '' }}</div>
+                  <div class="card-actions"><a href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack →</a></div>
+                </div>
+              </article>
+            {% endfor %}
+          {% endif %}
         </section>
 
-        <button id="loadMore" class="chip accent" style="display:none; margin: 24px auto 0;" aria-controls="postsGrid">Load older poems</button>
+        <button id="loadMore" class="chip accent" style="display:none; margin: 24px auto 0;" aria-controls="postsGrid">
+          Load older poems
+        </button>
       </div>
     </main>
 
@@ -148,8 +219,8 @@
             <img src="{{ STATIC }}logo-light.svg" class="footer-logo logo-light" alt="" aria-hidden="true" width="32" height="32">
             <img src="{{ STATIC }}logo-dark.svg" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
-              <h2>{{ site_title or 'torchborne' }}</h2>
-              <div class="footerCopyright">© {{ generated_at.year }} • Made with ❤️ and pixels</div>
+              <h3>{{ site_title or "Torchborne" }}</h3>
+              <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
             </div>
           </div>
 
@@ -177,6 +248,14 @@
           <button id="prevPost" class="chip accent" title="Previous (←)">← Prev</button>
           <button id="nextPost" class="chip accent" title="Next (→)">Next →</button>
         </div>
+
+        <!-- NEW: Reader controls -->
+        <div class="reader-controls" id="readerControls" aria-label="Reading controls">
+          <button class="chip" data-reader-dec title="Smaller">–</button>
+          <span class="reader-size" id="readerSize">100%</span>
+          <button class="chip" data-reader-inc title="Larger">+</button>
+          <button class="chip" data-reader-toggle="wide" title="Toggle wide">↔︎</button>
+        </div>
       </div>
       <div class="modal-body" id="modalBody"></div>
     </div>
@@ -187,101 +266,765 @@
     <div class="modal-content">
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
-      <div class="about-header">
-        <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="{{ site_title or 'Torchborne' }}" onerror="this.src='{{ STATIC }}logo-light.svg'">
-        <div class="about-info">
-          <h2 id="aboutTitle">About {{ site_title or 'Torchborne' }}</h2>
-          <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
+        <div class="about-header">
+          <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="Torchborne" onerror="this.src='{{ STATIC }}logo-light.svg'">
+          <div class="about-info">
+            <h2 id="aboutTitle">About Torchborne</h2>
+            <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
+          </div>
         </div>
-      </div>
-      <div class="about-body">
-        <p>Welcome to my little corner of the internet where I explore the tender spaces between thoughts and feelings. Here you'll find poems, musings, and little sparks of inspiration that dance through everyday moments.</p>
+
+        <div class="about-body">
+          <p>Welcome to my little corner of the internet where I explore the tender spaces between thoughts and feelings. Here you'll find poems, musings, and little sparks of inspiration that dance through everyday moments.</p>
+          <p>I believe poetry lives in the smallest gestures—the way light falls across a page, the pause between heartbeats, the stories we tell ourselves in the quiet hours. This collection gathers my public posts from Substack, made searchable and beautiful for wandering souls like yourself.</p>
+        </div>
+
+        <div class="about-cta">
+          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe on Substack</a>
+          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com"><span>📧</span> Copy Email</button>
+        </div>
+
+        <div class="about-links">
+          <a href="{{ POSTS_BASE }}" target="_blank" rel="noopener noreferrer nofollow external" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/></svg>
+            Substack
+          </a>
+          <a href="mailto:versesvibez@substack.com" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 01-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            Email
+          </a>
+          <a href="https://instagram.com/versesvibez" target="_blank" rel="noopener noreferrer nofollow external" class="pill">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5a5 5 0 100 10 5 5 0 000-10zm6.5-.9a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zM12 9a3 3 0 110 6 3 3 0 010-6z"/></svg>
+            Instagram
+          </a>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- DOMPurify and initial posts data -->
-    <script>
-      /*
-        prepareFeatured helper — tests extract this method's source from the
-        template and execute it in Node to validate poem HTML rendering. The
-        tests expect to find the method definition text in the template; the
-        method implementation follows below.
-      */
-      prepareFeatured(){
-        return {
-          poemHtml: function(text){
-            const s = String(text || '');
-            // Normalize CRLF -> LF
-            const lines = s.replace(/\r\n/g, '\n').split('\n');
-            const paragraphs = [];
-            let cur = [];
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
-              if (line.trim() === '') {
-                  if (cur.length > 0) { paragraphs.push(cur); cur = []; }
-                  else {
-                    // collapse consecutive blank lines into a single empty paragraph
-                    if (paragraphs.length === 0 || (Array.isArray(paragraphs[paragraphs.length-1]) && paragraphs[paragraphs.length-1].length !== 0)) {
-                      paragraphs.push([]);
-                    }
-                  }
-              } else {
-                cur.push(line);
-              }
-            }
-            if (cur.length > 0) paragraphs.push(cur);
-
-            const escapeHtml = (str = '') => String(str)
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/"/g, '&quot;')
-              .replace(/'/g, '&#039;');
-
-            const out = paragraphs.map(par => {
-              if (par.length === 0) return '<p><br></p>';
-              const inner = par.map(line => {
-                // preserve leading whitespace: tabs -> 4 &nbsp;, spaces -> &nbsp;
-                const m = line.match(/^(\s*)/);
-                const lead = m ? m[0] : '';
-                let leadHtml = '';
-                for (let ch of lead) {
-                  if (ch === '\t') leadHtml += '&nbsp;&nbsp;&nbsp;&nbsp;';
-                  else if (ch === ' ') leadHtml += '&nbsp;';
-                  else leadHtml += ch;
-                }
-                const rest = line.slice(lead.length);
-                return leadHtml + escapeHtml(rest);
-              }).join('<br>');
-              return '<p>' + inner + '</p>';
-            }).join('');
-
-            return out;
-          }
-        };
-      }
-    </script>
+  <!-- DOMPurify -->
   <script id="initialPostsData" type="application/json">{{ (posts or []) | tojson }}</script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"
           integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <!-- Runtime config for client JS (populated from template variables) -->
   <script>
-    window.SITE_CONFIG = {
-      RSS_URL: {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }},
-      WORKER_BASE: {{ (rss_proxy_url or "") | tojson }},
-      RSS2JSON_KEY: {{ (rss2json_api_key or "") | tojson }},
-      MAX_ITEMS: {{ (max_items or 50) | tojson }},
-      POSTS_BASE: {{ (POSTS_BASE or "https://versesvibez.substack.com/") | tojson }},
-      STATIC_DATA_URL: './data/posts.json',
-      FEATURED_EBOOK: {{ (featured or {}) | tojson }},
-      TAGLINES: ["where words carry the flame ✨","poetry for wandering souls ✍️","verses that glow in the dark 🌙"]
-    };
-  </script>
+    // ===== CONFIG =====
+    const RSS_URL        = {{ (feed_url or "https://versesvibez.substack.com/feed") | tojson }};
+    let   WORKER_BASE    = {{ (rss_proxy_url or "") | tojson }};
+    const RSS2JSON_KEY   = {{ (rss2json_api_key or "") | tojson }};
+    const MAX_ITEMS      = {{ (max_items or 50) | tojson }};
+    const PUBLIC_BASE    =
+      "https://api.rss2json.com/v1/api.json?"
+      + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
+      + "count=" + encodeURIComponent(MAX_ITEMS) + "&rss_url=";
+    const SUBSTACK_BASE   = {{ POSTS_BASE | tojson }};
+    const STATIC_DATA_URL = './data/posts.json';
+    const FEATURED_EBOOK  = {{ (featured_ebook or {}) | tojson }};
+    const TAGLINES = [
+      "where words carry the flame ✨",
+      "poetry for wandering souls ✍️",
+      "verses that glow in the dark 🌙"
+    ];
 
-  <!-- Load public JS (extracted from template for maintainability) -->
-  <script src="{{ STATIC }}js/main.js" defer></script>
+    function normalizeBase(base) {
+      if (!base) return "";
+      const hasParam = /[?&]rss_url=/.test(base);
+      if (hasParam) return base;
+      const hasQuery = base.includes("?");
+      if (!hasQuery) return base + "?rss_url=";
+      if (!/[&?]$/.test(base)) base += "&";
+      return base + "rss_url=";
+    }
+    WORKER_BASE = normalizeBase(WORKER_BASE);
+
+    const CLEAN_SUBSTACK_BASE = SUBSTACK_BASE.replace(/\/$/, '');
+
+    function normalizePost(raw = {}) {
+      if (!raw || typeof raw !== 'object') return null;
+      const slug = typeof raw.slug === 'string' ? raw.slug.trim() : '';
+      const candidates = [raw.link, raw.url, raw.href];
+      let link = '';
+      for (const cand of candidates) {
+        if (typeof cand === 'string' && cand.trim()) { link = cand.trim(); break; }
+      }
+      if (!link && slug) link = `${CLEAN_SUBSTACK_BASE}/p/${slug}`;
+      const pubDate = typeof raw.pubDate === 'string' ? raw.pubDate
+        : typeof raw.pubdate === 'string' ? raw.pubdate
+        : typeof raw.date === 'string' ? raw.date
+        : '';
+      const excerpt = typeof raw.excerpt === 'string' && raw.excerpt.trim()
+        ? raw.excerpt
+        : typeof raw.description === 'string' ? raw.description : '';
+      const content = typeof raw.content === 'string' ? raw.content
+        : typeof raw.html === 'string' ? raw.html
+        : typeof raw.body === 'string' ? raw.body
+        : '';
+      let title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : '';
+      if (!title) {
+        if (slug) { title = slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, s => s.toUpperCase()); }
+        else { title = 'Untitled'; }
+      }
+      const tags = Array.isArray(raw.tags)
+        ? raw.tags.filter(tag => typeof tag === 'string' && tag.trim()).map(tag => tag.trim())
+        : [];
+      return { ...raw, slug, title, link: link || '#', url: link || '#', pubDate: pubDate || '', description: excerpt || '', excerpt: excerpt || '', content, tags };
+    }
+
+    function normalizePostsList(list) { return Array.isArray(list) ? list.map(normalizePost).filter(Boolean) : []; }
+    function mergeEntries(base = {}, extra = {}) {
+      const merged = { ...base };
+      for (const key of Object.keys(extra)) {
+        const val = extra[key];
+        if (val == null) continue;
+        if (typeof val === 'string') { if (!val.trim()) continue; }
+        else if (Array.isArray(val)) { if (!val.length) continue; }
+        merged[key] = val;
+      }
+      return merged;
+    }
+    function postTimestamp(post) {
+      const dateStr = post?.pubDate || post?.pubdate || post?.date;
+      if (!dateStr) return 0;
+      const ts = Date.parse(dateStr);
+      return Number.isFinite(ts) ? ts : 0;
+    }
+    function mergePostLists(existing = [], incoming = []) {
+      const merged = []; const indexByKey = new Map();
+      const add = item => {
+        if (!item) return;
+        const slugKey = (item.slug || '').trim().toLowerCase();
+        const guid = (item.guid || '').trim();
+        const id = (item.id || '').trim();
+        const linkKey = (item.link || '').trim();
+        const urlKey = (item.url || '').trim();
+        const titleKey = (item.title || '').trim();
+        const key = slugKey || guid || id || linkKey || urlKey || titleKey;
+        if (!key) return;
+        if (indexByKey.has(key)) { const idx = indexByKey.get(key); merged[idx] = mergeEntries(merged[idx], item); }
+        else { indexByKey.set(key, merged.length); merged.push(item); }
+      };
+      (existing || []).forEach(add);
+      (incoming || []).forEach(add);
+      merged.sort((a, b) => postTimestamp(b) - postTimestamp(a));
+      return merged;
+    }
+
+    const inlineDataElement = document.getElementById('initialPostsData');
+    const INLINE_POSTS = (() => {
+      if (!inlineDataElement) return [];
+      const rawText = (inlineDataElement.textContent || inlineDataElement.innerText || '').trim();
+      if (!rawText) return [];
+      try {
+        const parsed = JSON.parse(rawText);
+        if (Array.isArray(parsed)) return normalizePostsList(parsed);
+        if (parsed && Array.isArray(parsed.posts)) return normalizePostsList(parsed.posts);
+      } catch (err) { console.warn('Inline posts JSON invalid', err); }
+      return [];
+    })();
+    inlineDataElement && inlineDataElement.remove();
+
+    // ===== DOM =====
+    const els = {
+      appRoot: document.getElementById('appRoot'),
+      status: document.getElementById('statusMessage'),
+      grid: document.getElementById('postsGrid'),
+      search: document.getElementById('searchInput'),
+      bar: document.getElementById('progressBar'),
+      particles: document.getElementById('particles'),
+      themeToggle: document.getElementById('themeToggle'),
+      themeIcon: document.getElementById('themeIcon'),
+      themeText: document.getElementById('themeText'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      randomBtn: document.getElementById('randomBtn'),
+      loadMore: document.getElementById('loadMore'),
+      aboutBtn: document.getElementById('aboutBtn'),
+      aboutModal: document.getElementById('aboutModal'),
+      aboutClose: document.getElementById('aboutModalClose'),
+      footerAbout: document.getElementById('footerAboutLink'),
+      readingModal: document.getElementById('readingModal'),
+      readingClose: document.getElementById('readingModalClose'),
+      modalTitle: document.getElementById('modalTitle'),
+      modalMeta: document.getElementById('modalMeta'),
+      modalBody: document.getElementById('modalBody'),
+      prev: document.getElementById('prevPost'),
+      next: document.getElementById('nextPost'),
+      copyEmailBtn: document.getElementById('copyEmailBtn'),
+      tagFilters: document.getElementById('tagFilters'),
+    };
+
+    // ===== STATE =====
+    let posts = INLINE_POSTS.slice();
+    let iModal = 0;
+    let lastFocus = null;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // ===== UTIL =====
+    const debounce = (fn, ms=200) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; };
+    const escapeHtml = (s='') => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+
+    // Theme
+    class ThemeManager {
+      init(){
+        const saved = localStorage.getItem('vv-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const mode = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', mode);
+        this.syncButton(); this.setThemeColor(mode);
+        els.themeToggle?.addEventListener('click', () => this.toggle(), { passive: true });
+
+        const mql = window.matchMedia('(prefers-color-scheme: dark)');
+        if (mql.addEventListener) {
+          mql.addEventListener('change', e => {
+            if (!localStorage.getItem('vv-theme')) {
+              const m = e.matches ? 'dark' : 'light';
+              document.documentElement.setAttribute('data-theme', m);
+              this.syncButton(); this.setThemeColor(m);
+            }
+          });
+        } else if (mql.addListener) {
+          mql.addListener(e => {
+            if (!localStorage.getItem('vv-theme')) {
+              const m = e.matches ? 'dark' : 'light';
+              document.documentElement.setAttribute('data-theme', m);
+              this.syncButton(); this.setThemeColor(m);
+            }
+          });
+        }
+      }
+      toggle(){ const cur = document.documentElement.getAttribute('data-theme') || 'light';
+        const next = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('vv-theme', next);
+        els.themeToggle?.setAttribute('aria-pressed', String(next === 'dark'));
+        this.bump(els.themeToggle); this.syncButton(); this.setThemeColor(next);
+      }
+      syncButton(){ const mode = document.documentElement.getAttribute('data-theme') || 'light';
+        els.themeIcon && (els.themeIcon.textContent = mode === 'dark' ? '☀️' : '🌙');
+        els.themeText && (els.themeText.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode');
+      }
+      setThemeColor(mode){ const meta = document.getElementById('themeColorMeta');
+        meta && meta.setAttribute('content', mode === 'dark' ? '#0d0d0d' : '#f59e0b');
+      }
+      bump(el){ if(!el) return; el.style.transform='scale(0.96)'; setTimeout(()=> el.style.transform='',120); }
+    }
+
+    // Particles
+    class ParticleSystem {
+      constructor(){ this.pool=[]; this.max = reduceMotion ? 0 : 14; this.t=0; this.anim=null; }
+      init(){
+        if (this.max === 0 || !els.particles) return;
+        for (let i=0;i<this.max;i++) this.spawn();
+        const step = ts => { this.update(ts); this.anim = requestAnimationFrame(step); };
+        this.anim = requestAnimationFrame(step);
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden && this.anim) cancelAnimationFrame(this.anim);
+          else if (!reduceMotion) this.anim = requestAnimationFrame(step);
+        }, { passive: true });
+      }
+      spawn(){ const p=document.createElement('div'); p.className='particle';
+        p.style.left=(Math.random()*100)+'%'; p.style.top=(100+Math.random()*20)+'vh';
+        p.dataset.vy=(-0.1-Math.random()*0.2).toString(); p.dataset.x=(Math.random()*100).toString();
+        els.particles.appendChild(p); this.pool.push(p);
+      }
+      update(ts){ this.t=ts*0.001;
+        for (const p of this.pool){ const vy=parseFloat(p.dataset.vy); const top=parseFloat(p.style.top);
+          const nx=parseFloat(p.dataset.x)+Math.sin(this.t+top)*0.02; p.dataset.x=nx.toString();
+          p.style.transform=`translateX(${nx}vw)`; p.style.top=(top+vy)+'vh';
+          if (parseFloat(p.style.top) < -10) { p.style.top=(110+Math.random()*10)+'vh'; p.style.left=(Math.random()*100)+'%'; }
+        }
+      }
+    }
+
+    // Focus trap
+    const Focus = {
+      trap(container){
+        const nodes = container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+        if (!nodes.length) return () => {};
+        const first = nodes[0], last = nodes[nodes.length - 1];
+        function handle(e){
+          if (e.key !== 'Tab') return;
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+        container.addEventListener('keydown', handle);
+        return () => container.removeEventListener('keydown', handle);
+      }
+    };
+
+    // Sanitizer helpers
+    function stripSubstackBoilerplate(html){
+      const d = document.createElement('div'); d.innerHTML = html || '';
+      const isBoilerplate = (t) => /^text within this block will maintain its original spacing when published/i.test((t||'').trim());
+      d.querySelectorAll('pre, p, div').forEach(el => { if (isBoilerplate(el.textContent || '')) el.remove(); });
+      return d.innerHTML;
+    }
+    function sanitize(html){
+      const raw = stripSubstackBoilerplate(html || '');
+      const useDOMPurify = typeof DOMPurify !== 'undefined' && DOMPurify?.sanitize;
+      const cleaned = useDOMPurify ? DOMPurify.sanitize(raw, {
+        RETURN_TRUSTED_TYPE: false,
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data:image\/(?:png|gif|jpeg|webp|svg\+xml));?)/i
+      }) : raw;
+      const div = document.createElement('div'); div.innerHTML = cleaned;
+      div.querySelectorAll('a[href]').forEach(a => {
+        const href = (a.getAttribute('href') || '').trim();
+        if (/^javascript:/i.test(href)) a.removeAttribute('href');
+        if (/^https?:\/\//i.test(href)) { a.setAttribute('target','_blank'); a.setAttribute('rel','noopener'); }
+      });
+      div.querySelectorAll('iframe, object, embed, link, style').forEach(el => el.remove());
+      div.querySelectorAll('*').forEach(el => {
+        [...el.attributes].forEach(attr => {
+          const n = attr.name.toLowerCase();
+          const v = (attr.value || '').trim().toLowerCase();
+          if (n.startsWith('on') || v.startsWith('javascript:')) el.removeAttribute(attr.name);
+        });
+      });
+      div.querySelectorAll('[style]').forEach(el => {
+        const rawStyle = el.getAttribute('style') || '';
+        const rules = rawStyle.split(';').map(s => s.trim()).filter(Boolean);
+        if (rules.length) el.setAttribute('style', rules.join('; ')); else el.removeAttribute('style');
+      });
+      div.querySelectorAll('.subscription-widget, .subscription-widget-wrap-editor, .button-wrapper').forEach(el => el.remove());
+      return div.innerHTML;
+    }
+
+    // Modals
+    class ModalManager {
+      constructor(){ this.releaseTrap = null; }
+      init(){
+        // About open/close
+        els.aboutBtn?.addEventListener('click', () => this.openAbout(), { passive: true });
+        els.footerAbout?.addEventListener('click', e => { e.preventDefault(); this.openAbout(); });
+
+        // robust close: X button / inner icon / backdrop
+        els.aboutClose?.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); this.closeAbout(); });
+        els.aboutModal?.addEventListener('click', e => {
+          if (e.target === els.aboutModal || (e.target.closest && e.target.closest('.modal-close'))) this.closeAbout();
+        });
+
+        els.readingClose?.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); this.closeReading(); });
+        els.readingModal?.addEventListener('click', e => {
+          if (e.target === els.readingModal || (e.target.closest && e.target.closest('.modal-close'))) this.closeReading();
+        });
+
+        els.prev?.addEventListener('click', () => this.prev());
+        els.next?.addEventListener('click', () => this.next());
+
+        document.addEventListener('keydown', e => this.key(e));
+        els.modalBody?.addEventListener('scroll', () => this.progress(), { passive: true });
+
+        els.copyEmailBtn?.addEventListener('click', () => this.copy(els.copyEmailBtn?.dataset.email || 'versesvibez@substack.com', els.copyEmailBtn));
+
+        // NEW: reader controls (delegated)
+        document.addEventListener('click', (e) => {
+          const t = e.target;
+          if (t.matches?.('[data-reader-inc]')) { e.preventDefault(); this.adjustReader(0.1); }
+          if (t.matches?.('[data-reader-dec]')) { e.preventDefault(); this.adjustReader(-0.1); }
+          if (t.matches?.('[data-reader-toggle="wide"]')) { e.preventDefault(); els.modalBody.classList.toggle('is-wide'); }
+        });
+
+        // Global delegated share (works for eBook share + card shares)
+        document.addEventListener('click', async (e) => {
+          const sh = e.target.closest && e.target.closest('[data-share]');
+          if (!sh) return;
+          e.preventDefault();
+          const url = decodeURIComponent(sh.getAttribute('data-share') || '');
+          const title = sh.getAttribute('data-title') || document.title;
+          const original = sh.textContent;
+          try {
+            if (navigator.share) { await navigator.share({ title, url }); }
+            else { await navigator.clipboard.writeText(url); sh.textContent = 'Copied ✓'; setTimeout(() => { sh.textContent = original; }, 1500); }
+          } catch {}
+        });
+      }
+      adjustReader(delta){
+        const cur = parseFloat(getComputedStyle(els.modalBody).getPropertyValue('--reader-scale')) || 1;
+        const next = Math.max(0.85, Math.min(1.6, cur + delta));
+        els.modalBody.style.setProperty('--reader-scale', next.toFixed(2));
+        const meter = document.getElementById('readerSize'); meter && (meter.textContent = Math.round(next * 100) + '%');
+      }
+      lockMain(lock){
+        els.appRoot?.setAttribute('aria-hidden', String(lock));
+        lock ? els.appRoot?.setAttribute('inert','') : els.appRoot?.removeAttribute('inert');
+        document.body.style.overflow = lock ? 'hidden' : '';
+      }
+      openAbout(){
+        lastFocus = document.activeElement;
+        els.aboutModal?.removeAttribute('hidden');
+        els.aboutModal?.classList.add('open');
+        els.aboutModal?.setAttribute('aria-hidden','false');
+        this.lockMain(true);
+        this.releaseTrap = Focus.trap(els.aboutModal);
+        els.aboutModal?.focus();
+      }
+      closeAbout(){
+        els.aboutModal?.classList.remove('open');
+        els.aboutModal?.setAttribute('aria-hidden','true');
+        els.aboutModal?.setAttribute('hidden','');
+        this.lockMain(false);
+        this.releaseTrap && this.releaseTrap();
+        lastFocus?.focus();
+      }
+      openReading(post, idx){
+        const meta = post.pubDate ? new Date(post.pubDate).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' }) : '';
+        els.modalTitle.textContent = post.title || 'Untitled';
+        els.modalMeta.textContent = meta;
+        els.modalBody.innerHTML = sanitize(post.content || post.description || '');
+        els.modalBody.querySelectorAll('img').forEach(img => { img.loading='lazy'; img.decoding='async'; img.removeAttribute('width'); img.removeAttribute('height'); });
+
+        // Sticky Kindle CTA inside quick read
+        if (FEATURED_EBOOK && FEATURED_EBOOK.url) {
+          const ctaBar = document.createElement('div');
+          ctaBar.className = 'sticky-cta';
+          ctaBar.innerHTML = `
+            <a class="btn btn-primary" href="${FEATURED_EBOOK.url}" target="_blank" rel="noopener external nofollow">
+              ${FEATURED_EBOOK.ctaText?.trim() || 'Read on Kindle'}
+            </a>`;
+          els.modalBody.appendChild(ctaBar);
+        }
+
+        // reset reader state
+        els.modalBody.style.setProperty('--reader-scale', 1);
+        els.modalBody.classList.remove('is-wide');
+        const meter = document.getElementById('readerSize'); meter && (meter.textContent = '100%');
+
+        lastFocus = document.activeElement;
+        els.readingModal?.removeAttribute('hidden');
+        els.readingModal?.classList.add('open');
+        els.readingModal?.setAttribute('aria-hidden','false');
+        els.readingModal.dataset.index = idx;
+        iModal = idx;
+        els.bar.style.width = '0%';
+        els.bar.setAttribute('aria-valuenow','0');
+        this.lockMain(true);
+        this.releaseTrap = Focus.trap(els.readingModal);
+        els.readingModal?.focus();
+        this.updateNav();
+      }
+      closeReading(){
+        els.readingModal?.classList.remove('open');
+        els.readingModal?.setAttribute('aria-hidden','true');
+        els.readingModal?.setAttribute('hidden','');
+        els.bar.style.width = '0%';
+        els.bar.setAttribute('aria-valuenow','0');
+        els.modalBody.scrollTop = 0;
+        this.lockMain(false);
+        this.releaseTrap && this.releaseTrap();
+        lastFocus?.focus();
+      }
+      key(e){
+        if (e.key === 'Escape') { this.closeAbout(); this.closeReading(); }
+        if (els.readingModal?.classList.contains('open')) {
+          if (e.key === 'ArrowRight') this.next();
+          if (e.key === 'ArrowLeft') this.prev();
+        }
+      }
+      next(){ if (iModal < posts.length - 1) this.openReading(posts[iModal + 1], iModal + 1); }
+      prev(){ if (iModal > 0) this.openReading(posts[iModal - 1], iModal - 1); }
+      updateNav(){ if (!els.prev || !els.next) return; els.prev.disabled = iModal <= 0; els.next.disabled = iModal >= posts.length - 1; }
+      progress(){ const h = els.modalBody.scrollHeight - els.modalBody.clientHeight;
+        const sc = h > 0 ? (els.modalBody.scrollTop / h) * 100 : 0;
+        els.bar.style.width = sc + '%'; els.bar.setAttribute('aria-valuenow', String(Math.round(sc)));
+      }
+      async copy(text, btn){
+        const original = btn?.innerHTML;
+        try { await navigator.clipboard.writeText(text);
+          if (btn) { btn.innerHTML = '<span>✓</span> Copied!'; setTimeout(() => btn.innerHTML = original, 1800); }
+        } catch { if (btn) { btn.innerHTML = text; setTimeout(() => btn.innerHTML = original, 2000); } }
+      }
+    }
+
+    // Content
+    class ContentManager {
+      constructor(){
+        this.viewList = [];
+        this.pageSize = 6; // 6 posts per page
+        this.shown = 0;
+        this.inlineConsumed = Boolean(posts.length);
+      }
+      init(){
+        els.search?.addEventListener('input', debounce(() => this.search(), 120));
+        els.refreshBtn?.addEventListener('click', () => this.load(true));
+        els.randomBtn?.addEventListener('click', () => this.random());
+        els.loadMore?.addEventListener('click', () => this.renderNextChunk());
+        const initialCards = els.grid ? els.grid.querySelectorAll('[data-post-slug]').length : 0;
+        if (initialCards > this.pageSize) this.pageSize = initialCards;
+        if (posts.length) { this.applyData(posts); this.inlineConsumed = true; }
+        this.load();
+      }
+
+      // NEW: build tag chips from posts
+      buildTagFilters(){
+        const c = els.tagFilters; if(!c) return;
+        const counts = new Map();
+        posts.forEach(p => (p.tags||[]).forEach(t => counts.set(t, (counts.get(t)||0)+1)));
+        const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(([t])=>t);
+        c.innerHTML = '';
+        const make = (label, pressed=false) => {
+          const b=document.createElement('button'); b.className='chip'; b.textContent=label;
+          b.setAttribute('aria-pressed', String(pressed)); return b;
+        };
+        c.appendChild(make('All', true));
+        top.forEach(t => c.appendChild(make(t)));
+        c.onclick = (e)=>{
+          if(e.target.tagName!=='BUTTON') return;
+          [...c.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed','false'));
+          e.target.setAttribute('aria-pressed','true');
+          const tag = e.target.textContent;
+          if(tag==='All'){ this.render(posts); return; }
+          this.render(posts.filter(p => (p.tags||[]).includes(tag)));
+        };
+      }
+
+      textOnly(html){ const d=document.createElement('div'); d.innerHTML = sanitize(html||''); return (d.textContent || d.innerText || '').replace(/\u00a0/g, ' '); }
+      firstImage(html){
+        const d=document.createElement('div'); d.innerHTML = sanitize(html||'');
+        const img = d.querySelector('img'); if (img?.src) return img.src;
+        const source = d.querySelector('source[srcset]');
+        if (source){ const first = (source.getAttribute('srcset')||'').split(',')[0]?.trim().split(' ')[0]; if (first) return first; }
+        return null;
+      }
+      readTime(txt){ const w=(txt.trim().match(/\S+/g)||[]).length; return `${Math.max(1, Math.round(w/180))} min read`; }
+      vibes(title=''){ const words=(title||'').toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
+
+      card(post, idx){
+        const date = post.pubDate ? new Date(post.pubDate) : null;
+        const html = post.content || post.description || '';
+        const txt = this.textOnly(html);
+        const img = this.firstImage(html);
+        const rt = txt ? this.readTime(txt) : '';
+        const tags = Array.isArray(post.tags) ? post.tags : this.vibes(post.title);
+
+        const el = document.createElement('article');
+        const palettes = ['accent','accent-2','accent-3'];
+        const accentClass = palettes[idx % palettes.length];
+        el.className = `card ${accentClass}`;
+        el.style.transitionDelay = `${Math.min(idx,15)*100}ms`;
+        el.setAttribute('aria-label', post.title || 'Poem');
+
+        const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
+        el.innerHTML = `
+          ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
+          <div class="card-content">
+            <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
+            <div class="card-meta">
+              ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
+              ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
+            </div>
+            <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
+            ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
+            <div class="card-actions">
+              <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
+              <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
+              <a href="#" data-share="${encodeURIComponent(post.link)}" data-title="${escapeHtml(post.title || 'Poem from Torchborne')}">Share</a>
+            </div>
+          </div>
+        `;
+
+        el.querySelector('[data-quick-read]')?.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); modal.openReading(post, idx); });
+
+        const im = el.querySelector('.card-thumb img');
+        if (im) { if (im.complete) im.setAttribute('data-loaded','1'); else im.addEventListener('load', () => im.setAttribute('data-loaded','1')); }
+        return el;
+      }
+
+      skeleton(){
+        const el = document.createElement('div');
+        el.className = 'card-skeleton';
+        el.innerHTML = `
+          <div class="skeleton-thumb shimmer"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line shimmer"></div>
+            <div class="skeleton-line shimmer"></div>
+            <div class="skeleton-line shimmer short"></div>
+          </div>`;
+        return el;
+      }
+
+      render(list){
+        els.grid.hidden = false;
+        this.viewList = list;
+        els.grid.innerHTML = "";
+        this.shown = 0;
+        this.renderNextChunk();
+        this.finishLoading('');
+        // update remaining count on button
+        const remaining = Math.max(0, this.viewList.length - this.shown);
+        els.loadMore.style.display = remaining > 0 ? "inline-flex" : "none";
+        if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
+      }
+
+      renderNextChunk(){
+        const slice = this.viewList.slice(this.shown, this.shown + this.pageSize);
+        slice.forEach((p) => {
+          const idx = posts.indexOf(p);
+          const c = this.card(p, idx >= 0 ? idx : 0);
+          els.grid.appendChild(c);
+          requestAnimationFrame(() => c.classList.add('show'));
+        });
+        this.shown += slice.length;
+        const remaining = Math.max(0, this.viewList.length - this.shown);
+        els.loadMore.style.display = remaining > 0 ? "inline-flex" : "none";
+        if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
+      }
+
+      random(){
+        if (!posts.length) return;
+        const idx = Math.floor(Math.random() * posts.length);
+        modal.openReading(posts[idx], idx);
+      }
+
+      search(){
+        const q = (els.search.value || '').trim().toLowerCase();
+        if (!q) { this.render(posts); return; }
+        const filtered = posts.filter(p => {
+          const text = [p.title || '', this.textOnly(p.content || p.description || '')].join(' ').toLowerCase();
+          return text.includes(q);
+        });
+        this.render(filtered);
+      }
+
+      async load(force=false){
+        const hadInitial = posts.length > 0;
+        const showSkeleton = force || !hadInitial;
+        let updated = false;
+        let success = hadInitial;
+
+        if (showSkeleton) {
+          els.grid.setAttribute('aria-busy','true');
+          els.status.className = 'status';
+          els.status.hidden = false;
+          els.status.removeAttribute('role');
+          els.status.textContent = force ? 'Refreshing poems from the digital ether...' : 'Gathering poems from the digital ether...';
+          els.grid.innerHTML = '';
+          for (let i = 0; i < this.pageSize; i++) els.grid.appendChild(this.skeleton());
+        } else {
+          this.finishLoading('');
+        }
+
+        if (!this.inlineConsumed && !force && INLINE_POSTS.length) {
+          if (this.applyData(INLINE_POSTS, { forceRender: showSkeleton })) { success = true; updated = true; }
+          this.inlineConsumed = true;
+        }
+
+        const cacheBust = force ? `?_=${Date.now()}` : '';
+        try {
+          const localData = await this.fetchWithTimeout(`${STATIC_DATA_URL}${cacheBust}`, 8000);
+          const localPosts = this.extractPosts(localData);
+          if (this.applyData(localPosts, { forceRender: showSkeleton })) { success = true; updated = true; }
+        } catch (err) { if (err && err.name !== 'AbortError') console.warn('Local posts unavailable:', err); }
+
+        if (!success || force) {
+          const worker = WORKER_BASE ? WORKER_BASE + encodeURIComponent(RSS_URL) : null;
+          const publicUrl = PUBLIC_BASE + encodeURIComponent(RSS_URL);
+          const sources = [];
+          if (worker) sources.push(worker + (force ? `&_=${Date.now()}` : ''));
+          sources.push(publicUrl + (force ? `&_=${Date.now()}` : ''));
+          for (const url of sources) {
+            try {
+              const data = await this.fetchWithTimeout(url, 12000);
+              const list = this.extractPosts(data);
+              if (this.applyData(list, { forceRender: showSkeleton })) { success = true; updated = true; break; }
+            } catch (e) { if (e && e.name !== 'AbortError') console.warn('Feed source failed:', url, e); }
+          }
+        }
+
+        if (showSkeleton && !updated && posts.length) this.render(posts);
+
+        if (!success) {
+          this.fail();
+          if (!posts.length) els.grid.innerHTML = '';
+        } else if (!updated) {
+          this.finishLoading('');
+        }
+
+        els.grid.removeAttribute('aria-busy');
+      }
+
+      async fetchWithTimeout(url, ms=10000){
+        const ctrl = new AbortController(); const id = setTimeout(() => ctrl.abort(), ms);
+        try {
+          const res = await fetch(url, { credentials:'omit', cache:'no-store', signal: ctrl.signal });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const text = await res.text(); const trimmed = text.trim();
+          if (!trimmed) return null;
+          try { return JSON.parse(trimmed); } catch { throw new Error('Invalid JSON'); }
+        } finally { clearTimeout(id); }
+      }
+
+      extractPosts(payload){
+        if (!payload) return [];
+        let list = [];
+        if (Array.isArray(payload)) list = payload;
+        else if (Array.isArray(payload.posts)) list = payload.posts;
+        else if (Array.isArray(payload.items)) list = payload.items;
+        else if (Array.isArray(payload.data)) list = payload.data;
+        return (list || []).map(item => item && !item.content && item["content:encoded"] ? { ...item, content: item["content:encoded"] } : item);
+      }
+
+      applyData(rawList, { forceRender = false } = {}){
+        const normalized = normalizePostsList(rawList).filter(item => {
+          if (!item) return false;
+          const title = (item.title || '').trim();
+          const text = this.textOnly(item.content || item.description || '').trim();
+          if (/coming\s+soon/i.test(title)) return false;
+          return Boolean(title || text);
+        });
+        if (!normalized.length) return false;
+        const merged = mergePostLists(posts, normalized);
+        const limited = (MAX_ITEMS && Number.isFinite(+MAX_ITEMS)) ? merged.slice(0, +MAX_ITEMS) : merged;
+
+        const changed = limited.length !== posts.length || limited.some((item, idx) => item !== posts[idx]);
+        posts = limited;
+        if (changed || forceRender || !this.viewList.length) this.render(posts);
+        else this.finishLoading('');
+
+        // (re)build tag chips whenever posts change
+        this.buildTagFilters();
+        return true;
+      }
+
+      finishLoading(message=''){
+        els.status.className = 'status';
+        if (message) { els.status.hidden = false; els.status.removeAttribute('role'); els.status.textContent = message; }
+        else { els.status.hidden = true; els.status.removeAttribute('role'); els.status.textContent = ''; }
+      }
+
+      fail(){
+        els.status.hidden = false;
+        els.status.className = 'status error';
+        els.status.setAttribute('role','alert');
+        els.status.textContent = "Unable to load poems right now. You can read on Substack via the links below.";
+      }
+    }
+
+    // ===== INIT =====
+    const theme = new ThemeManager();
+    const particles = new ParticleSystem();
+    const modal = new ModalManager();
+    const content = new ContentManager();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      theme.init(); particles.init(); modal.init(); content.init();
+      const tag = document.querySelector('.hero-tagline');
+      if (tag) tag.textContent = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+      let i = 0; setInterval(() => { i = (i + 1) % TAGLINES.length; tag && (tag.textContent = TAGLINES[i]); }, 5000);
+
+      // Verify CSS actually loaded
+      (function ensureCss(){
+        const link = document.getElementById('mainCss');
+        const flag = () => { try { els.status.classList.add('error'); els.status.textContent = 'Styles failed to load. Check your static_base and styles.css URL.'; } catch(e){} };
+        if (link) link.addEventListener('error', flag, { once: true });
+        setTimeout(() => {
+          const probe = document.createElement('div'); probe.className = 'posts-grid';
+          document.body.appendChild(probe);
+          const disp = getComputedStyle(probe).display || '';
+          document.body.removeChild(probe);
+          if (!/grid/i.test(disp)) flag();
+        }, 1200);
+      })();
+    }, { passive: true });
+  </script>
 </body>
 </html>
