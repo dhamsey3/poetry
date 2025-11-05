@@ -754,7 +754,159 @@
         this.load();
       }
 
-      // NEW: build tag chips from posts
+        prepareFeatured(){
+          const curated = [
+            {
+              slug: 'embers-of-dawn',
+              title: 'Embers of Dawn',
+              summary: 'A sunrise prayer stitched from soft embers.',
+              tags: ['poem', 'dawn'],
+              link: 'https://versesvibez.substack.com/p/embers-of-dawn',
+              poem: `
+    hush the dark
+      we gather tinder breaths
+  and open windows toward the east
+
+      the first light leans in
+    mapping gold across tired knuckles
+  `
+            },
+            {
+              slug: 'cartography-of-rest',
+              title: 'Cartography of Rest',
+              summary: 'Tracing the map back to tenderness and home.',
+              tags: ['poem', 'rest'],
+              link: 'https://versesvibez.substack.com/p/cartography-of-rest',
+              poem: `
+  we draw the curtains
+  and inventory the quiet
+
+    cushions become coordinates
+    for the map back home
+  `
+            },
+            {
+              slug: 'blueprint-for-a-firefly-night',
+              title: 'Blueprint for a Firefly Night',
+              summary: 'Instructions for bottling a summer glow.',
+              tags: ['poem', 'night'],
+              link: 'https://versesvibez.substack.com/p/blueprint-for-a-firefly-night',
+              poem: `
+  	make a sky out of mason jars
+  line them on the porch
+
+
+    leave a stanza empty
+
+      so the fireflies can rest
+  `
+            }
+          ];
+
+          const stripEdgeNewlines = (poem = '') => {
+            const poemText = poem == null ? '' : String(poem);
+            return poemText
+              .replace(/^(?:\r\n|\r|\n)+/, '')
+              .replace(/(?:\r\n|\r|\n)+$/, '');
+          };
+
+          const renderLine = (line='') => {
+            const match = line.match(/^[ \t]+/);
+            let prefix = '';
+            let rest = line;
+            if (match) {
+              prefix = match[0]
+                .replace(/ /g, '&nbsp;')
+                .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+              rest = line.slice(match[0].length);
+            }
+            return prefix + escapeHtml(rest);
+          };
+
+          const poemHtml = (poem='') => {
+            const normalized = stripEdgeNewlines(poem)
+              .replace(/\r\n/g, '\n')
+              .replace(/\r/g, '\n');
+            if (!normalized) return '';
+
+            const lines = normalized.split('\n');
+            const paragraphs = [];
+            let current = [];
+
+            const pushCurrent = () => {
+              paragraphs.push(current);
+              current = [];
+            };
+
+            for (const raw of lines) {
+              if (/^[ \t]*$/.test(raw)) {
+                if (current.length) {
+                  pushCurrent();
+                } else {
+                  paragraphs.push([]);
+                }
+                continue;
+              }
+              current.push(raw);
+            }
+            if (current.length) pushCurrent();
+
+            if (!paragraphs.length) return '';
+
+            return paragraphs
+              .map(linesArr => {
+                if (!linesArr.length) return '<p><br></p>';
+                const htmlLines = linesArr.map(renderLine).join('<br>');
+                return `<p>${htmlLines}</p>`;
+              })
+              .join('');
+          };
+
+          const poems = curated.map(item => {
+            const html = `<div class="ebook-poem"><h3 class="ebook-poem-title">${escapeHtml(item.title)}</h3>${poemHtml(item.poem)}</div>`;
+            return {
+              ...item,
+              html
+            };
+          });
+
+          const extras = [];
+          if (FEATURED_EBOOK?.url) {
+            const summary = (FEATURED_EBOOK.description || '').trim()
+              || 'Preview selections from the Torchborne poetry eBook.';
+            const preview = poems.map(p => p.html).join('');
+            extras.push({
+              featureType: 'ebook',
+              title: FEATURED_EBOOK.title || 'Torchborne Poetry eBook',
+              link: FEATURED_EBOOK.url,
+              description: summary,
+              content: `<div class="ebook-preview">${preview}</div>`,
+              feature: {
+                tag: FEATURED_EBOOK.tag || 'Featured',
+                meta: FEATURED_EBOOK.meta || '',
+                summary,
+                cover: FEATURED_EBOOK.cover || '',
+                shareText: FEATURED_EBOOK.shareText || 'Share eBook',
+                note: FEATURED_EBOOK.note || '',
+                ctaText: (FEATURED_EBOOK.ctaText || 'Read eBook').trim() || 'Read eBook'
+              }
+            });
+          }
+
+          extras.push(...poems.map(poem => ({
+            featureType: 'poem',
+            title: poem.title,
+            link: poem.link,
+            description: poem.summary,
+            content: poem.html,
+            tags: Array.isArray(poem.tags) ? poem.tags : [],
+            feature: { tags: Array.isArray(poem.tags) ? poem.tags : [] }
+          })));
+
+          return { poems, extras, poemHtml };
+        }
+
+        // NEW: build tag chips from posts
       buildTagFilters(){
         const c = els.tagFilters; if(!c) return;
         const counts = new Map();
