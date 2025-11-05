@@ -99,7 +99,7 @@ a:hover { color: var(--accent-solid); }
 [data-theme="dark"] .logo-dark{ display: inline; }
 .brand-name{ font-family: 'Playfair Display', serif; font-weight: 700; font-size: clamp(1.1rem, 2.2vw, 1.6rem); letter-spacing: -0.02em; color: var(--ink); }
 /* Make the hero tagline the prominent heading (matches provided design) */
-.hero-tagline{ font-family: 'Playfair Display', serif; font-weight: 700; font-size: clamp(2.5rem, 8vw, 6rem); line-height: 0.95; letter-spacing: -0.01em; margin: 12px auto 32px; max-width: 920px; opacity: 0; animation: fadeInUp 1s ease-out .5s forwards; background: var(--accent); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 12px 40px rgba(245,158,11,0.18); -webkit-text-stroke: 0.2px rgba(0,0,0,0.06); text-align: center; position: relative; z-index: 8; }
+.hero-tagline{ font-family: 'Playfair Display', serif; font-weight: 700; /* reduced size so taglines don't dominate the layout */ font-size: clamp(1.6rem, 5.5vw, 3rem); line-height: 1.05; letter-spacing: -0.01em; margin: 10px auto 20px; max-width: 920px; opacity: 0; animation: fadeInUp 1s ease-out .5s forwards; background: var(--accent); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 8px 28px rgba(245,158,11,0.14); -webkit-text-stroke: 0.15px rgba(0,0,0,0.05); text-align: center; position: relative; z-index: 8; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; opacity: 0; animation: fadeInUp 1s ease-out .8s forwards; }
 
