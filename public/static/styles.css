@@ -301,8 +301,6 @@ a:hover { color: var(--accent-solid); }
 
 /* Position the random button as a floating control on larger screens (matches image) */
 @media (min-width: 900px) {
-  #randomBtn { position: absolute; left: 28px; bottom: -28px; z-index: 3; border-radius: 12px; padding: 12px 20px; background: var(--paper); border: 1.5px solid rgba(0,0,0,0.08); box-shadow: var(--shadow); }
-  [data-theme="dark"] #randomBtn { border: 1.5px solid rgba(255,255,255,0.06); background: rgba(24,24,24,0.92); }
   .hero { padding-bottom: 72px; }
 }
 

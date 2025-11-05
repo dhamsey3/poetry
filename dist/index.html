@@ -99,7 +99,6 @@
               <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
             <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
-            <button id="randomBtn" class="chip accent" title="Surprise me"><span>🎲</span> Random</button>
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
             </button>
@@ -367,7 +366,7 @@
       themeIcon: document.getElementById('themeIcon'),
       themeText: document.getElementById('themeText'),
       refreshBtn: document.getElementById('refreshBtn'),
-      randomBtn: document.getElementById('randomBtn'),
+  // randomBtn removed
       loadMore: document.getElementById('loadMore'),
       aboutBtn: document.getElementById('aboutBtn'),
       aboutModal: document.getElementById('aboutModal'),
@@ -677,7 +676,7 @@
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
         els.refreshBtn?.addEventListener('click', () => this.load(true));
-        els.randomBtn?.addEventListener('click', () => this.random());
+  // random button removed; no-op
         els.loadMore?.addEventListener('click', () => this.renderNextChunk());
         const initialCards = els.grid ? els.grid.querySelectorAll('[data-post-slug]').length : 0;
         if (initialCards > this.pageSize) this.pageSize = initialCards;
@@ -800,11 +799,7 @@
         if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
       }
 
-      random(){
-        if (!posts.length) return;
-        const idx = Math.floor(Math.random() * posts.length);
-        modal.openReading(posts[idx], idx);
-      }
+      // random() removed — button and handler were deleted
 
       search(){
         const q = (els.search.value || '').trim().toLowerCase();
