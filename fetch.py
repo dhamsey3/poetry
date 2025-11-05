@@ -13,8 +13,14 @@ DIST_DIR = Path("dist")
 TEMPLATE_FILE = Path("index.html.j2")
 
 
-def ensure_dist() -> list[str]:
-    """Ensure ./dist exists, drop .nojekyll, and copy assets."""
+def ensure_dist():
+    """Ensure ./dist exists, drop .nojekyll, and copy assets.
+
+    Returns either a single folder name (e.g. 'public') or a list of
+    copied folder names when multiple sources were copied. This keeps
+    the function convenient for simple scripts while remaining usable
+    by callers that expect multiple entries.
+    """
     DIST_DIR.mkdir(parents=True, exist_ok=True)
     (DIST_DIR / ".nojekyll").write_text("", encoding="utf-8")
 
@@ -23,14 +29,18 @@ def ensure_dist() -> list[str]:
     public_src = Path("public")
     if public_src.exists():
         shutil.copytree(public_src, DIST_DIR, dirs_exist_ok=True)
-        copied.append("public/")
+        copied.append("public")
 
     static_src = Path("static")
     if static_src.exists():
         (DIST_DIR / "static").mkdir(parents=True, exist_ok=True)
         shutil.copytree(static_src, DIST_DIR / "static", dirs_exist_ok=True)
-        copied.append("static/")
+        copied.append("static")
 
+    if not copied:
+        return []
+    if len(copied) == 1:
+        return copied[0]
     return copied
 
 
@@ -134,7 +144,8 @@ def main() -> int:
 
     msg = "Wrote dist/index.html"
     if copied:
-        msg += " and copied " + ", ".join(copied) + "→ dist/"
+        files = copied if isinstance(copied, list) else [copied]
+        msg += " and copied " + ", ".join(files) + "→ dist/"
     print(msg)
     return 0
 
