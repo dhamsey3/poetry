@@ -7,7 +7,7 @@ What changed
 	- Increased hero tagline prominence (stronger glow, centered, max-width).
 	- Adjusted hero CTA padding and outlined borders (light/dark-aware).
 	- Increased posts grid gap and card content padding for improved spacing.
-	- Refined floating `#randomBtn` appearance and position.
+		- Removed the Random quick-jump button from the hero actions.
 - Added `prepareFeatured()` into `index.html.j2` (front-end JS). This method was present in earlier history and is required by tests that extract and execute it; it provides poem rendering helpers and featured previews. The insertion preserves existing IDs and hooks.
 - Small test-facing change in `fetch.py`:
 	- `ensure_dist()` now returns a single folder name (e.g. `'public'`) when only one source was copied, or a list when multiple sources were copied. `main()` was updated to handle either return type when composing its CLI message.
