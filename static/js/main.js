@@ -47,7 +47,7 @@
   // Minimal exported UI elements for other modules
   const els = {
     themeToggle: getEl('themeToggle'),
-    randomBtn: getEl('randomBtn'),
+  // randomBtn removed
     searchInput: getEl('searchInput'),
     postsGrid: getEl('postsGrid'),
     refreshBtn: getEl('refreshBtn'),
@@ -81,7 +81,7 @@
     init(){ els.searchInput = getEl('searchInput');
       // refresh and random
       const refresh = getEl('refreshBtn'); if (refresh) refresh.addEventListener('click', ()=> this.load(true));
-      const rnd = getEl('randomBtn'); if (rnd) rnd.addEventListener('click', ()=> this.random());
+  // random button removed; no-op
       // load more
       const lm = getEl('loadMore'); if (lm) lm.addEventListener('click', ()=> this.renderNextChunk());
       // prev/next inside reading modal
@@ -97,7 +97,7 @@
 
     render(list){ this.viewList = list; this.shown = 0; if (getEl('postsGrid')) getEl('postsGrid').hidden = false; const grid = getEl('postsGrid'); if(!grid) return; grid.innerHTML=''; this.renderNextChunk(); if (els.status) { els.status.hidden = true; } }
     renderNextChunk(){ const grid = getEl('postsGrid'); const slice = this.viewList.slice(this.shown, this.shown + this.pageSize); slice.forEach((p)=>{ const idx = this.posts.indexOf(p); const c = this.card(p, idx>=0?idx:0); grid.appendChild(c); requestAnimationFrame(()=>c.classList.add('show')); }); this.shown += slice.length; const remaining = Math.max(0, this.viewList.length - this.shown); if (els.loadMore) els.loadMore.style.display = remaining>0?'inline-flex':'none'; }
-  random(){ if(!this.posts.length) return; const idx = Math.floor(Math.random()*this.posts.length); this.openReading(this.posts[idx]); }
+  // random() removed — Random button and handler deleted
   async load(force=false){ const STATIC = cfg.STATIC_DATA_URL || './data/posts.json'; let success = Boolean(this.posts.length); if (!success) { if (els.postsGrid) els.postsGrid.hidden = false; if (els.status) { els.status.hidden = false; els.status.textContent = 'Gathering poems from the digital ether...'; } } // try local static data
       try { const res = await fetch(STATIC + (force?`?_=${Date.now()}`:''), { cache:'no-store' }); if (res && res.ok){ const data = await res.json(); if (Array.isArray(data) || Array.isArray(data.posts)) { const list = Array.isArray(data)?data:data.posts; this.posts = list; this.render(this.posts); success = true; } } } catch(e){}
       // try proxy/public sources
