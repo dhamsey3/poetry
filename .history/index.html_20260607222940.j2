@@ -57,10 +57,7 @@
     "author": { "@type": "Person", "name": "Dami" },
     {% if featured_ebook.cover %}"image": {{ featured_ebook.cover | tojson }},{% endif %}
     "description": {{ (featured_ebook.description or "Poetry collection") | tojson }},
-    "potentialAction": {
-      "@type": "ReadAction",
-      "target": {{ featured_ebook.url | tojson }}
-    }
+    "potentialAction": { "@type": "ReadAction", "target": {{ featured_ebook.url | tojson }} }
   }
   </script>
   {% endif %}
@@ -81,11 +78,7 @@
 <body>
   <a href="#postsGrid" class="visually-hidden" id="skipLink">Skip to posts</a>
   <div id="noJsBanner" class="status error" role="alert" hidden>JavaScript is disabled. Some features (search, quick read) won't work. You can still read directly on Substack via the links below.</div>
-  <noscript>
-    <style>
-      #noJsBanner, #noJsBanner[hidden] { display: block !important; }
-    </style>
-  </noscript>
+  <noscript><style>#noJsBanner,#noJsBanner[hidden]{display:block!important}</style></noscript>
 
   <!-- Floating Shapes -->
   <div class="floating-shapes" aria-hidden="true">
@@ -119,19 +112,15 @@
               <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
             <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
-            <button id="randomBtn" class="chip accent" title="Surprise me"><span>🎲</span> Random</button>
             <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
               <span>👋</span> About
             </button>
             {% if featured_ebook %}
-            <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow"
-               aria-label="Read on Kindle (opens Amazon)">
+            <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow" aria-label="Read on Kindle (opens Amazon)">
               {{ featured_ebook.ctaText or 'Read on Kindle' }}
             </a>
             {% endif %}
-            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">
-              <span>💌</span> Subscribe
-            </a>
+            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe</a>
           </div>
 
           <div class="search-section">
@@ -141,6 +130,8 @@
               </svg>
               <input id="searchInput" type="search" class="search-input" placeholder="Search through poems and musings..." aria-label="Search poems" />
             </div>
+            <!-- NEW: Tag filter chips -->
+            <div id="tagFilters" class="filter-chips" aria-label="Filter poems by tag"></div>
           </div>
         </div>
       </div>
@@ -152,7 +143,7 @@
 
         <!-- PINNED EBOOK (shows only if Kindle URL is set) -->
         {% if featured_ebook %}
-        <section class="posts-grid" style="margin-bottom: 16px;">
+        <section class="posts-grid" style="margin-bottom:16px">
           <article class="card ebook-card accent-3">
             <div class="card-content ebook">
               <div class="ebook-flag">{{ featured_ebook.tag or 'Featured' }}</div>
@@ -160,9 +151,7 @@
                 <div class="ebook-cover{{ '' if featured_ebook.cover else ' placeholder' }}">
                   {% if featured_ebook.cover %}
                     <img loading="lazy" decoding="async" src="{{ featured_ebook.cover }}" alt="">
-                  {% else %}
-                    <span aria-hidden="true">📘</span>
-                  {% endif %}
+                  {% else %}<span aria-hidden="true">📘</span>{% endif %}
                 </div>
                 <div class="ebook-details">
                   <h2 class="card-title">
@@ -171,9 +160,7 @@
                     </a>
                   </h2>
                   {% if featured_ebook.meta %}<div class="card-meta single">{{ featured_ebook.meta }}</div>{% endif %}
-                  {% if featured_ebook.description %}
-                  <div class="card-summary">{{ featured_ebook.description }}</div>
-                  {% endif %}
+                  {% if featured_ebook.description %}<div class="card-summary">{{ featured_ebook.description }}</div>{% endif %}
                   <div class="ebook-actions">
                     <a class="btn btn-primary" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow">
                       {{ featured_ebook.ctaText or 'Read on Kindle' }}
@@ -208,13 +195,9 @@
                 <div class="card-thumb" aria-hidden="true"></div>
                 <div class="card-content">
                   <h2 class="card-title"><a href="{{ post_url }}" target="_blank" rel="noopener">{{ card_title }}</a></h2>
-                  <div class="card-meta">
-                    {% if display_date %}<span>📅 {{ display_date }}</span>{% endif %}
-                  </div>
+                  <div class="card-meta">{% if display_date %}<span>📅 {{ display_date }}</span>{% endif %}</div>
                   <div class="card-summary">{{ post.excerpt or post.description or '' }}</div>
-                  <div class="card-actions">
-                    <a href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack →</a>
-                  </div>
+                  <div class="card-actions"><a href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack →</a></div>
                 </div>
               </article>
             {% endfor %}
@@ -244,9 +227,7 @@
             <a href="#" id="footerAboutLink" class="pill">About</a>
             <a href="{{ SUBSCRIBE_URL }}" class="pill">Subscribe</a>
             <a href="{{ POSTS_BASE }}" target="_blank" rel="noopener noreferrer nofollow external" class="pill">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/>
-              </svg>
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/></svg>
               Substack
             </a>
           </nav>
@@ -265,6 +246,14 @@
         <div class="modal-actions">
           <button id="prevPost" class="chip accent" title="Previous (←)">← Prev</button>
           <button id="nextPost" class="chip accent" title="Next (→)">Next →</button>
+        </div>
+
+        <!-- NEW: Reader controls -->
+        <div class="reader-controls" id="readerControls" aria-label="Reading controls">
+          <button class="chip" data-reader-dec title="Smaller">–</button>
+          <span class="reader-size" id="readerSize">100%</span>
+          <button class="chip" data-reader-inc title="Larger">+</button>
+          <button class="chip" data-reader-toggle="wide" title="Toggle wide">↔︎</button>
         </div>
       </div>
       <div class="modal-body" id="modalBody"></div>
@@ -290,31 +279,21 @@
         </div>
 
         <div class="about-cta">
-          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">
-            <span>💌</span> Subscribe on Substack
-          </a>
-          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">
-            <span>📧</span> Copy Email
-          </button>
+          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe on Substack</a>
+          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com"><span>📧</span> Copy Email</button>
         </div>
 
         <div class="about-links">
           <a href="{{ POSTS_BASE }}" target="_blank" rel="noopener noreferrer nofollow external" class="pill">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm0 4h18v6l-9-3-9 3V9z"/></svg>
             Substack
           </a>
           <a href="mailto:versesvibez@substack.com" class="pill">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <path fill="currentColor" d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 01-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 01-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
             Email
           </a>
           <a href="https://instagram.com/versesvibez" target="_blank" rel="noopener noreferrer nofollow external" class="pill">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <path fill="currentColor" d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5a5 5 0 100 10 5 5 0 000-10zm6.5-.9a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zM12 9a3 3 0 110 6 3 3 0 010-6z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 015 5v10a5 5 0 01-5 5H7a5 5 0 01-5-5V7a5 5 0 015-5zm5 5a5 5 0 100 10 5 5 0 000-10zm6.5-.9a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zM12 9a3 3 0 110 6 3 3 0 010-6z"/></svg>
             Instagram
           </a>
         </div>
@@ -324,12 +303,9 @@
 
   <!-- DOMPurify -->
   <script id="initialPostsData" type="application/json">{{ (posts or []) | tojson }}</script>
-  <script
-    src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"
-    integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  ></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"
+          integrity="sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <script>
     // ===== CONFIG =====
@@ -341,9 +317,9 @@
       "https://api.rss2json.com/v1/api.json?"
       + (RSS2JSON_KEY ? ("api_key=" + encodeURIComponent(RSS2JSON_KEY) + "&") : "")
       + "count=" + encodeURIComponent(MAX_ITEMS) + "&rss_url=";
-    const SUBSTACK_BASE  = {{ POSTS_BASE | tojson }};
+    const SUBSTACK_BASE   = {{ POSTS_BASE | tojson }};
     const STATIC_DATA_URL = './data/posts.json';
-    const FEATURED_EBOOK = {{ (featured_ebook or {}) | tojson }};
+    const FEATURED_EBOOK  = {{ (featured_ebook or {}) | tojson }};
     const TAGLINES = [
       "where words carry the flame ✨",
       "poetry for wandering souls ✍️",
@@ -385,11 +361,8 @@
         : '';
       let title = typeof raw.title === 'string' && raw.title.trim() ? raw.title.trim() : '';
       if (!title) {
-        if (slug) {
-          title = slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, s => s.toUpperCase());
-        } else {
-          title = 'Untitled';
-        }
+        if (slug) { title = slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, s => s.toUpperCase()); }
+        else { title = 'Untitled'; }
       }
       const tags = Array.isArray(raw.tags)
         ? raw.tags.filter(tag => typeof tag === 'string' && tag.trim()).map(tag => tag.trim())
@@ -397,36 +370,26 @@
       return { ...raw, slug, title, link: link || '#', url: link || '#', pubDate: pubDate || '', description: excerpt || '', excerpt: excerpt || '', content, tags };
     }
 
-    function normalizePostsList(list) {
-      if (!Array.isArray(list)) return [];
-      return list.map(normalizePost).filter(Boolean);
-    }
-
+    function normalizePostsList(list) { return Array.isArray(list) ? list.map(normalizePost).filter(Boolean) : []; }
     function mergeEntries(base = {}, extra = {}) {
       const merged = { ...base };
       for (const key of Object.keys(extra)) {
         const val = extra[key];
         if (val == null) continue;
-        if (typeof val === 'string') {
-          if (!val.trim()) continue;
-        } else if (Array.isArray(val)) {
-          if (!val.length) continue;
-        }
+        if (typeof val === 'string') { if (!val.trim()) continue; }
+        else if (Array.isArray(val)) { if (!val.length) continue; }
         merged[key] = val;
       }
       return merged;
     }
-
     function postTimestamp(post) {
       const dateStr = post?.pubDate || post?.pubdate || post?.date;
       if (!dateStr) return 0;
       const ts = Date.parse(dateStr);
       return Number.isFinite(ts) ? ts : 0;
     }
-
     function mergePostLists(existing = [], incoming = []) {
-      const merged = [];
-      const indexByKey = new Map();
+      const merged = []; const indexByKey = new Map();
       const add = item => {
         if (!item) return;
         const slugKey = (item.slug || '').trim().toLowerCase();
@@ -437,13 +400,8 @@
         const titleKey = (item.title || '').trim();
         const key = slugKey || guid || id || linkKey || urlKey || titleKey;
         if (!key) return;
-        if (indexByKey.has(key)) {
-          const idx = indexByKey.get(key);
-          merged[idx] = mergeEntries(merged[idx], item);
-        } else {
-          indexByKey.set(key, merged.length);
-          merged.push(item);
-        }
+        if (indexByKey.has(key)) { const idx = indexByKey.get(key); merged[idx] = mergeEntries(merged[idx], item); }
+        else { indexByKey.set(key, merged.length); merged.push(item); }
       };
       (existing || []).forEach(add);
       (incoming || []).forEach(add);
@@ -460,12 +418,10 @@
         const parsed = JSON.parse(rawText);
         if (Array.isArray(parsed)) return normalizePostsList(parsed);
         if (parsed && Array.isArray(parsed.posts)) return normalizePostsList(parsed.posts);
-      } catch (err) {
-        console.warn('Inline posts JSON invalid', err);
-      }
+      } catch (err) { console.warn('Inline posts JSON invalid', err); }
       return [];
     })();
-    if (inlineDataElement) inlineDataElement.remove();
+    inlineDataElement && inlineDataElement.remove();
 
     // ===== DOM =====
     const els = {
@@ -479,7 +435,7 @@
       themeIcon: document.getElementById('themeIcon'),
       themeText: document.getElementById('themeText'),
       refreshBtn: document.getElementById('refreshBtn'),
-      randomBtn: document.getElementById('randomBtn'),
+  // randomBtn removed
       loadMore: document.getElementById('loadMore'),
       aboutBtn: document.getElementById('aboutBtn'),
       aboutModal: document.getElementById('aboutModal'),
@@ -493,6 +449,7 @@
       prev: document.getElementById('prevPost'),
       next: document.getElementById('nextPost'),
       copyEmailBtn: document.getElementById('copyEmailBtn'),
+      tagFilters: document.getElementById('tagFilters'),
     };
 
     // ===== STATE =====
@@ -534,26 +491,21 @@
           });
         }
       }
-      toggle(){
-        const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      toggle(){ const cur = document.documentElement.getAttribute('data-theme') || 'light';
         const next = cur === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('vv-theme', next);
         els.themeToggle?.setAttribute('aria-pressed', String(next === 'dark'));
-        this.bump(els.themeToggle);
-        this.syncButton();
-        this.setThemeColor(next);
+        this.bump(els.themeToggle); this.syncButton(); this.setThemeColor(next);
       }
-      syncButton(){
-        const mode = document.documentElement.getAttribute('data-theme') || 'light';
-        if (els.themeIcon) els.themeIcon.textContent = mode === 'dark' ? '☀️' : '🌙';
-        if (els.themeText) els.themeText.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode';
+      syncButton(){ const mode = document.documentElement.getAttribute('data-theme') || 'light';
+        els.themeIcon && (els.themeIcon.textContent = mode === 'dark' ? '☀️' : '🌙');
+        els.themeText && (els.themeText.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode');
       }
-      setThemeColor(mode){
-        const meta = document.getElementById('themeColorMeta');
-        if (meta) meta.setAttribute('content', mode === 'dark' ? '#0d0d0d' : '#f59e0b');
+      setThemeColor(mode){ const meta = document.getElementById('themeColorMeta');
+        meta && meta.setAttribute('content', mode === 'dark' ? '#0d0d0d' : '#f59e0b');
       }
-      bump(el){ if(!el) return; el.style.transform='scale(0.96)'; setTimeout(() => el.style.transform='', 120); }
+      bump(el){ if(!el) return; el.style.transform='scale(0.96)'; setTimeout(()=> el.style.transform='',120); }
     }
 
     // Particles
@@ -569,25 +521,16 @@
           else if (!reduceMotion) this.anim = requestAnimationFrame(step);
         }, { passive: true });
       }
-      spawn(){
-        const p = document.createElement('div'); p.className = 'particle';
-        p.style.left = (Math.random()*100) + '%';
-        p.style.top = (100 + Math.random()*20) + 'vh';
-        p.dataset.vy = (-0.1 - Math.random()*0.2).toString();
-        p.dataset.x = (Math.random()*100).toString();
-        els.particles.appendChild(p);
-        this.pool.push(p);
+      spawn(){ const p=document.createElement('div'); p.className='particle';
+        p.style.left=(Math.random()*100)+'%'; p.style.top=(100+Math.random()*20)+'vh';
+        p.dataset.vy=(-0.1-Math.random()*0.2).toString(); p.dataset.x=(Math.random()*100).toString();
+        els.particles.appendChild(p); this.pool.push(p);
       }
-      update(ts){
-        this.t = ts * 0.001;
-        for (const p of this.pool){
-          const vy = parseFloat(p.dataset.vy);
-          const top = parseFloat(p.style.top);
-          const nx = parseFloat(p.dataset.x) + Math.sin(this.t + top) * 0.02;
-          p.dataset.x = nx.toString();
-          p.style.transform = `translateX(${nx}vw)`;
-          p.style.top = (top + vy) + 'vh';
-          if (parseFloat(p.style.top) < -10) { p.style.top = (110 + Math.random()*10) + 'vh'; p.style.left = (Math.random()*100) + '%'; }
+      update(ts){ this.t=ts*0.001;
+        for (const p of this.pool){ const vy=parseFloat(p.dataset.vy); const top=parseFloat(p.style.top);
+          const nx=parseFloat(p.dataset.x)+Math.sin(this.t+top)*0.02; p.dataset.x=nx.toString();
+          p.style.transform=`translateX(${nx}vw)`; p.style.top=(top+vy)+'vh';
+          if (parseFloat(p.style.top) < -10) { p.style.top=(110+Math.random()*10)+'vh'; p.style.left=(Math.random()*100)+'%'; }
         }
       }
     }
@@ -672,6 +615,14 @@
 
         els.copyEmailBtn?.addEventListener('click', () => this.copy(els.copyEmailBtn?.dataset.email || 'versesvibez@substack.com', els.copyEmailBtn));
 
+        // NEW: reader controls (delegated)
+        document.addEventListener('click', (e) => {
+          const t = e.target;
+          if (t.matches?.('[data-reader-inc]')) { e.preventDefault(); this.adjustReader(0.1); }
+          if (t.matches?.('[data-reader-dec]')) { e.preventDefault(); this.adjustReader(-0.1); }
+          if (t.matches?.('[data-reader-toggle="wide"]')) { e.preventDefault(); els.modalBody.classList.toggle('is-wide'); }
+        });
+
         // Global delegated share (works for eBook share + card shares)
         document.addEventListener('click', async (e) => {
           const sh = e.target.closest && e.target.closest('[data-share]');
@@ -686,9 +637,15 @@
           } catch {}
         });
       }
+      adjustReader(delta){
+        const cur = parseFloat(getComputedStyle(els.modalBody).getPropertyValue('--reader-scale')) || 1;
+        const next = Math.max(0.85, Math.min(1.6, cur + delta));
+        els.modalBody.style.setProperty('--reader-scale', next.toFixed(2));
+        const meter = document.getElementById('readerSize'); meter && (meter.textContent = Math.round(next * 100) + '%');
+      }
       lockMain(lock){
         els.appRoot?.setAttribute('aria-hidden', String(lock));
-        if (lock) els.appRoot?.setAttribute('inert',''); else els.appRoot?.removeAttribute('inert');
+        lock ? els.appRoot?.setAttribute('inert','') : els.appRoot?.removeAttribute('inert');
         document.body.style.overflow = lock ? 'hidden' : '';
       }
       openAbout(){
@@ -722,10 +679,14 @@
           ctaBar.innerHTML = `
             <a class="btn btn-primary" href="${FEATURED_EBOOK.url}" target="_blank" rel="noopener external nofollow">
               ${FEATURED_EBOOK.ctaText?.trim() || 'Read on Kindle'}
-            </a>
-          `;
+            </a>`;
           els.modalBody.appendChild(ctaBar);
         }
+
+        // reset reader state
+        els.modalBody.style.setProperty('--reader-scale', 1);
+        els.modalBody.classList.remove('is-wide');
+        const meter = document.getElementById('readerSize'); meter && (meter.textContent = '100%');
 
         lastFocus = document.activeElement;
         els.readingModal?.removeAttribute('hidden');
@@ -760,24 +721,16 @@
       }
       next(){ if (iModal < posts.length - 1) this.openReading(posts[iModal + 1], iModal + 1); }
       prev(){ if (iModal > 0) this.openReading(posts[iModal - 1], iModal - 1); }
-      updateNav(){
-        if (!els.prev || !els.next) return;
-        els.prev.disabled = iModal <= 0;
-        els.next.disabled = iModal >= posts.length - 1;
-      }
-      progress(){
-        const h = els.modalBody.scrollHeight - els.modalBody.clientHeight;
+      updateNav(){ if (!els.prev || !els.next) return; els.prev.disabled = iModal <= 0; els.next.disabled = iModal >= posts.length - 1; }
+      progress(){ const h = els.modalBody.scrollHeight - els.modalBody.clientHeight;
         const sc = h > 0 ? (els.modalBody.scrollTop / h) * 100 : 0;
-        els.bar.style.width = sc + '%';
-        els.bar.setAttribute('aria-valuenow', String(Math.round(sc)));
+        els.bar.style.width = sc + '%'; els.bar.setAttribute('aria-valuenow', String(Math.round(sc)));
       }
       async copy(text, btn){
         const original = btn?.innerHTML;
         try { await navigator.clipboard.writeText(text);
           if (btn) { btn.innerHTML = '<span>✓</span> Copied!'; setTimeout(() => btn.innerHTML = original, 1800); }
-        } catch {
-          if (btn) { btn.innerHTML = text; setTimeout(() => btn.innerHTML = original, 2000); }
-        }
+        } catch { if (btn) { btn.innerHTML = text; setTimeout(() => btn.innerHTML = original, 2000); } }
       }
     }
 
@@ -792,21 +745,201 @@
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
         els.refreshBtn?.addEventListener('click', () => this.load(true));
-        els.randomBtn?.addEventListener('click', () => this.random());
+  // random button removed; no-op
         els.loadMore?.addEventListener('click', () => this.renderNextChunk());
         const initialCards = els.grid ? els.grid.querySelectorAll('[data-post-slug]').length : 0;
         if (initialCards > this.pageSize) this.pageSize = initialCards;
-        if (posts.length) {
-          this.applyData(posts);
-          this.inlineConsumed = true;
-        }
+        if (posts.length) { this.applyData(posts); this.inlineConsumed = true; }
         this.load();
       }
 
-      textOnly(html){
-        const d=document.createElement('div'); d.innerHTML = sanitize(html||'');
-        return (d.textContent || d.innerText || '').replace(/\u00a0/g, ' ');
+        prepareFeatured(){
+          const curated = [
+            {
+              slug: 'embers-of-dawn',
+              title: 'Embers of Dawn',
+              summary: 'A sunrise prayer stitched from soft embers.',
+              tags: ['poem', 'dawn'],
+              link: 'https://versesvibez.substack.com/p/embers-of-dawn',
+              poem: `
+    hush the dark
+      we gather tinder breaths
+  and open windows toward the east
+
+      the first light leans in
+    mapping gold across tired knuckles
+  `
+            },
+            {
+              slug: 'cartography-of-rest',
+              title: 'Cartography of Rest',
+              summary: 'Tracing the map back to tenderness and home.',
+              tags: ['poem', 'rest'],
+              link: 'https://versesvibez.substack.com/p/cartography-of-rest',
+              poem: `
+  we draw the curtains
+  and inventory the quiet
+
+    cushions become coordinates
+    for the map back home
+  `
+            },
+            {
+              slug: 'blueprint-for-a-firefly-night',
+              title: 'Blueprint for a Firefly Night',
+              summary: 'Instructions for bottling a summer glow.',
+              tags: ['poem', 'night'],
+              link: 'https://versesvibez.substack.com/p/blueprint-for-a-firefly-night',
+              poem: `
+  	make a sky out of mason jars
+  line them on the porch
+
+
+    leave a stanza empty
+
+      so the fireflies can rest
+  `
+            }
+          ];
+
+          const stripEdgeNewlines = (poem = '') => {
+            const poemText = poem == null ? '' : String(poem);
+            return poemText
+              .replace(/^(?:\r\n|\r|\n)+/, '')
+              .replace(/(?:\r\n|\r|\n)+$/, '');
+          };
+
+          const renderLine = (line='') => {
+            const match = line.match(/^[ \t]+/);
+            let prefix = '';
+            let rest = line;
+            if (match) {
+              prefix = match[0]
+                .replace(/ /g, '&nbsp;')
+                .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+              rest = line.slice(match[0].length);
+            }
+            return prefix + escapeHtml(rest);
+          };
+
+          const poemHtml = (poem='') => {
+            const normalized = stripEdgeNewlines(poem)
+              .replace(/\r\n/g, '\n')
+              .replace(/\r/g, '\n');
+            if (!normalized) return '';
+
+            const lines = normalized.split('\n');
+            const paragraphs = [];
+            let current = [];
+
+            const pushCurrent = () => {
+              paragraphs.push(current);
+              current = [];
+            };
+
+            for (const raw of lines) {
+              if (/^[ \t]*$/.test(raw)) {
+                if (current.length) {
+                  pushCurrent();
+                } else {
+                  paragraphs.push([]);
+                }
+                continue;
+              }
+              current.push(raw);
+            }
+            if (current.length) pushCurrent();
+
+            if (!paragraphs.length) return '';
+
+            return paragraphs
+              .map(linesArr => {
+                if (!linesArr.length) return '<p><br></p>';
+                const htmlLines = linesArr.map(renderLine).join('<br>');
+                return `<p>${htmlLines}</p>`;
+              })
+              .join('');
+          };
+
+          const poems = curated.map(item => {
+            const html = `<div class="ebook-poem"><h3 class="ebook-poem-title">${escapeHtml(item.title)}</h3>${poemHtml(item.poem)}</div>`;
+            return {
+              ...item,
+              html
+            };
+          });
+
+          const extras = [];
+          if (FEATURED_EBOOK?.url) {
+            const summary = (FEATURED_EBOOK.description || '').trim()
+              || 'Preview selections from the Torchborne poetry eBook.';
+            const preview = poems.map(p => p.html).join('');
+            extras.push({
+              featureType: 'ebook',
+              title: FEATURED_EBOOK.title || 'Torchborne Poetry eBook',
+              link: FEATURED_EBOOK.url,
+              description: summary,
+              content: `<div class="ebook-preview">${preview}</div>`,
+              feature: {
+                tag: FEATURED_EBOOK.tag || 'Featured',
+                meta: FEATURED_EBOOK.meta || '',
+                summary,
+                cover: FEATURED_EBOOK.cover || '',
+                shareText: FEATURED_EBOOK.shareText || 'Share eBook',
+                note: FEATURED_EBOOK.note || '',
+                ctaText: (FEATURED_EBOOK.ctaText || 'Read eBook').trim() || 'Read eBook'
+              }
+            });
+          }
+
+          extras.push(...poems.map(poem => ({
+            featureType: 'poem',
+            title: poem.title,
+            link: poem.link,
+            description: poem.summary,
+            content: poem.html,
+            tags: Array.isArray(poem.tags) ? poem.tags : [],
+            feature: { tags: Array.isArray(poem.tags) ? poem.tags : [] }
+          })));
+
+          return { poems, extras, poemHtml };
+        }
+
+        // NEW: build tag chips from posts
+      buildTagFilters(){
+        const c = els.tagFilters; if(!c) return;
+        const counts = new Map();
+        posts.forEach(p => (p.tags||[]).forEach(t => counts.set(t, (counts.get(t)||0)+1)));
+        const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+        c.innerHTML = '';
+        const make = (label, count=0, pressed=false) => {
+          const b=document.createElement('button'); b.className='chip';
+          b.textContent = `${label}${typeof count === 'number' && count > 0 ? ` (${count})` : ''}`;
+          b.setAttribute('aria-pressed', String(pressed));
+          b.setAttribute('data-tag', label);
+          return b;
+        };
+        const total = posts.length || 0;
+        c.appendChild(make('All', total, true));
+        top.forEach(([t, cnt]) => c.appendChild(make(t, cnt)));
+        c.onclick = (e)=>{
+          if(e.target.tagName!=='BUTTON') return;
+          [...c.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed','false'));
+          e.target.setAttribute('aria-pressed','true');
+          const tag = e.target.getAttribute('data-tag') || e.target.textContent;
+          if(tag==='All'){ this.render(posts); try { els.status.hidden = false; els.status.textContent = `Showing ${posts.length} poems`; } catch(e){}; return; }
+          const filtered = posts.filter(p => (p.tags||[]).includes(tag));
+          this.render(filtered);
+          try {
+            els.status.hidden = false;
+            els.status.className = 'status';
+            els.status.removeAttribute('role');
+            els.status.textContent = `${filtered.length} result${filtered.length===1?'':'s'} for "${tag}"`;
+          } catch (e) {}
+        };
       }
+
+      textOnly(html){ const d=document.createElement('div'); d.innerHTML = sanitize(html||''); return (d.textContent || d.innerText || '').replace(/\u00a0/g, ' '); }
       firstImage(html){
         const d=document.createElement('div'); d.innerHTML = sanitize(html||'');
         const img = d.querySelector('img'); if (img?.src) return img.src;
@@ -814,14 +947,8 @@
         if (source){ const first = (source.getAttribute('srcset')||'').split(',')[0]?.trim().split(' ')[0]; if (first) return first; }
         return null;
       }
-      readTime(txt){
-        const w=(txt.trim().match(/\S+/g)||[]).length;
-        return `${Math.max(1, Math.round(w/180))} min read`;
-      }
-      vibes(title=''){
-        const words = (title || '').toLowerCase().match(/[a-z]{4,}/g)||[];
-        return [...new Set(words.slice(0,2))];
-      }
+      readTime(txt){ const w=(txt.trim().match(/\S+/g)||[]).length; return `${Math.max(1, Math.round(w/180))} min read`; }
+      vibes(title=''){ const words=(title||'').toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
 
       card(post, idx){
         const date = post.pubDate ? new Date(post.pubDate) : null;
@@ -884,6 +1011,10 @@
         this.shown = 0;
         this.renderNextChunk();
         this.finishLoading('');
+        // update remaining count on button
+        const remaining = Math.max(0, this.viewList.length - this.shown);
+        els.loadMore.style.display = remaining > 0 ? "inline-flex" : "none";
+        if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
       }
 
       renderNextChunk(){
@@ -898,13 +1029,17 @@
         const remaining = Math.max(0, this.viewList.length - this.shown);
         els.loadMore.style.display = remaining > 0 ? "inline-flex" : "none";
         if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
+
+        // Update accessible status so assistive tech knows how many posts are visible
+        try {
+          els.status.hidden = false;
+          els.status.className = 'status';
+          els.status.removeAttribute('role');
+          els.status.textContent = `Showing ${this.shown} of ${this.viewList.length} poems`;
+        } catch (e) { /* noop */ }
       }
 
-      random(){
-        if (!posts.length) return;
-        const idx = Math.floor(Math.random() * posts.length);
-        modal.openReading(posts[idx], idx);
-      }
+      // random() removed — Random button and handler were deleted
 
       search(){
         const q = (els.search.value || '').trim().toLowerCase();
@@ -914,6 +1049,13 @@
           return text.includes(q);
         });
         this.render(filtered);
+        try {
+          const n = filtered.length;
+          els.status.hidden = false;
+          els.status.className = 'status';
+          els.status.removeAttribute('role');
+          els.status.textContent = n ? `${n} result${n===1? '':'s'} for "${q}"` : `No results for "${q}"`;
+        } catch (e) {}
       }
 
       async load(force=false){
@@ -974,13 +1116,11 @@
       }
 
       async fetchWithTimeout(url, ms=10000){
-        const ctrl = new AbortController();
-        const id = setTimeout(() => ctrl.abort(), ms);
+        const ctrl = new AbortController(); const id = setTimeout(() => ctrl.abort(), ms);
         try {
           const res = await fetch(url, { credentials:'omit', cache:'no-store', signal: ctrl.signal });
           if (!res.ok) throw new Error('HTTP ' + res.status);
-          const text = await res.text();
-          const trimmed = text.trim();
+          const text = await res.text(); const trimmed = text.trim();
           if (!trimmed) return null;
           try { return JSON.parse(trimmed); } catch { throw new Error('Invalid JSON'); }
         } finally { clearTimeout(id); }
@@ -1012,6 +1152,9 @@
         posts = limited;
         if (changed || forceRender || !this.viewList.length) this.render(posts);
         else this.finishLoading('');
+
+        // (re)build tag chips whenever posts change
+        this.buildTagFilters();
         return true;
       }
 

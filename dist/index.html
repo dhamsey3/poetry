@@ -14,6 +14,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap">
   <link rel="preconnect" href="https://api.rss2json.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
@@ -91,19 +92,17 @@
               <img src="./static/logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
               <h1 class="brand-name">torchborne</h1>
             </a>
-            <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
+            <div class="hero-tagline" aria-live="polite">where words carry the flame</div>
           </div>
 
           <div class="hero-actions">
             <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
-              <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
+              <span id="themeText">Theme</span>
             </button>
             <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
-            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
-              <span>👋</span> About
-            </button>
+            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">About</button>
             
-            <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener"><span>💌</span> Subscribe</a>
+            <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener">Subscribe</a>
           </div>
 
           <div class="search-section">
@@ -150,7 +149,7 @@
             <img src="./static/logo-dark.svg" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>torchborne</h3>
-              <div class="footerCopyright">© 2025 • Made with ❤️ and pixels</div>
+              <div class="footerCopyright">© 2026 • Made with care and pixels</div>
             </div>
           </div>
 
@@ -200,7 +199,7 @@
           <img class="about-avatar" src="./static/avatar.jpg" alt="Torchborne" onerror="this.src='./static/logo-light.svg'">
           <div class="about-info">
             <h2 id="aboutTitle">About Torchborne</h2>
-            <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
+            <p class="about-tagline">Illuminating poetry, carrying the flame of words</p>
           </div>
         </div>
 
@@ -210,8 +209,8 @@
         </div>
 
         <div class="about-cta">
-          <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener"><span>💌</span> Subscribe on Substack</a>
-          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com"><span>📧</span> Copy Email</button>
+          <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener">Subscribe on Substack</a>
+          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">Copy Email</button>
         </div>
 
         <div class="about-links">
@@ -252,9 +251,9 @@
     const STATIC_DATA_URL = './data/posts.json';
     const FEATURED_EBOOK  = {};
     const TAGLINES = [
-      "where words carry the flame ✨",
-      "poetry for wandering souls ✍️",
-      "verses that glow in the dark 🌙"
+      "where words carry the flame",
+      "poetry for wandering souls",
+      "verses that glow in the dark"
     ];
 
     function normalizeBase(base) {
@@ -841,21 +840,32 @@
         const c = els.tagFilters; if(!c) return;
         const counts = new Map();
         posts.forEach(p => (p.tags||[]).forEach(t => counts.set(t, (counts.get(t)||0)+1)));
-        const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(([t])=>t);
+        const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
         c.innerHTML = '';
-        const make = (label, pressed=false) => {
-          const b=document.createElement('button'); b.className='chip'; b.textContent=label;
-          b.setAttribute('aria-pressed', String(pressed)); return b;
+        const make = (label, count=0, pressed=false) => {
+          const b=document.createElement('button'); b.className='chip';
+          b.textContent = `${label}${typeof count === 'number' && count > 0 ? ` (${count})` : ''}`;
+          b.setAttribute('aria-pressed', String(pressed));
+          b.setAttribute('data-tag', label);
+          return b;
         };
-        c.appendChild(make('All', true));
-        top.forEach(t => c.appendChild(make(t)));
+        const total = posts.length || 0;
+        c.appendChild(make('All', total, true));
+        top.forEach(([t, cnt]) => c.appendChild(make(t, cnt)));
         c.onclick = (e)=>{
           if(e.target.tagName!=='BUTTON') return;
           [...c.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed','false'));
           e.target.setAttribute('aria-pressed','true');
-          const tag = e.target.textContent;
-          if(tag==='All'){ this.render(posts); return; }
-          this.render(posts.filter(p => (p.tags||[]).includes(tag)));
+          const tag = e.target.getAttribute('data-tag') || e.target.textContent;
+          if(tag==='All'){ this.render(posts); try { els.status.hidden = false; els.status.textContent = `Showing ${posts.length} poems`; } catch(e){}; return; }
+          const filtered = posts.filter(p => (p.tags||[]).includes(tag));
+          this.render(filtered);
+          try {
+            els.status.hidden = false;
+            els.status.className = 'status';
+            els.status.removeAttribute('role');
+            els.status.textContent = `${filtered.length} result${filtered.length===1?'':'s'} for "${tag}"`;
+          } catch (e) {}
         };
       }
 
@@ -891,13 +901,13 @@
           <div class="card-content">
             <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
             <div class="card-meta">
-              ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
-              ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
+              ${dateStr ? `<span>${escapeHtml(dateStr)}</span>` : '' }
+              ${rt ? `<span>${escapeHtml(rt)}</span>` : '' }
             </div>
             <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
             ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
-              <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
+              <a class="read-link" href="${post.link}" target="_blank" rel="noopener">Read on Substack <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 6l1.41 1.41L11.33 11.0H20v2H11.33l3.58 3.59L13.5 18 7.5 12z"></path></svg></a>
               <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
               <a href="#" data-share="${encodeURIComponent(post.link)}" data-title="${escapeHtml(post.title || 'Poem from Torchborne')}">Share</a>
             </div>
@@ -949,6 +959,14 @@
         const remaining = Math.max(0, this.viewList.length - this.shown);
         els.loadMore.style.display = remaining > 0 ? "inline-flex" : "none";
         if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
+
+        // Update accessible status so assistive tech knows how many posts are visible
+        try {
+          els.status.hidden = false;
+          els.status.className = 'status';
+          els.status.removeAttribute('role');
+          els.status.textContent = `Showing ${this.shown} of ${this.viewList.length} poems`;
+        } catch (e) { /* noop */ }
       }
 
       // random() removed — Random button and handler were deleted
@@ -961,6 +979,13 @@
           return text.includes(q);
         });
         this.render(filtered);
+        try {
+          const n = filtered.length;
+          els.status.hidden = false;
+          els.status.className = 'status';
+          els.status.removeAttribute('role');
+          els.status.textContent = n ? `${n} result${n===1? '':'s'} for "${q}"` : `No results for "${q}"`;
+        } catch (e) {}
       }
 
       async load(force=false){

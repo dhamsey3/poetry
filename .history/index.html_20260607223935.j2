@@ -976,7 +976,7 @@
             <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
             ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
-              <a class="read-link" href="${post.link}" target="_blank" rel="noopener">Read on Substack <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 6l1.41 1.41L11.33 11.0H20v2H11.33l3.58 3.59L13.5 18 7.5 12z"></path></svg></a>
+              <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
               <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
               <a href="#" data-share="${encodeURIComponent(post.link)}" data-title="${escapeHtml(post.title || 'Poem from Torchborne')}">Share</a>
             </div>

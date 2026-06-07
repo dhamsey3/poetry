@@ -14,7 +14,6 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap">
   <link rel="preconnect" href="https://api.rss2json.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
@@ -105,21 +104,23 @@
               <img src="{{ STATIC }}logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
               <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
-            <div class="hero-tagline" aria-live="polite">where words carry the flame</div>
+            <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
           </div>
 
           <div class="hero-actions">
             <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
-              <span id="themeText">Theme</span>
+              <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
             </button>
             <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
-            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">About</button>
+            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
+              <span>👋</span> About
+            </button>
             {% if featured_ebook %}
             <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow" aria-label="Read on Kindle (opens Amazon)">
               {{ featured_ebook.ctaText or 'Read on Kindle' }}
             </a>
             {% endif %}
-            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">Subscribe</a>
+            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe</a>
           </div>
 
           <div class="search-section">
@@ -150,7 +151,7 @@
                 <div class="ebook-cover{{ '' if featured_ebook.cover else ' placeholder' }}">
                   {% if featured_ebook.cover %}
                     <img loading="lazy" decoding="async" src="{{ featured_ebook.cover }}" alt="">
-                  {% else %}<span aria-hidden="true">eBook</span>{% endif %}
+                  {% else %}<span aria-hidden="true">📘</span>{% endif %}
                 </div>
                 <div class="ebook-details">
                   <h2 class="card-title">
@@ -194,9 +195,9 @@
                 <div class="card-thumb" aria-hidden="true"></div>
                 <div class="card-content">
                   <h2 class="card-title"><a href="{{ post_url }}" target="_blank" rel="noopener">{{ card_title }}</a></h2>
-                  <div class="card-meta">{% if display_date %}<span>{{ display_date }}</span>{% endif %}</div>
+                  <div class="card-meta">{% if display_date %}<span>📅 {{ display_date }}</span>{% endif %}</div>
                   <div class="card-summary">{{ post.excerpt or post.description or '' }}</div>
-                  <div class="card-actions"><a class="read-link" href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 6l1.41 1.41L11.33 11.0H20v2H11.33l3.58 3.59L13.5 18 7.5 12z"></path></svg></a></div>
+                  <div class="card-actions"><a href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack →</a></div>
                 </div>
               </article>
             {% endfor %}
@@ -218,7 +219,7 @@
             <img src="{{ STATIC }}logo-dark.svg" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
-              <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with care and pixels</div>
+              <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
             </div>
           </div>
 
@@ -268,7 +269,7 @@
           <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="Torchborne" onerror="this.src='{{ STATIC }}logo-light.svg'">
           <div class="about-info">
             <h2 id="aboutTitle">About Torchborne</h2>
-            <p class="about-tagline">Illuminating poetry, carrying the flame of words</p>
+            <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
           </div>
         </div>
 
@@ -278,8 +279,8 @@
         </div>
 
         <div class="about-cta">
-          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">Subscribe on Substack</a>
-          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">Copy Email</button>
+          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe on Substack</a>
+          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com"><span>📧</span> Copy Email</button>
         </div>
 
         <div class="about-links">
@@ -320,9 +321,9 @@
     const STATIC_DATA_URL = './data/posts.json';
     const FEATURED_EBOOK  = {{ (featured_ebook or {}) | tojson }};
     const TAGLINES = [
-      "where words carry the flame",
-      "poetry for wandering souls",
-      "verses that glow in the dark"
+      "where words carry the flame ✨",
+      "poetry for wandering souls ✍️",
+      "verses that glow in the dark 🌙"
     ];
 
     function normalizeBase(base) {
@@ -926,15 +927,8 @@
           [...c.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed','false'));
           e.target.setAttribute('aria-pressed','true');
           const tag = e.target.getAttribute('data-tag') || e.target.textContent;
-          if(tag==='All'){ this.render(posts); try { els.status.hidden = false; els.status.textContent = `Showing ${posts.length} poems`; } catch(e){}; return; }
-          const filtered = posts.filter(p => (p.tags||[]).includes(tag));
-          this.render(filtered);
-          try {
-            els.status.hidden = false;
-            els.status.className = 'status';
-            els.status.removeAttribute('role');
-            els.status.textContent = `${filtered.length} result${filtered.length===1?'':'s'} for "${tag}"`;
-          } catch (e) {}
+          if(tag==='All'){ this.render(posts); return; }
+          this.render(posts.filter(p => (p.tags||[]).includes(tag)));
         };
       }
 
@@ -970,13 +964,13 @@
           <div class="card-content">
             <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
             <div class="card-meta">
-              ${dateStr ? `<span>${escapeHtml(dateStr)}</span>` : '' }
-              ${rt ? `<span>${escapeHtml(rt)}</span>` : '' }
+              ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
+              ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
             </div>
             <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
             ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
-              <a class="read-link" href="${post.link}" target="_blank" rel="noopener">Read on Substack <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 6l1.41 1.41L11.33 11.0H20v2H11.33l3.58 3.59L13.5 18 7.5 12z"></path></svg></a>
+              <a href="${post.link}" target="_blank" rel="noopener">Read on Substack →</a>
               <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
               <a href="#" data-share="${encodeURIComponent(post.link)}" data-title="${escapeHtml(post.title || 'Poem from Torchborne')}">Share</a>
             </div>
@@ -1048,13 +1042,6 @@
           return text.includes(q);
         });
         this.render(filtered);
-        try {
-          const n = filtered.length;
-          els.status.hidden = false;
-          els.status.className = 'status';
-          els.status.removeAttribute('role');
-          els.status.textContent = n ? `${n} result${n===1? '':'s'} for "${q}"` : `No results for "${q}"`;
-        } catch (e) {}
       }
 
       async load(force=false){

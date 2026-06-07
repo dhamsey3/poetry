@@ -14,6 +14,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap">
   <link rel="preconnect" href="https://api.rss2json.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
@@ -104,24 +105,21 @@
               <img src="{{ STATIC }}logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
               <h1 class="brand-name">{{ site_title or "Torchborne" }}</h1>
             </a>
-            <div class="hero-tagline" aria-live="polite">where words carry the flame ✨</div>
+            <div class="hero-tagline" aria-live="polite">where words carry the flame</div>
           </div>
 
           <div class="hero-actions">
             <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
-              <span id="themeIcon" aria-hidden="true">🌓</span> <span id="themeText">Theme</span>
+              <span id="themeText">Theme</span>
             </button>
             <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
-            <button id="randomBtn" class="chip accent" title="Surprise me"><span>🎲</span> Random</button>
-            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">
-              <span>👋</span> About
-            </button>
+            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">About</button>
             {% if featured_ebook %}
             <a class="btn" href="{{ featured_ebook.url }}" target="_blank" rel="noopener external nofollow" aria-label="Read on Kindle (opens Amazon)">
               {{ featured_ebook.ctaText or 'Read on Kindle' }}
             </a>
             {% endif %}
-            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe</a>
+            <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">Subscribe</a>
           </div>
 
           <div class="search-section">
@@ -152,7 +150,7 @@
                 <div class="ebook-cover{{ '' if featured_ebook.cover else ' placeholder' }}">
                   {% if featured_ebook.cover %}
                     <img loading="lazy" decoding="async" src="{{ featured_ebook.cover }}" alt="">
-                  {% else %}<span aria-hidden="true">📘</span>{% endif %}
+                  {% else %}<span aria-hidden="true">eBook</span>{% endif %}
                 </div>
                 <div class="ebook-details">
                   <h2 class="card-title">
@@ -196,7 +194,7 @@
                 <div class="card-thumb" aria-hidden="true"></div>
                 <div class="card-content">
                   <h2 class="card-title"><a href="{{ post_url }}" target="_blank" rel="noopener">{{ card_title }}</a></h2>
-                  <div class="card-meta">{% if display_date %}<span>📅 {{ display_date }}</span>{% endif %}</div>
+                  <div class="card-meta">{% if display_date %}<span>{{ display_date }}</span>{% endif %}</div>
                   <div class="card-summary">{{ post.excerpt or post.description or '' }}</div>
                   <div class="card-actions"><a href="{{ post_url }}" target="_blank" rel="noopener">Read on Substack →</a></div>
                 </div>
@@ -220,7 +218,7 @@
             <img src="{{ STATIC }}logo-dark.svg" class="footer-logo logo-dark" alt="" aria-hidden="true" width="32" height="32">
             <div class="footer-info">
               <h3>{{ site_title or "Torchborne" }}</h3>
-              <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with ❤️ and pixels</div>
+              <div class="footerCopyright">© {{ generated_at.strftime("%Y") if generated_at else "2024" }} • Made with care and pixels</div>
             </div>
           </div>
 
@@ -270,7 +268,7 @@
           <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="Torchborne" onerror="this.src='{{ STATIC }}logo-light.svg'">
           <div class="about-info">
             <h2 id="aboutTitle">About Torchborne</h2>
-            <p class="about-tagline">Illuminating poetry, carrying the flame of words ✨</p>
+            <p class="about-tagline">Illuminating poetry, carrying the flame of words</p>
           </div>
         </div>
 
@@ -280,8 +278,8 @@
         </div>
 
         <div class="about-cta">
-          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener"><span>💌</span> Subscribe on Substack</a>
-          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com"><span>📧</span> Copy Email</button>
+          <a class="btn btn-primary" href="{{ SUBSCRIBE_URL }}" rel="noopener">Subscribe on Substack</a>
+          <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">Copy Email</button>
         </div>
 
         <div class="about-links">
@@ -322,9 +320,9 @@
     const STATIC_DATA_URL = './data/posts.json';
     const FEATURED_EBOOK  = {{ (featured_ebook or {}) | tojson }};
     const TAGLINES = [
-      "where words carry the flame ✨",
-      "poetry for wandering souls ✍️",
-      "verses that glow in the dark 🌙"
+      "where words carry the flame",
+      "poetry for wandering souls",
+      "verses that glow in the dark"
     ];
 
     function normalizeBase(base) {
@@ -436,7 +434,7 @@
       themeIcon: document.getElementById('themeIcon'),
       themeText: document.getElementById('themeText'),
       refreshBtn: document.getElementById('refreshBtn'),
-      randomBtn: document.getElementById('randomBtn'),
+  // randomBtn removed
       loadMore: document.getElementById('loadMore'),
       aboutBtn: document.getElementById('aboutBtn'),
       aboutModal: document.getElementById('aboutModal'),
@@ -746,7 +744,7 @@
       init(){
         els.search?.addEventListener('input', debounce(() => this.search(), 120));
         els.refreshBtn?.addEventListener('click', () => this.load(true));
-        els.randomBtn?.addEventListener('click', () => this.random());
+  // random button removed; no-op
         els.loadMore?.addEventListener('click', () => this.renderNextChunk());
         const initialCards = els.grid ? els.grid.querySelectorAll('[data-post-slug]').length : 0;
         if (initialCards > this.pageSize) this.pageSize = initialCards;
@@ -754,26 +752,189 @@
         this.load();
       }
 
-      // NEW: build tag chips from posts
+        prepareFeatured(){
+          const curated = [
+            {
+              slug: 'embers-of-dawn',
+              title: 'Embers of Dawn',
+              summary: 'A sunrise prayer stitched from soft embers.',
+              tags: ['poem', 'dawn'],
+              link: 'https://versesvibez.substack.com/p/embers-of-dawn',
+              poem: `
+    hush the dark
+      we gather tinder breaths
+  and open windows toward the east
+
+      the first light leans in
+    mapping gold across tired knuckles
+  `
+            },
+            {
+              slug: 'cartography-of-rest',
+              title: 'Cartography of Rest',
+              summary: 'Tracing the map back to tenderness and home.',
+              tags: ['poem', 'rest'],
+              link: 'https://versesvibez.substack.com/p/cartography-of-rest',
+              poem: `
+  we draw the curtains
+  and inventory the quiet
+
+    cushions become coordinates
+    for the map back home
+  `
+            },
+            {
+              slug: 'blueprint-for-a-firefly-night',
+              title: 'Blueprint for a Firefly Night',
+              summary: 'Instructions for bottling a summer glow.',
+              tags: ['poem', 'night'],
+              link: 'https://versesvibez.substack.com/p/blueprint-for-a-firefly-night',
+              poem: `
+  	make a sky out of mason jars
+  line them on the porch
+
+
+    leave a stanza empty
+
+      so the fireflies can rest
+  `
+            }
+          ];
+
+          const stripEdgeNewlines = (poem = '') => {
+            const poemText = poem == null ? '' : String(poem);
+            return poemText
+              .replace(/^(?:\r\n|\r|\n)+/, '')
+              .replace(/(?:\r\n|\r|\n)+$/, '');
+          };
+
+          const renderLine = (line='') => {
+            const match = line.match(/^[ \t]+/);
+            let prefix = '';
+            let rest = line;
+            if (match) {
+              prefix = match[0]
+                .replace(/ /g, '&nbsp;')
+                .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+              rest = line.slice(match[0].length);
+            }
+            return prefix + escapeHtml(rest);
+          };
+
+          const poemHtml = (poem='') => {
+            const normalized = stripEdgeNewlines(poem)
+              .replace(/\r\n/g, '\n')
+              .replace(/\r/g, '\n');
+            if (!normalized) return '';
+
+            const lines = normalized.split('\n');
+            const paragraphs = [];
+            let current = [];
+
+            const pushCurrent = () => {
+              paragraphs.push(current);
+              current = [];
+            };
+
+            for (const raw of lines) {
+              if (/^[ \t]*$/.test(raw)) {
+                if (current.length) {
+                  pushCurrent();
+                } else {
+                  paragraphs.push([]);
+                }
+                continue;
+              }
+              current.push(raw);
+            }
+            if (current.length) pushCurrent();
+
+            if (!paragraphs.length) return '';
+
+            return paragraphs
+              .map(linesArr => {
+                if (!linesArr.length) return '<p><br></p>';
+                const htmlLines = linesArr.map(renderLine).join('<br>');
+                return `<p>${htmlLines}</p>`;
+              })
+              .join('');
+          };
+
+          const poems = curated.map(item => {
+            const html = `<div class="ebook-poem"><h3 class="ebook-poem-title">${escapeHtml(item.title)}</h3>${poemHtml(item.poem)}</div>`;
+            return {
+              ...item,
+              html
+            };
+          });
+
+          const extras = [];
+          if (FEATURED_EBOOK?.url) {
+            const summary = (FEATURED_EBOOK.description || '').trim()
+              || 'Preview selections from the Torchborne poetry eBook.';
+            const preview = poems.map(p => p.html).join('');
+            extras.push({
+              featureType: 'ebook',
+              title: FEATURED_EBOOK.title || 'Torchborne Poetry eBook',
+              link: FEATURED_EBOOK.url,
+              description: summary,
+              content: `<div class="ebook-preview">${preview}</div>`,
+              feature: {
+                tag: FEATURED_EBOOK.tag || 'Featured',
+                meta: FEATURED_EBOOK.meta || '',
+                summary,
+                cover: FEATURED_EBOOK.cover || '',
+                shareText: FEATURED_EBOOK.shareText || 'Share eBook',
+                note: FEATURED_EBOOK.note || '',
+                ctaText: (FEATURED_EBOOK.ctaText || 'Read eBook').trim() || 'Read eBook'
+              }
+            });
+          }
+
+          extras.push(...poems.map(poem => ({
+            featureType: 'poem',
+            title: poem.title,
+            link: poem.link,
+            description: poem.summary,
+            content: poem.html,
+            tags: Array.isArray(poem.tags) ? poem.tags : [],
+            feature: { tags: Array.isArray(poem.tags) ? poem.tags : [] }
+          })));
+
+          return { poems, extras, poemHtml };
+        }
+
+        // NEW: build tag chips from posts
       buildTagFilters(){
         const c = els.tagFilters; if(!c) return;
         const counts = new Map();
         posts.forEach(p => (p.tags||[]).forEach(t => counts.set(t, (counts.get(t)||0)+1)));
-        const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(([t])=>t);
+        const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
         c.innerHTML = '';
-        const make = (label, pressed=false) => {
-          const b=document.createElement('button'); b.className='chip'; b.textContent=label;
-          b.setAttribute('aria-pressed', String(pressed)); return b;
+        const make = (label, count=0, pressed=false) => {
+          const b=document.createElement('button'); b.className='chip';
+          b.textContent = `${label}${typeof count === 'number' && count > 0 ? ` (${count})` : ''}`;
+          b.setAttribute('aria-pressed', String(pressed));
+          b.setAttribute('data-tag', label);
+          return b;
         };
-        c.appendChild(make('All', true));
-        top.forEach(t => c.appendChild(make(t)));
+        const total = posts.length || 0;
+        c.appendChild(make('All', total, true));
+        top.forEach(([t, cnt]) => c.appendChild(make(t, cnt)));
         c.onclick = (e)=>{
           if(e.target.tagName!=='BUTTON') return;
           [...c.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed','false'));
           e.target.setAttribute('aria-pressed','true');
-          const tag = e.target.textContent;
-          if(tag==='All'){ this.render(posts); return; }
-          this.render(posts.filter(p => (p.tags||[]).includes(tag)));
+          const tag = e.target.getAttribute('data-tag') || e.target.textContent;
+          if(tag==='All'){ this.render(posts); try { els.status.hidden = false; els.status.textContent = `Showing ${posts.length} poems`; } catch(e){}; return; }
+          const filtered = posts.filter(p => (p.tags||[]).includes(tag));
+          this.render(filtered);
+          try {
+            els.status.hidden = false;
+            els.status.className = 'status';
+            els.status.removeAttribute('role');
+            els.status.textContent = `${filtered.length} result${filtered.length===1?'':'s'} for "${tag}"`;
+          } catch (e) {}
         };
       }
 
@@ -809,8 +970,8 @@
           <div class="card-content">
             <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
             <div class="card-meta">
-              ${dateStr ? `<span>📅 ${escapeHtml(dateStr)}</span>` : '' }
-              ${rt ? `<span>⏱️ ${escapeHtml(rt)}</span>` : '' }
+              ${dateStr ? `<span>${escapeHtml(dateStr)}</span>` : '' }
+              ${rt ? `<span>${escapeHtml(rt)}</span>` : '' }
             </div>
             <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
             ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
@@ -867,13 +1028,17 @@
         const remaining = Math.max(0, this.viewList.length - this.shown);
         els.loadMore.style.display = remaining > 0 ? "inline-flex" : "none";
         if (remaining > 0) els.loadMore.textContent = `Load older poems (${remaining})`;
+
+        // Update accessible status so assistive tech knows how many posts are visible
+        try {
+          els.status.hidden = false;
+          els.status.className = 'status';
+          els.status.removeAttribute('role');
+          els.status.textContent = `Showing ${this.shown} of ${this.viewList.length} poems`;
+        } catch (e) { /* noop */ }
       }
 
-      random(){
-        if (!posts.length) return;
-        const idx = Math.floor(Math.random() * posts.length);
-        modal.openReading(posts[idx], idx);
-      }
+      // random() removed — Random button and handler were deleted
 
       search(){
         const q = (els.search.value || '').trim().toLowerCase();
@@ -883,6 +1048,13 @@
           return text.includes(q);
         });
         this.render(filtered);
+        try {
+          const n = filtered.length;
+          els.status.hidden = false;
+          els.status.className = 'status';
+          els.status.removeAttribute('role');
+          els.status.textContent = n ? `${n} result${n===1? '':'s'} for "${q}"` : `No results for "${q}"`;
+        } catch (e) {}
       }
 
       async load(force=false){
