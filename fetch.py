@@ -28,7 +28,7 @@ def ensure_dist():
 
     public_src = Path("public")
     if public_src.exists():
-        shutil.copytree(public_src, DIST_DIR, dirs_exist_ok=True)
+        shutil.copytree(public_src, DIST_DIR, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.input.css"))
         copied.append("public")
 
     static_src = Path("static")
