@@ -20,13 +20,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="preload" as="style" href="./static/tailwind-ui.css?v=20260708-ui-refresh">
-  <link rel="stylesheet" href="./static/tailwind-ui.css?v=20260708-ui-refresh">
-  <link rel="preload" as="style" href="./static/styles.css?v=20260708-ui-refresh">
-  <link id="mainCss" rel="stylesheet" href="./static/styles.css?v=20260708-ui-refresh">
+  <link rel="preload" as="style" href="./static/tailwind-ui.css?v=20260708-depth-psychology">
+  <link rel="stylesheet" href="./static/tailwind-ui.css?v=20260708-depth-psychology">
+  <link rel="preload" as="style" href="./static/styles.css?v=20260708-depth-psychology">
+  <link id="mainCss" rel="stylesheet" href="./static/styles.css?v=20260708-depth-psychology">
   <noscript>
-    <link rel="stylesheet" href="./static/tailwind-ui.css?v=20260708-ui-refresh">
-    <link rel="stylesheet" href="./static/styles.css?v=20260708-ui-refresh">
+    <link rel="stylesheet" href="./static/tailwind-ui.css?v=20260708-depth-psychology">
+    <link rel="stylesheet" href="./static/styles.css?v=20260708-depth-psychology">
   </noscript>
 
   <link rel="alternate" type="application/rss+xml" title="torchborne" href="https://versesvibez.substack.com/feed" />
@@ -99,7 +99,7 @@
                 <img src="./static/logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
                 <h1 class="brand-name">torchborne</h1>
               </a>
-              <div class="hero-tagline" aria-live="polite">where words carry the flame</div>
+              <div class="hero-tagline" aria-live="polite">poems for the shadow, the dream, and the returning self</div>
             </div>
 
             <div class="hero-actions" aria-label="Primary actions">
@@ -124,24 +124,30 @@
 
             <div class="hero-stats" aria-label="Collection stats">
               <div><strong id="statPoems">0</strong><span>poems</span></div>
-              <div><strong id="statTags">0</strong><span>threads</span></div>
-              <div><strong id="statLatest">new</strong><span>latest signal</span></div>
+              <div><strong id="statTags">0</strong><span>symbols</span></div>
+              <div><strong id="statLatest">new</strong><span>threshold</span></div>
             </div>
           </div>
 
           <aside class="hero-orbit" aria-label="Featured reading mood">
             <div class="orbit-ring" aria-hidden="true"></div>
+            <div class="depth-symbols" aria-hidden="true">
+              <span class="symbol symbol-shadow">shadow</span>
+              <span class="symbol symbol-dream">dream</span>
+              <span class="symbol symbol-return">return</span>
+            </div>
             <div class="poem-window">
               <div class="window-top">
                 <span></span><span></span><span></span>
               </div>
+              <div class="window-label">inner weather</div>
               <div class="poem-lines" aria-hidden="true">
                 <span></span>
                 <span></span>
                 <span></span>
                 <span></span>
               </div>
-              <p id="heroSnippet">A small flame for every quiet hour.</p>
+              <p id="heroSnippet">A small flame for what waits beneath the quiet.</p>
             </div>
           </aside>
         </div>
@@ -221,24 +227,35 @@
 
   <!-- ABOUT MODAL -->
   <div id="aboutModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" tabindex="-1" hidden>
-    <div class="modal-content">
+    <div class="modal-content about-content">
       <button class="modal-close" id="aboutModalClose" aria-label="Close about">✕</button>
       <div class="modal-header">
         <div class="about-header">
-          <img class="about-avatar" src="./static/avatar.jpg" alt="Torchborne" onerror="this.src='./static/logo-light.svg'">
+          <div class="about-mark" aria-hidden="true">
+            <img class="about-avatar" src="./static/avatar.jpg" alt="" onerror="this.src='./static/logo-light.svg'">
+          </div>
           <div class="about-info">
+            <div class="about-kicker">a field note from the interior</div>
             <h2 id="aboutTitle">About Torchborne</h2>
-            <p class="about-tagline">Illuminating poetry, carrying the flame of words</p>
+            <p class="about-tagline">Poetry for shadow work, dream fragments, tenderness, and return.</p>
           </div>
         </div>
 
         <div class="about-body">
-          <p>Welcome to my little corner of the internet where I explore the tender spaces between thoughts and feelings. Here you'll find poems, musings, and little sparks of inspiration that dance through everyday moments.</p>
-          <p>I believe poetry lives in the smallest gestures—the way light falls across a page, the pause between heartbeats, the stories we tell ourselves in the quiet hours. This collection gathers my public posts from Substack, made searchable and beautiful for wandering souls like yourself.</p>
+          <p><strong>Torchborne is a place for language that listens back.</strong> It gathers poems and reflections that move through longing, memory, faith, desire, grief, wonder, and the quieter rooms of the self.</p>
+          <p>The name carries the image of a small flame: not a spotlight, not a performance, but enough light to walk a little deeper. Some pieces feel like prayers. Some feel like dreams. Some are simply honest attempts to name what is difficult to hold.</p>
+
+          <div class="about-principles" aria-label="Torchborne themes">
+            <div><span>Shadow</span><p>Making room for the hidden, unfinished, and unspoken.</p></div>
+            <div><span>Dream</span><p>Following symbols, images, and strange inner weather.</p></div>
+            <div><span>Return</span><p>Coming back to tenderness, body, spirit, and voice.</p></div>
+          </div>
+
+          <p class="about-note">Read slowly. Search by mood. Follow whatever word keeps glowing after you leave.</p>
         </div>
 
         <div class="about-cta">
-          <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener">Subscribe on Substack</a>
+          <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener">Subscribe for new poems</a>
           <button id="copyEmailBtn" class="btn" data-email="versesvibez@substack.com">Copy Email</button>
         </div>
 
@@ -872,7 +889,9 @@
       buildTagFilters(){
         const c = els.tagFilters; if(!c) return;
         const counts = new Map();
-        posts.forEach(p => (p.tags||[]).forEach(t => counts.set(t, (counts.get(t)||0)+1)));
+        posts.forEach(p => {
+          [...(p.tags || []), ...this.depthMotifs(p)].forEach(t => counts.set(t, (counts.get(t)||0)+1));
+        });
         const top = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
         c.innerHTML = '';
         const make = (label, count=0, pressed=false) => {
@@ -891,7 +910,7 @@
           e.target.setAttribute('aria-pressed','true');
           const tag = e.target.getAttribute('data-tag') || e.target.textContent;
           if(tag==='All'){ this.render(posts); try { els.status.hidden = false; els.status.textContent = `Showing ${posts.length} poems`; } catch(e){}; return; }
-          const filtered = posts.filter(p => (p.tags||[]).includes(tag));
+          const filtered = posts.filter(p => [...(p.tags || []), ...this.depthMotifs(p)].includes(tag));
           this.render(filtered);
           try {
             els.status.hidden = false;
@@ -912,6 +931,22 @@
       }
       readTime(txt){ const w=(txt.trim().match(/\S+/g)||[]).length; return `${Math.max(1, Math.round(w/180))} min read`; }
       vibes(title=''){ const words=(title||'').toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
+      depthMotifs(post={}){
+        const text = [post.title || '', post.description || '', this.textOnly(post.content || '')].join(' ').toLowerCase();
+        const motifs = [
+          ['shadow', ['dark', 'night', 'hidden', 'wound', 'fear', 'alone', 'black', 'silence']],
+          ['dream', ['dream', 'sleep', 'moon', 'blue', 'vision', 'image', 'mist', 'memory']],
+          ['threshold', ['door', 'edge', 'between', 'cross', 'wake', 'dawn', 'window', 'begin']],
+          ['return', ['home', 'again', 'back', 'remember', 'rest', 'tender', 'soft', 'body']],
+          ['ember', ['fire', 'flame', 'ember', 'burn', 'gold', 'light', 'sun', 'spark']]
+        ];
+        const found = motifs
+          .filter(([, words]) => words.some(word => text.includes(word)))
+          .map(([name]) => name);
+        if (found.length) return found.slice(0, 2);
+        const seed = this.titleSeed(post.title || text);
+        return [motifs[seed % motifs.length][0]];
+      }
       titleSeed(title=''){
         let seed = 0;
         for (const char of String(title || 'Torchborne')) seed = (seed + char.charCodeAt(0) * 17) % 360;
@@ -922,6 +957,8 @@
         const words = String(title || 'Torchborne').split(/\s+/).filter(Boolean).slice(0, 3);
         const glyph = escapeHtml((words[0] || 'T').slice(0, 1).toUpperCase());
         return `<div class="card-thumb generated-art ${accentClass}" style="--seed:${seed}" aria-hidden="true">
+          <span class="art-axis"></span>
+          <span class="art-mirror"></span>
           <span class="art-glyph">${glyph}</span>
           <span class="art-line one"></span>
           <span class="art-line two"></span>
@@ -931,6 +968,7 @@
       updateHeroStats(){
         const tagSet = new Set();
         posts.forEach(post => (post.tags || []).forEach(tag => tagSet.add(tag)));
+        posts.forEach(post => this.depthMotifs(post).forEach(tag => tagSet.add(tag)));
         const latest = posts.map(postTimestamp).filter(Boolean).sort((a,b)=>b-a)[0];
         if (els.statPoems) els.statPoems.textContent = String(posts.length);
         if (els.statTags) els.statTags.textContent = String(tagSet.size || this.vibes(posts[0]?.title || '').length || 1);
@@ -947,6 +985,8 @@
         const img = this.firstImage(html);
         const rt = txt ? this.readTime(txt) : '';
         const tags = Array.isArray(post.tags) ? post.tags : this.vibes(post.title);
+        const motifs = this.depthMotifs(post);
+        const badges = [...new Set([...motifs, ...tags])].slice(0, 4);
 
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
@@ -964,8 +1004,9 @@
               ${dateStr ? `<span>${escapeHtml(dateStr)}</span>` : '' }
               ${rt ? `<span>${escapeHtml(rt)}</span>` : '' }
             </div>
+            ${motifs.length ? `<div class="card-motif">${escapeHtml(motifs[0])}</div>` : ''}
             <div class="card-summary">${escapeHtml(txt.slice(0, 240))}${txt.length > 240 ? '…' : ''}</div>
-            ${tags.length ? `<div class="card-badges">${tags.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
+            ${badges.length ? `<div class="card-badges">${badges.map(v=>`<span class="badge">${escapeHtml(v)}</span>`).join('')}</div>` : ''}
             <div class="card-actions">
               <a class="read-link" href="${post.link}" target="_blank" rel="noopener">Read on Substack <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 6l1.41 1.41L11.33 11.0H20v2H11.33l3.58 3.59L13.5 18 7.5 12z"></path></svg></a>
               <button type="button" class="linklike" data-quick-read="1" aria-controls="readingModal">Quick read</button>
