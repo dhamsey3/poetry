@@ -217,7 +217,7 @@
         <section id="postsGrid" class="posts-grid"{% if not posts %} hidden{% endif %}>
           {% if posts %}
             {% set accent_classes = ['accent', 'accent-2', 'accent-3'] %}
-            {% for post in posts[:6] %}
+            {% for post in posts[:7] %}
               {% set slug = post.slug or '' %}
               {% set candidate_url = post.url or post.link %}
               {% set post_url = candidate_url if candidate_url else (POSTS_BASE ~ '/p/' ~ slug if slug else POSTS_BASE) %}
@@ -787,7 +787,7 @@
     class ContentManager {
       constructor(){
         this.viewList = [];
-        this.pageSize = 6; // 6 posts per page
+        this.pageSize = 7; // 7 posts per page
         this.shown = 0;
         this.inlineConsumed = Boolean(posts.length);
       }
