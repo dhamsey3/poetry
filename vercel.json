@@ -1,0 +1,4 @@
+{
+  "buildCommand": "echo \"Using committed dist output\"",
+  "outputDirectory": "dist"
+}
