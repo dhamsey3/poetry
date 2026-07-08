@@ -301,7 +301,8 @@
       <div class="modal-header">
         <div class="about-header">
           <div class="about-mark" aria-hidden="true">
-            <img class="about-avatar" src="{{ STATIC }}avatar.jpg" alt="" onerror="this.src='{{ STATIC }}logo-light.svg'">
+            <img class="about-avatar logo-light" src="{{ STATIC }}logo-light.svg" alt="">
+            <img class="about-avatar logo-dark" src="{{ STATIC }}logo-dark.svg" alt="">
           </div>
           <div class="about-info">
             <div class="about-kicker">a field note from the interior</div>
@@ -639,7 +640,10 @@
 
     // Modals
     class ModalManager {
-      constructor(){ this.releaseTrap = null; }
+      constructor(){
+        this.releaseTrap = null;
+        this.activeModal = null;
+      }
       init(){
         // About open/close
         els.aboutBtn?.addEventListener('click', () => this.openAbout(), { passive: true });
@@ -692,29 +696,53 @@
         els.modalBody.style.setProperty('--reader-scale', next.toFixed(2));
         const meter = document.getElementById('readerSize'); meter && (meter.textContent = Math.round(next * 100) + '%');
       }
+      clearTrap(){
+        if (this.releaseTrap) {
+          this.releaseTrap();
+          this.releaseTrap = null;
+        }
+      }
       lockMain(lock){
         els.appRoot?.setAttribute('aria-hidden', String(lock));
         lock ? els.appRoot?.setAttribute('inert','') : els.appRoot?.removeAttribute('inert');
         document.body.style.overflow = lock ? 'hidden' : '';
       }
+      openModal(modal){
+        if (!modal) return;
+        if (this.activeModal && this.activeModal !== modal) this.closeActive({ restoreFocus: false });
+        this.clearTrap();
+        modal.removeAttribute('hidden');
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden','false');
+        this.activeModal = modal;
+        this.lockMain(true);
+        this.releaseTrap = Focus.trap(modal);
+        modal.focus();
+      }
+      closeActive(options = {}){
+        const { restoreFocus = true } = options;
+        const modal = this.activeModal;
+        if (!modal) {
+          this.lockMain(false);
+          return;
+        }
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden','true');
+        modal.setAttribute('hidden','');
+        this.clearTrap();
+        this.activeModal = null;
+        this.lockMain(false);
+        if (restoreFocus && lastFocus && document.contains(lastFocus)) lastFocus.focus();
+      }
       openAbout(){
         lastFocus = document.activeElement;
-        els.aboutModal?.removeAttribute('hidden');
-        els.aboutModal?.classList.add('open');
-        els.aboutModal?.setAttribute('aria-hidden','false');
-        this.lockMain(true);
-        this.releaseTrap = Focus.trap(els.aboutModal);
-        els.aboutModal?.focus();
+        this.openModal(els.aboutModal);
       }
       closeAbout(){
-        els.aboutModal?.classList.remove('open');
-        els.aboutModal?.setAttribute('aria-hidden','true');
-        els.aboutModal?.setAttribute('hidden','');
-        this.lockMain(false);
-        this.releaseTrap && this.releaseTrap();
-        lastFocus?.focus();
+        if (this.activeModal === els.aboutModal) this.closeActive();
       }
-      openReading(post, idx){
+      openReading(post, idx, options = {}){
+        const { preserveFocus = false } = options;
         const meta = post.pubDate ? new Date(post.pubDate).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' }) : '';
         els.modalTitle.textContent = post.title || 'Untitled';
         els.modalMeta.textContent = meta;
@@ -737,39 +765,34 @@
         els.modalBody.classList.remove('is-wide');
         const meter = document.getElementById('readerSize'); meter && (meter.textContent = '100%');
 
-        lastFocus = document.activeElement;
-        els.readingModal?.removeAttribute('hidden');
-        els.readingModal?.classList.add('open');
-        els.readingModal?.setAttribute('aria-hidden','false');
+        if (!preserveFocus) lastFocus = document.activeElement;
+        const wasReadingOpen = this.activeModal === els.readingModal;
         els.readingModal.dataset.index = idx;
         iModal = idx;
         els.bar.style.width = '0%';
         els.bar.setAttribute('aria-valuenow','0');
-        this.lockMain(true);
-        this.releaseTrap = Focus.trap(els.readingModal);
-        els.readingModal?.focus();
+        if (!wasReadingOpen) this.openModal(els.readingModal);
         this.updateNav();
       }
       closeReading(){
-        els.readingModal?.classList.remove('open');
-        els.readingModal?.setAttribute('aria-hidden','true');
-        els.readingModal?.setAttribute('hidden','');
         els.bar.style.width = '0%';
         els.bar.setAttribute('aria-valuenow','0');
         els.modalBody.scrollTop = 0;
-        this.lockMain(false);
-        this.releaseTrap && this.releaseTrap();
-        lastFocus?.focus();
+        if (this.activeModal === els.readingModal) this.closeActive();
       }
       key(e){
-        if (e.key === 'Escape') { this.closeAbout(); this.closeReading(); }
+        if (e.key === 'Escape') {
+          if (this.activeModal === els.readingModal) this.closeReading();
+          else if (this.activeModal === els.aboutModal) this.closeAbout();
+          else this.closeActive();
+        }
         if (els.readingModal?.classList.contains('open')) {
           if (e.key === 'ArrowRight') this.next();
           if (e.key === 'ArrowLeft') this.prev();
         }
       }
-      next(){ if (iModal < posts.length - 1) this.openReading(posts[iModal + 1], iModal + 1); }
-      prev(){ if (iModal > 0) this.openReading(posts[iModal - 1], iModal - 1); }
+      next(){ if (iModal < posts.length - 1) this.openReading(posts[iModal + 1], iModal + 1, { preserveFocus: true }); }
+      prev(){ if (iModal > 0) this.openReading(posts[iModal - 1], iModal - 1, { preserveFocus: true }); }
       updateNav(){ if (!els.prev || !els.next) return; els.prev.disabled = iModal <= 0; els.next.disabled = iModal >= posts.length - 1; }
       progress(){ const h = els.modalBody.scrollHeight - els.modalBody.clientHeight;
         const sc = h > 0 ? (els.modalBody.scrollTop / h) * 100 : 0;
