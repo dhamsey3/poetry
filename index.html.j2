@@ -2,6 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   {% set STATIC = static_base or './static/' %}
+  {% set ASSET_VERSION = '20260708-ui-refresh' %}
   <meta charset="utf-8" />
   <title>{{ site_title or "Torchborne" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -19,13 +20,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="preload" as="style" href="{{ STATIC }}tailwind-ui.css">
-  <link rel="stylesheet" href="{{ STATIC }}tailwind-ui.css">
-  <link rel="preload" as="style" href="{{ STATIC }}styles.css">
-  <link id="mainCss" rel="stylesheet" href="{{ STATIC }}styles.css">
+  <link rel="preload" as="style" href="{{ STATIC }}tailwind-ui.css?v={{ ASSET_VERSION }}">
+  <link rel="stylesheet" href="{{ STATIC }}tailwind-ui.css?v={{ ASSET_VERSION }}">
+  <link rel="preload" as="style" href="{{ STATIC }}styles.css?v={{ ASSET_VERSION }}">
+  <link id="mainCss" rel="stylesheet" href="{{ STATIC }}styles.css?v={{ ASSET_VERSION }}">
   <noscript>
-    <link rel="stylesheet" href="{{ STATIC }}tailwind-ui.css">
-    <link rel="stylesheet" href="{{ STATIC }}styles.css">
+    <link rel="stylesheet" href="{{ STATIC }}tailwind-ui.css?v={{ ASSET_VERSION }}">
+    <link rel="stylesheet" href="{{ STATIC }}styles.css?v={{ ASSET_VERSION }}">
   </noscript>
 
   <link rel="alternate" type="application/rss+xml" title="{{ site_title or 'Feed' }}" href="{{ feed_url }}" />
