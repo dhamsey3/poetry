@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build:css": "tailwindcss -i ./public/static/tailwind.input.css -o ./public/static/tailwind.css --minify",
+    "build:css": "tailwindcss -i ./public/static/tailwind.input.css -o ./public/static/tailwind-ui.css --minify",
     "build": "npm run build:css && ./.venv/bin/python fetch.py",
     "render": "./.venv/bin/python fetch.py",
     "serve": "cd dist && ../.venv/bin/python -m http.server 8080"

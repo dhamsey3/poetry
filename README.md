@@ -27,5 +27,5 @@ cd dist && python -m http.server 8080
 ```
 
 ## Styling
-Tailwind compiles from `public/static/tailwind.input.css` into `public/static/tailwind.css`.
+Tailwind compiles from `public/static/tailwind.input.css` into `public/static/tailwind-ui.css`.
 The hand-written editorial theme still lives in `public/static/styles.css`, so Tailwind utilities can be added gradually without rewriting the whole UI.
