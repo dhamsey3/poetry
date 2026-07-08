@@ -8,7 +8,7 @@
   <meta name="robots" content="index,follow" />
   <meta name="description" content="Poetry & musings by Dami." />
   <meta name="color-scheme" content="light dark" />
-  <meta id="themeColorMeta" name="theme-color" content="#f59e0b" />
+  <meta id="themeColorMeta" name="theme-color" content="#176b5f" />
   <link rel="canonical" href="https://versesvibez.substack.com/" />
 
   <!-- Fonts -->
@@ -19,9 +19,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 
   <!-- Styles -->
+  <link rel="preload" as="style" href="./static/tailwind.css">
+  <link rel="stylesheet" href="./static/tailwind.css">
   <link rel="preload" as="style" href="./static/styles.css">
   <link id="mainCss" rel="stylesheet" href="./static/styles.css">
-  <noscript><link rel="stylesheet" href="./static/styles.css"></noscript>
+  <noscript>
+    <link rel="stylesheet" href="./static/tailwind.css">
+    <link rel="stylesheet" href="./static/styles.css">
+  </noscript>
 
   <link rel="alternate" type="application/rss+xml" title="torchborne" href="https://versesvibez.substack.com/feed" />
   <link rel="icon" type="image/png" sizes="64x64" href="./static/logo-light.png">
@@ -81,40 +86,63 @@
   <!-- Progress Bar -->
   <div class="progress-bar" id="progressBar" role="progressbar" aria-live="off" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 
-  <div id="appRoot" class="main-content" aria-hidden="false">
+  <div id="appRoot" class="main-content min-h-screen" aria-hidden="false">
     <!-- HERO -->
     <section class="hero">
       <div class="wrap">
-        <div class="hero-content">
-          <div class="brand-section">
-            <a href="./" class="brand-link">
-              <img src="./static/logo-light.svg" alt="Torchborne logo" class="logo-img logo-light" fetchpriority="high" width="64" height="64" />
-              <img src="./static/logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
-              <h1 class="brand-name">torchborne</h1>
-            </a>
-            <div class="hero-tagline" aria-live="polite">where words carry the flame</div>
-          </div>
-
-          <div class="hero-actions">
-            <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
-              <span id="themeText">Theme</span>
-            </button>
-            <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
-            <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">About</button>
-            
-            <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener">Subscribe</a>
-          </div>
-
-          <div class="search-section">
-            <div class="search-wrapper">
-              <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M21 21l-4.35-4.35M10.5 18A7.5 7.5 0 1010.5 3a7.5 7.5 0 000 15z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              <input id="searchInput" type="search" class="search-input" placeholder="Search through poems and musings..." aria-label="Search poems" />
+        <div class="hero-content mx-auto max-w-5xl">
+          <div class="hero-copy">
+            <div class="brand-section">
+              <a href="./" class="brand-link">
+                <img src="./static/logo-light.svg" alt="Torchborne logo" class="logo-img logo-light" fetchpriority="high" width="64" height="64" />
+                <img src="./static/logo-dark.svg" alt="Torchborne logo" class="logo-img logo-dark" fetchpriority="high" width="64" height="64" />
+                <h1 class="brand-name">torchborne</h1>
+              </a>
+              <div class="hero-tagline" aria-live="polite">where words carry the flame</div>
             </div>
-            <!-- NEW: Tag filter chips -->
-            <div id="tagFilters" class="filter-chips" aria-label="Filter poems by tag"></div>
+
+            <div class="hero-actions" aria-label="Primary actions">
+              <button id="themeToggle" class="chip accent" title="Toggle theme" aria-pressed="false">
+                <span id="themeText">Theme</span>
+              </button>
+              <button id="refreshBtn" class="chip accent" title="Refresh posts">↻ Refresh</button>
+              <button id="aboutBtn" class="btn" title="About" aria-haspopup="dialog" aria-controls="aboutModal">About</button>
+              
+              <a class="btn btn-primary" href="https://versesvibez.substack.com/subscribe" rel="noopener">Subscribe</a>
+            </div>
+
+            <div class="search-section">
+              <div class="search-wrapper">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M21 21l-4.35-4.35M10.5 18A7.5 7.5 0 1010.5 3a7.5 7.5 0 000 15z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <input id="searchInput" type="search" class="search-input" placeholder="Search through poems and musings..." aria-label="Search poems" />
+              </div>
+              <div id="tagFilters" class="filter-chips" aria-label="Filter poems by tag"></div>
+            </div>
+
+            <div class="hero-stats" aria-label="Collection stats">
+              <div><strong id="statPoems">0</strong><span>poems</span></div>
+              <div><strong id="statTags">0</strong><span>threads</span></div>
+              <div><strong id="statLatest">new</strong><span>latest signal</span></div>
+            </div>
           </div>
+
+          <aside class="hero-orbit" aria-label="Featured reading mood">
+            <div class="orbit-ring" aria-hidden="true"></div>
+            <div class="poem-window">
+              <div class="window-top">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="poem-lines" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <p id="heroSnippet">A small flame for every quiet hour.</p>
+            </div>
+          </aside>
         </div>
       </div>
     </section>
@@ -127,7 +155,7 @@
         
 
         <div id="statusMessage" class="status" role="status" aria-live="polite">
-          Gathering poems from the digital ether...
+          Loading poems...
         </div>
 
         <section id="postsGrid" class="posts-grid" hidden>
@@ -380,6 +408,10 @@
       next: document.getElementById('nextPost'),
       copyEmailBtn: document.getElementById('copyEmailBtn'),
       tagFilters: document.getElementById('tagFilters'),
+      statPoems: document.getElementById('statPoems'),
+      statTags: document.getElementById('statTags'),
+      statLatest: document.getElementById('statLatest'),
+      heroSnippet: document.getElementById('heroSnippet'),
     };
 
     // ===== STATE =====
@@ -429,7 +461,7 @@
         this.bump(els.themeToggle); this.syncButton(); this.setThemeColor(next);
       }
       syncButton(){ const mode = document.documentElement.getAttribute('data-theme') || 'light';
-        els.themeIcon && (els.themeIcon.textContent = mode === 'dark' ? '☀️' : '🌙');
+        els.themeIcon && (els.themeIcon.textContent = mode === 'dark' ? 'Light' : 'Dark');
         els.themeText && (els.themeText.textContent = mode === 'dark' ? 'Light mode' : 'Dark mode');
       }
       setThemeColor(mode){ const meta = document.getElementById('themeColorMeta');
@@ -879,6 +911,33 @@
       }
       readTime(txt){ const w=(txt.trim().match(/\S+/g)||[]).length; return `${Math.max(1, Math.round(w/180))} min read`; }
       vibes(title=''){ const words=(title||'').toLowerCase().match(/[a-z]{4,}/g)||[]; return [...new Set(words.slice(0,2))]; }
+      titleSeed(title=''){
+        let seed = 0;
+        for (const char of String(title || 'Torchborne')) seed = (seed + char.charCodeAt(0) * 17) % 360;
+        return seed;
+      }
+      art(title='', accentClass='accent'){
+        const seed = this.titleSeed(title);
+        const words = String(title || 'Torchborne').split(/\s+/).filter(Boolean).slice(0, 3);
+        const glyph = escapeHtml((words[0] || 'T').slice(0, 1).toUpperCase());
+        return `<div class="card-thumb generated-art ${accentClass}" style="--seed:${seed}" aria-hidden="true">
+          <span class="art-glyph">${glyph}</span>
+          <span class="art-line one"></span>
+          <span class="art-line two"></span>
+          <span class="art-line three"></span>
+        </div>`;
+      }
+      updateHeroStats(){
+        const tagSet = new Set();
+        posts.forEach(post => (post.tags || []).forEach(tag => tagSet.add(tag)));
+        const latest = posts.map(postTimestamp).filter(Boolean).sort((a,b)=>b-a)[0];
+        if (els.statPoems) els.statPoems.textContent = String(posts.length);
+        if (els.statTags) els.statTags.textContent = String(tagSet.size || this.vibes(posts[0]?.title || '').length || 1);
+        if (els.statLatest) els.statLatest.textContent = latest ? new Date(latest).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : 'new';
+        const first = posts[0];
+        const text = first ? this.textOnly(first.content || first.description || first.title || '').slice(0, 86) : '';
+        if (els.heroSnippet && text) els.heroSnippet.textContent = text + (text.length >= 86 ? '...' : '');
+      }
 
       card(post, idx){
         const date = post.pubDate ? new Date(post.pubDate) : null;
@@ -891,13 +950,13 @@
         const el = document.createElement('article');
         const palettes = ['accent','accent-2','accent-3'];
         const accentClass = palettes[idx % palettes.length];
-        el.className = `card ${accentClass}`;
+        el.className = `card ${accentClass}${idx === 0 ? ' featured-card' : ''}`;
         el.style.transitionDelay = `${Math.min(idx,15)*100}ms`;
         el.setAttribute('aria-label', post.title || 'Poem');
 
         const dateStr = date ? date.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '';
         el.innerHTML = `
-          ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : `<div class="card-thumb" aria-hidden="true"></div>`}
+          ${img ? `<div class="card-thumb"><img loading="lazy" decoding="async" src="${img}" alt="" /></div>` : this.art(post.title, accentClass)}
           <div class="card-content">
             <h2 class="card-title"><a href="${post.link}" target="_blank" rel="noopener">${escapeHtml(post.title || 'Untitled')}</a></h2>
             <div class="card-meta">
@@ -935,6 +994,7 @@
       }
 
       render(list){
+        this.updateHeroStats();
         els.grid.hidden = false;
         this.viewList = list;
         els.grid.innerHTML = "";
@@ -999,7 +1059,7 @@
           els.status.className = 'status';
           els.status.hidden = false;
           els.status.removeAttribute('role');
-          els.status.textContent = force ? 'Refreshing poems from the digital ether...' : 'Gathering poems from the digital ether...';
+          els.status.textContent = force ? 'Refreshing poems...' : 'Loading poems...';
           els.grid.innerHTML = '';
           for (let i = 0; i < this.pageSize; i++) els.grid.appendChild(this.skeleton());
         } else {
