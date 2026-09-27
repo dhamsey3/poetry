@@ -419,7 +419,7 @@ img { display: block; max-width: 100%; }
 .reader-body figure { max-width: 100%; margin: 24px 0 34px; }
 .reader-body picture { display: block; max-width: 100%; }
 .reader-body img { width: auto; max-width: 100%; height: auto; max-height: 520px; margin: 0 auto; border-radius: var(--radius-sm); object-fit: contain; }
-.reader-body pre { max-width: 100%; margin: 0 0 1.65em; overflow: visible; white-space: pre-wrap; }
+.reader-body pre { max-width: 100%; margin: 0 0 1.65em; overflow: visible; white-space: pre-wrap; font: inherit; }
 .reader-body code { font: inherit; white-space: inherit; overflow-wrap: anywhere; }
 .reader-body .image-link-expand,
 .reader-body .subscription-widget-wrap-editor { display: none; }
