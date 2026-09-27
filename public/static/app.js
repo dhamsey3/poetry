@@ -86,6 +86,81 @@
       text(enclosure && (enclosure.link || enclosure.url));
   }
 
+  const NAMED_ENTITIES = {
+    nbsp: ' ', amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', rsquo: '\u2019', lsquo: '\u2018',
+    rdquo: '\u201d', ldquo: '\u201c', mdash: '\u2014', ndash: '\u2013', hellip: '\u2026',
+  };
+
+  function decodeEntities(value) {
+    return String(value || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
+      if (entity[0] === '#') {
+        const code = entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : parseInt(entity.slice(1), 10);
+        return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+      }
+      const named = NAMED_ENTITIES[entity.toLowerCase()];
+      return named == null ? match : named;
+    });
+  }
+
+  function verseTextOf(html) {
+    const match = /<pre[^>]*>([\s\S]*?)<\/pre>/i.exec(String(html || ''));
+    return match ? decodeEntities(match[1].replace(/<[^>]+>/g, '')) : '';
+  }
+
+  // Splits verse text into stanzas; a line of only dashes/asterisks marks a section break.
+  function parseVerse(value) {
+    const blocks = [];
+    let lines = [];
+    const flush = () => { if (lines.length) blocks.push({ type: 'stanza', lines }); lines = []; };
+    String(value || '').replace(/\r\n?/g, '\n').split('\n').forEach((raw) => {
+      const line = raw.replace(/\s+$/, '');
+      if (/^\s*([-*_]\s*){3,}$/.test(line)) {
+        flush();
+        if (blocks.length && blocks[blocks.length - 1].type !== 'break') blocks.push({ type: 'break' });
+      } else if (!line.trim()) flush();
+      else lines.push(line);
+    });
+    flush();
+    while (blocks.length && blocks[blocks.length - 1].type === 'break') blocks.pop();
+    return blocks;
+  }
+
+  function clip(value, limit) {
+    const clean = text(value).replace(/\s+/g, ' ');
+    if (clean.length <= limit) return clean;
+    const cut = clean.slice(0, limit + 1);
+    const space = cut.lastIndexOf(' ');
+    return `${(space > limit * 0.6 ? cut.slice(0, space) : cut.slice(0, limit)).replace(/[\s,;:—–-]+$/, '')}…`;
+  }
+
+  function openingLine(verse, summary) {
+    const stanza = parseVerse(verse).find((block) => block.type === 'stanza');
+    if (!stanza) return clip(summary, 90);
+    let line = '';
+    for (const next of stanza.lines) {
+      line = line ? `${line} / ${next.trim()}` : next.trim();
+      if (line.length >= 45) break;
+    }
+    if (line.length > 90) return clip(line, 90);
+    return /[.!?…”"]$/.test(line) ? line : `${line.replace(/[\s,;:—–-]+$/, '')}…`;
+  }
+
+  function romanize(value) {
+    let number = Math.floor(Number(value));
+    if (!Number.isFinite(number) || number <= 0 || number >= 4000) return String(value || '');
+    const table = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+    let out = '';
+    for (const [amount, numeral] of table) {
+      while (number >= amount) { out += numeral; number -= amount; }
+    }
+    return out;
+  }
+
+  function pickFeatured(posts) {
+    const list = posts || [];
+    return list.find((post) => parseVerse(post.verse).some((block) => block.type === 'stanza')) || list[0] || null;
+  }
+
   function normalizePost(raw, index) {
     const source = raw || {};
     const title = text(source.title) || 'Untitled poem';
@@ -96,6 +171,7 @@
     const slugBase = slugFromLink(link) || slugify(title);
     const slug = slugBase === 'poem' ? `poem-${Number(index || 0) + 1}` : slugBase;
     const mood = classifyMood({ ...source, title, description: summary, categories: tags });
+    const verse = verseTextOf(content);
     return {
       ...source,
       title,
@@ -105,6 +181,8 @@
       mood,
       summary,
       content,
+      verse,
+      opening: openingLine(verse, summary),
       image: imageOf(source),
       date: text(source.pubDate || source.date || source.published_at),
       searchText: `${title} ${summary} ${tags.join(' ')} ${mood}`.toLowerCase(),
@@ -280,6 +358,9 @@
       readerBody: byId('readerBody'), readerScale: byId('readerScale'), readerShare: byId('readerShare'),
       readerSource: byId('readerSource'), previous: byId('previousPost'), next: byId('nextPost'),
       related: byId('relatedGrid'), dialog: byId('subscribeDialog'),
+      heroCount: byId('heroCount'), featured: byId('featuredPoem'), featuredLabel: byId('featuredLabel'),
+      featuredLink: byId('featuredLink'), featuredMeta: byId('featuredMeta'), featuredVerse: byId('featuredVerse'),
+      featuredRead: byId('featuredRead'), readerNumber: byId('readerNumber'),
     };
     if (!elements.home || !elements.grid) return null;
 
@@ -304,7 +385,36 @@
     function dateLabel(value) {
       if (!value) return '';
       const parsed = new Date(value);
-      return Number.isNaN(parsed.getTime()) ? text(value) : new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(parsed);
+      if (Number.isNaN(parsed.getTime())) return text(value);
+      return `${parsed.getDate()} ${new Intl.DateTimeFormat('en-US', { month: 'short' }).format(parsed)} ${parsed.getFullYear()}`;
+    }
+
+    function longDate(value) {
+      const parsed = new Date(value);
+      return value && !Number.isNaN(parsed.getTime())
+        ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'long' }).format(parsed) : '';
+    }
+
+    function numberOf(post) {
+      return romanize(state.posts.length - Number(post.sourceIndex || 0));
+    }
+
+    function verseFragment(blocks, dropCap) {
+      const fragment = doc.createDocumentFragment();
+      blocks.forEach((block, index) => {
+        const node = doc.createElement('p');
+        if (block.type === 'break') {
+          node.className = 'fleuron'; node.setAttribute('aria-hidden', 'true'); node.textContent = '\u2767';
+        } else {
+          node.className = index === 0 && dropCap ? 'stanza has-drop-cap' : 'stanza';
+          block.lines.forEach((line, lineIndex) => {
+            if (lineIndex) node.append(doc.createElement('br'));
+            node.append(doc.createTextNode(line));
+          });
+        }
+        fragment.append(node);
+      });
+      return fragment;
     }
 
     function moodLabel(mood) {
@@ -312,19 +422,70 @@
     }
 
     function postCard(post, compact) {
-      const article = doc.createElement('article');
-      article.className = compact ? 'poem-card poem-card--compact' : 'poem-card';
-      const image = post.image && !compact
-        ? `<a class="poem-card__media" href="${formatHash({ view: 'reader', slug: post.slug })}" data-open-poem="${escapeHtml(post.slug)}"><img src="${escapeHtml(safeUrl(post.image))}" alt="" loading="lazy"></a>` : '';
-      const tags = post.tags.slice(0, 2).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('');
-      article.innerHTML = `${image}<div class="poem-card__body">
-        <div class="poem-card__meta"><span class="mood-label mood-label--${post.mood}">${moodLabel(post.mood)}</span>${dateLabel(post.date) ? `<time>${escapeHtml(dateLabel(post.date))}</time>` : ''}</div>
-        <h3><a href="${formatHash({ view: 'reader', slug: post.slug })}" data-open-poem="${escapeHtml(post.slug)}">${escapeHtml(post.title)}</a></h3>
-        ${post.summary ? `<p>${escapeHtml(post.summary)}</p>` : ''}
-        ${tags ? `<div class="poem-card__tags">${tags}</div>` : ''}
-        <div class="poem-card__actions"><a href="${formatHash({ view: 'reader', slug: post.slug })}" data-open-poem="${escapeHtml(post.slug)}">Read poem <span aria-hidden="true">→</span></a><button type="button" data-share="${encodeURIComponent(post.link)}" data-title="${escapeHtml(post.title)}">Share</button></div>
-      </div>`;
-      return article;
+      const href = formatHash({ view: 'reader', slug: post.slug });
+      const slug = escapeHtml(post.slug);
+      const date = dateLabel(post.date) ? `<time>${escapeHtml(dateLabel(post.date))}</time>` : '';
+      const mood = `<span class="mood-label mood-label--${post.mood}">${moodLabel(post.mood)}</span>`;
+      const opening = post.opening ? `<span class="contents-row__opening">${escapeHtml(post.opening)}</span>` : '';
+      const item = doc.createElement(compact ? 'article' : 'div');
+      if (compact) {
+        item.className = 'poem-card poem-card--compact';
+        item.innerHTML = `<p class="poem-card__number">${numberOf(post)}. · ${mood}</p>
+          <h3><a href="${href}" data-open-poem="${slug}">${escapeHtml(post.title)}</a></h3>${opening}`;
+        return item;
+      }
+      item.className = 'contents-row';
+      item.setAttribute('role', 'listitem');
+      item.innerHTML = `<a class="contents-row__link" href="${href}" data-open-poem="${slug}">
+        <span class="contents-row__number">${numberOf(post)}.</span>
+        <span class="contents-row__main">
+          <span class="contents-row__line"><span class="contents-row__title">${escapeHtml(post.title)}</span><span class="contents-row__leader" aria-hidden="true"></span>${date}</span>
+          ${opening}
+        </span>
+        ${mood}
+      </a>`;
+      return item;
+    }
+
+    function renderFeatured() {
+      if (!elements.featured) return;
+      const post = pickFeatured(state.posts);
+      elements.featured.hidden = !post;
+      if (!post) return;
+      const blocks = parseVerse(post.verse);
+      const excerpt = [];
+      let lines = 0;
+      for (const block of blocks) {
+        if (block.type === 'stanza' && (lines >= 10 || excerpt.filter((entry) => entry.type === 'stanza').length >= 2)) break;
+        if (block.type === 'stanza') lines += block.lines.length;
+        excerpt.push(block);
+      }
+      while (excerpt.length && excerpt[excerpt.length - 1].type === 'break') excerpt.pop();
+      elements.featuredLabel.textContent = `From the contents \u00b7 ${numberOf(post)}.`;
+      elements.featuredLink.textContent = post.title;
+      [elements.featuredLink, elements.featuredRead].forEach((link) => {
+        link.href = formatHash({ view: 'reader', slug: post.slug });
+        link.dataset.openPoem = post.slug;
+      });
+      elements.featuredMeta.textContent = [`A poem of ${post.mood}`, longDate(post.date)].filter(Boolean).join(' \u00b7 ');
+      if (excerpt.length) elements.featuredVerse.replaceChildren(verseFragment(excerpt, true));
+      else {
+        const note = doc.createElement('p');
+        note.className = 'stanza'; note.textContent = post.opening || post.summary;
+        elements.featuredVerse.replaceChildren(note);
+      }
+    }
+
+    function renderHeroCount() {
+      if (!elements.heroCount) return;
+      const count = state.posts.length;
+      const oldest = state.posts.reduce((earliest, post) => {
+        const time = new Date(post.date).getTime();
+        return Number.isFinite(time) && (!earliest || time < earliest) ? time : earliest;
+      }, 0);
+      const since = oldest ? new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' }).format(new Date(oldest)) : '';
+      elements.heroCount.textContent = count ? `${count} ${count === 1 ? 'poem' : 'poems'}${since ? ` \u00b7 begun in ${since}` : ''}` : '';
+      elements.heroCount.hidden = !count;
     }
 
     function renderTags() {
@@ -353,11 +514,18 @@
       elements.loadMore.hidden = results.length <= visible.length;
       const qualifier = state.query || state.mood !== 'all' || state.tag ? ' matching your search' : '';
       elements.summary.textContent = `${results.length} ${results.length === 1 ? 'poem' : 'poems'}${qualifier}`;
+      const moodCounts = state.posts.reduce((counts, post) => ({ ...counts, [post.mood]: (counts[post.mood] || 0) + 1 }), {});
       elements.moods.querySelectorAll('[data-mood]').forEach((button) => {
         const active = button.dataset.mood === state.mood;
+        const count = button.dataset.mood === 'all' ? state.posts.length : (moodCounts[button.dataset.mood] || 0);
         button.classList.toggle('is-active', active); button.setAttribute('aria-pressed', String(active));
+        button.hidden = Boolean(state.posts.length) && !count && !active;
+        const counter = button.querySelector('.filter-chip__count');
+        if (counter) counter.textContent = state.posts.length ? String(count) : '';
       });
       renderTags();
+      renderFeatured();
+      renderHeroCount();
     }
 
     function showView(view) {
@@ -375,8 +543,10 @@
       if (!post) return false;
       state.slug = slug;
       elements.readerTitle.textContent = post.title;
-      elements.readerMeta.innerHTML = `<span class="mood-label mood-label--${post.mood}">${moodLabel(post.mood)}</span>${dateLabel(post.date) ? `<time>${escapeHtml(dateLabel(post.date))}</time>` : ''}`;
+      if (elements.readerNumber) elements.readerNumber.textContent = `${numberOf(post)}.`;
+      elements.readerMeta.innerHTML = `<span class="mood-label mood-label--${post.mood}">A poem of ${post.mood}</span>${longDate(post.date) ? `<span aria-hidden="true">\u00b7</span><time>${escapeHtml(longDate(post.date))}</time>` : ''}`;
       elements.readerBody.innerHTML = sanitizeArticle(post.content || post.summary, doc);
+      layoutVerse(elements.readerBody);
       elements.readerBody.style.setProperty('--reader-scale', state.readerScale);
       elements.readerScale.textContent = `${Math.round(state.readerScale * 100)}%`;
       elements.readerSource.href = safeUrl(post.link) || config.publicUrl || '#';
@@ -384,13 +554,26 @@
       elements.readerShare.dataset.title = post.title;
       const results = currentResults();
       const adjacent = getAdjacent(results.some((entry) => entry.slug === slug) ? results : state.posts, slug);
-      renderAdjacent(elements.previous, adjacent.previous, '← Previous');
-      renderAdjacent(elements.next, adjacent.next, 'Next →');
+      renderAdjacent(elements.previous, adjacent.previous, (post) => `\u2190 Newer \u00b7 ${numberOf(post)}.`);
+      renderAdjacent(elements.next, adjacent.next, (post) => `Older \u00b7 ${numberOf(post)}. \u2192`);
       elements.related.replaceChildren(...rankRelated(state.posts, post, 3).map((entry) => postCard(entry, true)));
       showView('reader');
       doc.title = `${post.title} — Torchborne`;
       win.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
       return true;
+    }
+
+    function layoutVerse(container) {
+      container.querySelectorAll('pre').forEach((pre) => {
+        const blocks = parseVerse(pre.textContent);
+        if (!blocks.length) { pre.remove(); return; }
+        const verse = doc.createElement('div');
+        verse.className = 'verse';
+        verse.append(verseFragment(blocks, false));
+        pre.replaceWith(verse);
+      });
+      const first = [...container.querySelectorAll('.stanza, p')].find((node) => !node.closest('figure') && text(node.textContent).length > 1);
+      if (first) first.classList.add('has-drop-cap');
     }
 
     function showStatusNote(message) {
@@ -404,7 +587,7 @@
       button.disabled = !post;
       if (!post) return;
       button.dataset.openPoem = post.slug;
-      button.innerHTML = `<span>${label}</span><strong>${escapeHtml(post.title)}</strong>`;
+      button.innerHTML = `<span>${escapeHtml(label(post))}</span><strong>${escapeHtml(post.title)}</strong>${post.opening ? `<em>${escapeHtml(post.opening)}</em>` : ''}`;
     }
 
     function reducedMotion() {
@@ -447,7 +630,7 @@
       elements.theme.setAttribute('aria-pressed', String(value === 'dark'));
       elements.theme.setAttribute('aria-label', value === 'dark' ? 'Use light theme' : 'Use dark theme');
       writePreference(storageOf(win), 'torchborne-theme', value);
-      const meta = byId('themeColorMeta'); if (meta) meta.content = value === 'dark' ? '#171510' : '#fbf7ed';
+      const meta = byId('themeColorMeta'); if (meta) meta.content = value === 'dark' ? '#15130f' : '#f3eee4';
     }
 
     function openDialog(trigger) {
@@ -475,7 +658,12 @@
         const open = event.target.closest('[data-open-poem]');
         if (open) { event.preventDefault(); state.lastScroll = win.scrollY; win.location.hash = formatHash({ view: 'reader', slug: open.dataset.openPoem }); return; }
         const routeLink = event.target.closest('[data-route]');
-        if (routeLink) { event.preventDefault(); win.location.hash = routeLink.dataset.route === 'about' ? '#about' : ''; route(); return; }
+        if (routeLink) {
+          event.preventDefault(); win.location.hash = routeLink.dataset.route === 'about' ? '#about' : ''; route();
+          const contents = routeLink.dataset.route === 'contents' && byId('contents');
+          if (contents) win.requestAnimationFrame(() => contents.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth' }));
+          return;
+        }
         const mood = event.target.closest('[data-mood]');
         if (mood) { state.mood = mood.dataset.mood; state.visible = 7; renderHome(); return; }
         const tag = event.target.closest('[data-tag]');
@@ -560,15 +748,20 @@
     formatHash,
     getAdjacent,
     normalizePost,
+    openingLine,
     parseHash,
+    parseVerse,
+    pickFeatured,
     proxyRequestUrl,
     rankRelated,
     readPreference,
+    romanize,
     resolveRoute,
     init,
     sanitizeArticle,
     slugify,
     stripHtml,
+    verseTextOf,
     writePreference,
   };
 });

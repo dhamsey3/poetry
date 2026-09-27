@@ -4,10 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Poems for the shadow, the dream, and the returning self.">
-  <meta id="themeColorMeta" name="theme-color" content="#fbf7ed">
+  <meta id="themeColorMeta" name="theme-color" content="#f3eee4">
   <title>{{ site_title or "Torchborne" }}</title>
   {% set STATIC = static_base or './static/' %}
   {% set ASSET_VERSION = generated_at_iso or generated_at or '1' %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
   <link rel="stylesheet" href="{{ STATIC }}tailwind-ui.css?v={{ ASSET_VERSION }}">
   <link rel="stylesheet" href="{{ STATIC }}styles.css?v={{ ASSET_VERSION }}">
   <script>
@@ -37,6 +40,7 @@
         <span>Torchborne</span>
       </a>
       <nav class="site-nav" aria-label="Primary navigation">
+        <a class="nav-link nav-link--contents" href="#contents" data-route="contents">Contents</a>
         <a class="nav-link" href="#about" data-route="about">About</a>
         <button class="icon-button" id="themeToggle" type="button" aria-label="Use dark theme" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -50,27 +54,32 @@
     <section class="home-view" id="homeView" aria-labelledby="homeTitle">
       <div class="page-shell">
         <header class="hero">
-          <svg class="hero__flame" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/></svg>
           <p class="eyebrow">Shadow · Dream · Return</p>
-          <h1 id="homeTitle">Poems for the shadow, the dream, and the returning self</h1>
+          <h1 id="homeTitle">Poems for the shadow, the dream, and the <em>returning</em> self.</h1>
+          <span class="ornament" aria-hidden="true">❦</span>
           <p class="hero__intro">A small flame for what waits beneath the quiet. Read slowly, and follow whatever word keeps glowing after you leave.</p>
-
-          <div class="discovery" aria-label="Find a poem">
-            <label class="search-field" for="searchInput">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-              <span class="visually-hidden">Search poems</span>
-              <input id="searchInput" type="search" autocomplete="off" placeholder="Search poems, symbols, and themes">
-            </label>
-            <div class="filter-row" id="moodFilters" aria-label="Filter by mood">
-              <button class="filter-chip is-active" type="button" data-mood="all" aria-pressed="true">All poems</button>
-              <button class="filter-chip" type="button" data-mood="shadow" aria-pressed="false">Shadow</button>
-              <button class="filter-chip" type="button" data-mood="dream" aria-pressed="false">Dream</button>
-              <button class="filter-chip" type="button" data-mood="return" aria-pressed="false">Return</button>
-            </div>
-            <div class="filter-row filter-row--tags" id="tagFilters" aria-label="Filter by tag" hidden></div>
-          </div>
+          <p class="hero__count" id="heroCount" hidden></p>
         </header>
+      </div>
 
+      <section class="featured" id="featuredPoem" aria-labelledby="featuredTitle" hidden>
+        <div class="featured__inner">
+          <div class="featured__intro">
+            <div>
+              <p class="eyebrow featured__label">
+                <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/></svg>
+                <span id="featuredLabel">From the contents</span>
+              </p>
+              <h2 id="featuredTitle"><a id="featuredLink" href="#contents"></a></h2>
+              <p class="featured__meta" id="featuredMeta"></p>
+            </div>
+            <a class="button button--outline" id="featuredRead" href="#contents">Read the poem <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="featured__verse verse" id="featuredVerse"></div>
+        </div>
+      </section>
+
+      <div class="page-shell">
         {% if featured_ebook %}
         <aside class="ebook-spotlight" id="ebookSpotlight" aria-labelledby="ebookTitle">
           {% if featured_ebook.cover %}<img class="ebook-spotlight__cover" src="{{ featured_ebook.cover }}" alt="Cover of {{ featured_ebook.title }}" loading="lazy">{% endif %}
@@ -87,20 +96,34 @@
         </aside>
         {% endif %}
 
-        <section class="poem-library" aria-labelledby="libraryTitle">
+        <section class="poem-library" id="contents" aria-labelledby="libraryTitle">
           <div class="section-heading">
-            <div>
-              <p class="eyebrow">The archive</p>
-              <h2 id="libraryTitle">Choose what glows</h2>
-            </div>
-            <p class="result-summary" id="resultSummary" role="status" aria-live="polite">Preparing the poems…</p>
+            <p class="eyebrow">Contents</p>
+            <h2 id="libraryTitle">Every poem, newest first</h2>
+            <span class="ornament ornament--small" aria-hidden="true">✦</span>
           </div>
+
+          <div class="discovery" aria-label="Find a poem">
+            <div class="filter-row" id="moodFilters" role="group" aria-label="Filter by mood">
+              <button class="filter-chip is-active" type="button" data-mood="all" aria-pressed="true">All <span class="filter-chip__count"></span></button>
+              <button class="filter-chip" type="button" data-mood="shadow" aria-pressed="false">Shadow <span class="filter-chip__count"></span></button>
+              <button class="filter-chip" type="button" data-mood="dream" aria-pressed="false">Dream <span class="filter-chip__count"></span></button>
+              <button class="filter-chip" type="button" data-mood="return" aria-pressed="false">Return <span class="filter-chip__count"></span></button>
+            </div>
+            <label class="search-field" for="searchInput">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+              <span class="visually-hidden">Search poems</span>
+              <input id="searchInput" type="search" autocomplete="off" placeholder="Search a word, a line, a feeling">
+            </label>
+          </div>
+          <div class="filter-row filter-row--tags" id="tagFilters" role="group" aria-label="Filter by tag" hidden></div>
+          <p class="result-summary" id="resultSummary" role="status" aria-live="polite">Preparing the poems…</p>
 
           <div class="status-state" id="statusMessage" role="status" aria-live="polite">
             <span class="status-state__flame" aria-hidden="true"></span>
             <p>Gathering the latest poems…</p>
           </div>
-          <div class="posts-grid" id="postsGrid" aria-live="polite" hidden></div>
+          <div class="contents-list" id="postsGrid" role="list" aria-label="Poems" hidden></div>
           <div class="empty-state" id="emptyState" hidden>
             <h3>No poem is glowing here yet</h3>
             <p>Try another word or clear the active filters.</p>
@@ -113,21 +136,29 @@
 
     <section class="reader-view" id="readerView" aria-labelledby="readerTitle" hidden>
       <div class="reader-shell">
-        <button class="back-link" id="readerBack" type="button">← All poems</button>
+        <div class="reader-topbar">
+          <button class="back-link" id="readerBack" type="button"><span aria-hidden="true">←</span> Contents</button>
+          <div class="reader-tools" role="group" aria-label="Text size">
+            <button class="reader-size reader-size--down" type="button" data-reader-dec aria-label="Decrease poem text size">A</button>
+            <output id="readerScale" aria-live="polite">100%</output>
+            <button class="reader-size reader-size--up" type="button" data-reader-inc aria-label="Increase poem text size">A</button>
+          </div>
+        </div>
         <article class="reader-article">
           <header class="reader-header">
-            <div class="reader-meta" id="readerMeta"></div>
-            <div class="reader-tools" aria-label="Reading controls">
-              <button class="icon-button reader-size" type="button" data-reader-dec aria-label="Decrease poem text size">A−</button>
-              <output id="readerScale" aria-live="polite">100%</output>
-              <button class="icon-button reader-size" type="button" data-reader-inc aria-label="Increase poem text size">A+</button>
-            </div>
+            <p class="reader-number" id="readerNumber"></p>
             <h1 id="readerTitle"></h1>
+            <div class="reader-meta" id="readerMeta"></div>
+            <span class="ornament" aria-hidden="true">❦</span>
           </header>
           <div class="reader-body" id="readerBody"></div>
+          <p class="reader-end" aria-hidden="true">⁂</p>
           <footer class="reader-actions">
-            <button class="text-button" id="readerShare" type="button">Share poem</button>
-            <a class="text-button" id="readerSource" href="{{ POSTS_BASE }}" target="_blank" rel="noopener">Open on Substack ↗</a>
+            <span class="reader-actions__note">First published on Substack</span>
+            <span class="reader-actions__links">
+              <button class="button button--secondary" id="readerShare" type="button">Share poem</button>
+              <a class="button button--secondary" id="readerSource" href="{{ POSTS_BASE }}" target="_blank" rel="noopener">Open on Substack ↗</a>
+            </span>
           </footer>
         </article>
         <nav class="reader-pagination" aria-label="Adjacent poems">
@@ -136,10 +167,8 @@
         </nav>
         <section class="related" aria-labelledby="relatedTitle">
           <div class="section-heading section-heading--compact">
-            <div>
-              <p class="eyebrow">Keep reading</p>
-              <h2 id="relatedTitle">Whatever glows next</h2>
-            </div>
+            <p class="eyebrow">Keep reading</p>
+            <h2 id="relatedTitle">Whatever glows next</h2>
           </div>
           <div class="posts-grid posts-grid--related" id="relatedGrid"></div>
         </section>
@@ -148,9 +177,10 @@
 
     <section class="about-view" id="aboutView" aria-labelledby="aboutTitle" hidden>
       <div class="about-shell">
-        <button class="back-link" type="button" data-route="home">← All poems</button>
+        <button class="back-link" type="button" data-route="home"><span aria-hidden="true">←</span> Contents</button>
         <p class="eyebrow">About Torchborne</p>
         <h1 id="aboutTitle">A place for language that listens back</h1>
+        <span class="ornament" aria-hidden="true">❦</span>
         <p class="about-lede">Torchborne gathers poems and reflections that move through longing, memory, faith, desire, grief, wonder, and the quieter rooms of the self.</p>
         <p>The name carries the image of a small flame: not a spotlight, not a performance, but enough light to walk a little deeper. Some pieces feel like prayers. Some feel like dreams. Some are honest attempts to name what is difficult to hold.</p>
         <div class="about-themes">
@@ -158,22 +188,23 @@
           <article><p class="eyebrow">Dream</p><h2>Follow the symbol</h2><p>Listening to images, wonder, faith, and strange inner weather.</p></article>
           <article><p class="eyebrow">Return</p><h2>Come back gently</h2><p>Returning to tenderness, body, spirit, hope, and voice.</p></article>
         </div>
-        <aside class="about-cta">
-          <h2>New poems arrive quietly</h2>
-          <p>No noise and no fixed schedule—just the work when it is ready.</p>
-          <a class="button button--subscribe" href="{{ SUBSCRIBE_URL }}" data-subscribe>Subscribe for new poems</a>
-        </aside>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
+    <div class="site-footer__cta">
+      <p class="reader-end" aria-hidden="true">⁂</p>
+      <h2>New poems arrive when they are ready.</h2>
+      <p>No noise and no fixed schedule—just the work when it is ready.</p>
+      <a class="button button--ember" href="{{ SUBSCRIBE_URL }}" data-subscribe>Subscribe on Substack <span aria-hidden="true">↗</span></a>
+    </div>
     <div class="site-footer__inner">
       <a class="brand brand--small" href="#" data-route="home" aria-label="Torchborne home">
         <svg class="brand__mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/></svg>
         <span>Torchborne</span>
       </a>
-      <p>© {{ generated_at.year if generated_at else 2026 }} · Made with care.</p>
+      <p>© {{ generated_at.year if generated_at else 2026 }} Torchborne · All rights reserved</p>
       <nav aria-label="Footer navigation">
         <a href="#about" data-route="about">About</a>
         <a href="{{ POSTS_BASE }}" target="_blank" rel="noopener">Substack</a>
