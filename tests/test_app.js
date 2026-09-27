@@ -9,6 +9,7 @@ const {
   getAdjacent,
   normalizePost,
   parseHash,
+  proxyRequestUrl,
   rankRelated,
   readPreference,
   resolveRoute,
@@ -102,4 +103,19 @@ test('reader route waits for asynchronously loaded posts', () => {
   assert.deepEqual(resolveRoute(route, [], false), { status: 'pending', route });
   assert.deepEqual(resolveRoute(route, [{ slug: 'small-flame' }], true), { status: 'ready', route });
   assert.deepEqual(resolveRoute(route, [{ slug: 'other' }], true), { status: 'invalid', route: { view: 'home' } });
+});
+
+test('rss2json proxy requests carry the api key and item count', () => {
+  const url = new URL(proxyRequestUrl(
+    'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fexample.com%2Ffeed',
+    { rss2jsonApiKey: 'key', maxItems: 50 },
+  ));
+  assert.equal(url.searchParams.get('api_key'), 'key');
+  assert.equal(url.searchParams.get('count'), '50');
+  assert.equal(url.searchParams.get('rss_url'), 'https://example.com/feed');
+});
+
+test('other proxies are left untouched', () => {
+  const value = 'https://proxy.example.com/?url=https%3A%2F%2Fexample.com%2Ffeed';
+  assert.equal(proxyRequestUrl(value, { rss2jsonApiKey: 'key', maxItems: 50 }), value);
 });

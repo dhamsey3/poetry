@@ -184,6 +184,14 @@
     }
   }
 
+  function storageOf(win) {
+    try {
+      return win ? win.localStorage : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function writePreference(storage, key, value) {
     try {
       if (storage) storage.setItem(key, String(value));
@@ -195,6 +203,20 @@
     if (!loaded && !(posts || []).length) return { status: 'pending', route };
     if ((posts || []).some((post) => post.slug === route.slug)) return { status: 'ready', route };
     return { status: 'invalid', route: { view: 'home' } };
+  }
+
+  function proxyRequestUrl(value, options) {
+    const config = options || {};
+    try {
+      const url = new URL(value);
+      if (!/(^|\.)rss2json\.com$/.test(url.hostname)) return value;
+      if (text(config.rss2jsonApiKey)) url.searchParams.set('api_key', text(config.rss2jsonApiKey));
+      const count = Number(config.maxItems);
+      if (Number.isFinite(count) && count > 0) url.searchParams.set('count', String(Math.floor(count)));
+      return url.href;
+    } catch (_) {
+      return value;
+    }
   }
 
   function escapeHtml(value) {
@@ -215,15 +237,19 @@
     }
   }
 
+  const UNSAFE_TAGS = 'script,style,iframe,frame,frameset,object,embed,applet,form,input,button,textarea,select,base,link,meta,svg,math,template,noscript';
+  const URL_ATTRIBUTE = /(^|:)(href|src|action|formaction|poster|background|cite)$/;
+
   function sanitizeArticle(html, doc) {
     if (!doc || !doc.createElement) return escapeHtml(stripHtml(html)).replace(/\n/g, '<br>');
     const template = doc.createElement('template');
     template.innerHTML = String(html || '');
-    template.content.querySelectorAll('script,style,iframe,object,embed,form,input,button').forEach((node) => node.remove());
+    template.content.querySelectorAll(UNSAFE_TAGS).forEach((node) => node.remove());
     template.content.querySelectorAll('*').forEach((node) => {
       [...node.attributes].forEach((attribute) => {
         const name = attribute.name.toLowerCase();
         if (name.startsWith('on') || name === 'style' || name === 'srcdoc') node.removeAttribute(attribute.name);
+        else if (name !== 'href' && name !== 'src' && URL_ATTRIBUTE.test(name) && !safeUrl(attribute.value)) node.removeAttribute(attribute.name);
       });
       if (node.hasAttribute('href')) {
         const href = safeUrl(node.getAttribute('href'));
@@ -263,7 +289,7 @@
       posts: Array.isArray(initial) ? initial.map(normalizePost) : [],
       postsLoaded: Array.isArray(initial) && initial.length > 0,
       view: 'home', slug: '', query: '', mood: 'all', tag: '', visible: 7,
-      readerScale: clampReaderScale(readPreference(win.localStorage, 'torchborne-reader-scale', 1)),
+      readerScale: clampReaderScale(readPreference(storageOf(win), 'torchborne-reader-scale', 1)),
       lastScroll: 0, dialogTrigger: null,
     };
 
@@ -346,12 +372,7 @@
 
     function renderReader(slug) {
       const post = state.posts.find((entry) => entry.slug === slug);
-      if (!post) {
-        showView('home');
-        elements.status.hidden = false;
-        elements.status.querySelector('p').textContent = 'That poem is unavailable. The archive is ready below.';
-        return false;
-      }
+      if (!post) return false;
       state.slug = slug;
       elements.readerTitle.textContent = post.title;
       elements.readerMeta.innerHTML = `<span class="mood-label mood-label--${post.mood}">${moodLabel(post.mood)}</span>${dateLabel(post.date) ? `<time>${escapeHtml(dateLabel(post.date))}</time>` : ''}`;
@@ -361,7 +382,8 @@
       elements.readerSource.href = safeUrl(post.link) || config.publicUrl || '#';
       elements.readerShare.dataset.share = encodeURIComponent(post.link);
       elements.readerShare.dataset.title = post.title;
-      const adjacent = getAdjacent(currentResults(), slug);
+      const results = currentResults();
+      const adjacent = getAdjacent(results.some((entry) => entry.slug === slug) ? results : state.posts, slug);
       renderAdjacent(elements.previous, adjacent.previous, '← Previous');
       renderAdjacent(elements.next, adjacent.next, 'Next →');
       elements.related.replaceChildren(...rankRelated(state.posts, post, 3).map((entry) => postCard(entry, true)));
@@ -369,6 +391,12 @@
       doc.title = `${post.title} — Torchborne`;
       win.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' });
       return true;
+    }
+
+    function showStatusNote(message) {
+      elements.status.hidden = false;
+      const note = elements.status.querySelector('p');
+      if (note) note.textContent = message;
     }
 
     function renderAdjacent(button, post, label) {
@@ -383,7 +411,12 @@
       return Boolean(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
+    function isAppHash(hash) {
+      return !hash || hash === '#' || hash === '#about' || hash.startsWith('#poem/');
+    }
+
     function route() {
+      if (!isAppHash(win.location.hash) && state.view === 'home') return;
       const parsed = parseHash(win.location.hash);
       const resolution = resolveRoute(parsed, state.posts, state.postsLoaded);
       if (resolution.status === 'pending') return;
@@ -393,6 +426,10 @@
         showView('about'); doc.title = 'About — Torchborne'; win.scrollTo(0, 0); return;
       }
       showView('home'); renderHome(); doc.title = 'Torchborne';
+      if (resolution.status === 'invalid') {
+        showStatusNote('That poem is unavailable. The archive is ready below.');
+        return;
+      }
       if (state.lastScroll) win.requestAnimationFrame(() => win.scrollTo(0, state.lastScroll));
     }
 
@@ -409,7 +446,7 @@
       doc.documentElement.dataset.theme = value;
       elements.theme.setAttribute('aria-pressed', String(value === 'dark'));
       elements.theme.setAttribute('aria-label', value === 'dark' ? 'Use light theme' : 'Use dark theme');
-      writePreference(win.localStorage, 'torchborne-theme', value);
+      writePreference(storageOf(win), 'torchborne-theme', value);
       const meta = byId('themeColorMeta'); if (meta) meta.content = value === 'dark' ? '#171510' : '#fbf7ed';
     }
 
@@ -422,8 +459,15 @@
 
     function closeDialog() {
       if (typeof elements.dialog.close === 'function') elements.dialog.close();
-      else elements.dialog.removeAttribute('open');
+      else { elements.dialog.removeAttribute('open'); restoreDialogFocus(); }
+    }
+
+    function restoreDialogFocus() {
       state.dialogTrigger?.focus(); state.dialogTrigger = null;
+    }
+
+    function dialogOpen() {
+      return Boolean(elements.dialog && (elements.dialog.open || elements.dialog.hasAttribute('open')));
     }
 
     function bindEvents() {
@@ -450,13 +494,17 @@
       doc.querySelector('[data-reader-dec]').addEventListener('click', () => adjustScale(-0.1));
       elements.dialog?.querySelector('[data-dialog-close]')?.addEventListener('click', closeDialog);
       elements.dialog?.addEventListener('click', (event) => { if (event.target === elements.dialog) closeDialog(); });
+      elements.dialog?.addEventListener('close', restoreDialogFocus);
       win.addEventListener('hashchange', route);
       win.addEventListener('scroll', updateProgress, { passive: true });
       doc.addEventListener('keydown', (event) => {
+        if (state.view !== 'reader' || event.defaultPrevented || dialogOpen()) return;
         const editable = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName) || event.target.isContentEditable;
-        if (state.view === 'reader' && event.key === 'Escape') { win.location.hash = ''; route(); }
-        if (state.view === 'reader' && !editable && event.key === 'ArrowLeft' && !elements.previous.hidden) elements.previous.click();
-        if (state.view === 'reader' && !editable && event.key === 'ArrowRight' && !elements.next.hidden) elements.next.click();
+        const modified = event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
+        if (event.key === 'Escape') { win.location.hash = ''; route(); return; }
+        if (editable || modified) return;
+        if (event.key === 'ArrowLeft' && !elements.previous.hidden) elements.previous.click();
+        if (event.key === 'ArrowRight' && !elements.next.hidden) elements.next.click();
       });
     }
 
@@ -464,7 +512,7 @@
       state.readerScale = clampReaderScale(state.readerScale + delta);
       elements.readerBody.style.setProperty('--reader-scale', state.readerScale);
       elements.readerScale.textContent = `${Math.round(state.readerScale * 100)}%`;
-      writePreference(win.localStorage, 'torchborne-reader-scale', state.readerScale);
+      writePreference(storageOf(win), 'torchborne-reader-scale', state.readerScale);
     }
 
     function updateProgress() {
@@ -481,7 +529,7 @@
       const candidates = ['./data/posts.json'];
       if (config.proxyUrl && config.feedUrl) {
         const separator = /[?=&]$/.test(config.proxyUrl) ? '' : (config.proxyUrl.includes('?') ? '&rss_url=' : '?rss_url=');
-        candidates.push(`${config.proxyUrl}${separator}${encodeURIComponent(config.feedUrl)}`);
+        candidates.push(proxyRequestUrl(`${config.proxyUrl}${separator}${encodeURIComponent(config.feedUrl)}`, config));
       }
       for (const url of candidates) {
         try {
@@ -499,7 +547,7 @@
     }
 
     bindEvents();
-    setTheme(doc.documentElement.dataset.theme || readPreference(win.localStorage, 'torchborne-theme', 'light'));
+    setTheme(doc.documentElement.dataset.theme || readPreference(storageOf(win), 'torchborne-theme', 'light'));
     renderHome(); route(); loadPosts();
     return { state, renderHome, route };
   }
@@ -513,6 +561,7 @@
     getAdjacent,
     normalizePost,
     parseHash,
+    proxyRequestUrl,
     rankRelated,
     readPreference,
     resolveRoute,
