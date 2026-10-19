@@ -8,12 +8,17 @@ const {
   formatHash,
   getAdjacent,
   normalizePost,
+  openingLine,
   parseHash,
+  parseVerse,
+  pickFeatured,
   proxyRequestUrl,
   rankRelated,
   readPreference,
   resolveRoute,
+  romanize,
   slugify,
+  verseTextOf,
   writePreference,
 } = require('../public/static/app.js');
 
@@ -118,4 +123,36 @@ test('rss2json proxy requests carry the api key and item count', () => {
 test('other proxies are left untouched', () => {
   const value = 'https://proxy.example.com/?url=https%3A%2F%2Fexample.com%2Ffeed';
   assert.equal(proxyRequestUrl(value, { rss2jsonApiKey: 'key', maxItems: 50 }), value);
+});
+
+test('verse text is read from the first pre block with entities decoded', () => {
+  const html = '<figure><img src="x"></figure><pre><code>\nI asked for a doorway,  \nyour number &amp; name\n\n---\n\nBut you asked me</code></pre>';
+  assert.equal(verseTextOf(html), '\nI asked for a doorway,  \nyour number & name\n\n---\n\nBut you asked me');
+  assert.equal(verseTextOf('<p>prose only</p>'), '');
+});
+
+test('verse parsing keeps stanzas and marks explicit section breaks', () => {
+  assert.deepEqual(parseVerse('\nOne,\ntwo\n\n---\n\nThree\n\nFour\n---\n'), [
+    { type: 'stanza', lines: ['One,', 'two'] },
+    { type: 'break' },
+    { type: 'stanza', lines: ['Three'] },
+    { type: 'stanza', lines: ['Four'] },
+  ]);
+});
+
+test('opening line quotes verse with slashes and falls back to the summary', () => {
+  assert.equal(openingLine('I asked for a doorway,\nyour number,\na chance to knock,\nto learn', ''), 'I asked for a doorway, / your number, / a chance to knock\u2026');
+  assert.equal(openingLine('The older I get,\nthe clearer it becomes:\nhow frail life is.', ''), 'The older I get, / the clearer it becomes: / how frail life is.');
+  assert.equal(openingLine('', 'A short reflection.'), 'A short reflection.');
+});
+
+test('roman numerals number the contents', () => {
+  assert.deepEqual([1, 4, 8, 9, 14, 40, 2024].map(romanize), ['I', 'IV', 'VIII', 'IX', 'XIV', 'XL', 'MMXXIV']);
+});
+
+test('featured poem is the newest one written as verse', () => {
+  const posts = [{ slug: 'essay', verse: '' }, { slug: 'poem', verse: 'A line' }, { slug: 'older', verse: 'B line' }];
+  assert.equal(pickFeatured(posts).slug, 'poem');
+  assert.equal(pickFeatured([{ slug: 'essay', verse: '' }]).slug, 'essay');
+  assert.equal(pickFeatured([]), null);
 });
